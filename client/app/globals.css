@@ -1,16 +1,16 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #000000;
-  --color-foreground: #ffffff;
-  --color-secondary: #0a0a0a;
-  --color-card: #111111;
-  --color-border: rgba(255, 255, 255, 0.08);
+  --color-background: #030712; /* Deeper, richer black */
+  --color-foreground: #f9fafb;
+  --color-secondary: #111827;
+  --color-card: rgba(17, 24, 39, 0.4);
+  --color-border: rgba(255, 255, 255, 0.06);
   
   --color-muted-foreground: #9ca3af;
   
   --color-accent: #3b82f6;
-  --color-success: #22c55e;
+  --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
 
@@ -20,35 +20,37 @@
 
 @layer base {
   :root {
-    --background: #000000;
-    --foreground: #ffffff;
+    --background: #030712;
+    --foreground: #f9fafb;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60;
   }
   .text-gradient-blue {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-blue-600;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400;
   }
   .glass {
-    @apply bg-white/5 backdrop-blur-md border border-white/10;
+    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.05];
   }
   .glass-card {
-    @apply bg-[#111111]/80 backdrop-blur-lg border border-white/10;
+    @apply bg-gray-900/40 backdrop-blur-2xl border border-white/[0.05] shadow-2xl;
   }
   .neon-glow {
-    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
   }
   .neon-glow-hover:hover {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Scrollbar */
@@ -56,12 +58,12 @@ body {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #000000;
+  background: #030712;
 }
 ::-webkit-scrollbar-thumb {
-  background: #333;
+  background: #1f2937;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #374151;
 }
