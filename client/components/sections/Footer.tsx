@@ -1,6 +1,7 @@
 "use client";
 
-import { Shield, Github, Twitter, Linkedin } from "lucide-react";
+import { Shield } from "lucide-react";
+import { GitHubLogoIcon as Github, TwitterLogoIcon as Twitter, LinkedInLogoIcon as Linkedin } from "@radix-ui/react-icons";
 import Link from "next/link";
 
 export default function Footer() {

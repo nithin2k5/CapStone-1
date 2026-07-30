@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Shield, Github, Menu, X } from "lucide-react";
+import { Shield, Menu, X } from "lucide-react";
+import { GitHubLogoIcon as Github } from "@radix-ui/react-icons";
 import Link from "next/link";
 
 const navLinks = [

@@ -1,7 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Github, Linkedin, Mail } from "lucide-react";
+import { User, Mail } from "lucide-react";
+import { GitHubLogoIcon as Github, LinkedInLogoIcon as Linkedin } from "@radix-ui/react-icons";
 
 const team = [
   { role: "Project Lead", name: "Alex Chen", color: "text-blue-400", border: "border-blue-500/20", bg: "bg-blue-500/5" },
