@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { User, Mail } from "lucide-react";
-import { GitHubLogoIcon as Github, LinkedInLogoIcon as Linkedin } from "@radix-ui/react-icons";
+import { GithubIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
 
 const team = [
   { role: "Project Lead", name: "Alex Chen", color: "text-blue-400", border: "border-blue-500/20", bg: "bg-blue-500/5" },
@@ -59,10 +59,10 @@ export default function Team() {
               
               <div className="flex items-center gap-3 mt-auto pt-4 border-t border-white/5 w-full justify-center">
                 <button className="text-gray-500 hover:text-white transition-colors">
-                  <Github className="w-4 h-4" />
+                  <GithubIcon className="h-4 w-4" />
                 </button>
                 <button className="text-gray-500 hover:text-white transition-colors">
-                  <Linkedin className="w-4 h-4" />
+                  <LinkedinIcon className="h-4 w-4" />
                 </button>
                 <button className="text-gray-500 hover:text-white transition-colors">
                   <Mail className="w-4 h-4" />
