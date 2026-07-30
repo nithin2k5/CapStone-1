@@ -8,6 +8,7 @@ import DashboardPreview from "@/components/sections/DashboardPreview";
 import ResearchTimeline from "@/components/sections/ResearchTimeline";
 import Standards from "@/components/sections/Standards";
 import TechStack from "@/components/sections/TechStack";
+import Team from "@/components/sections/Team";
 import Contact from "@/components/sections/Contact";
 import Footer from "@/components/sections/Footer";
 
@@ -26,6 +27,7 @@ export default function Home() {
         <ResearchTimeline />
         <Standards />
         <TechStack />
+        <Team />
         <Contact />
       </div>
 
