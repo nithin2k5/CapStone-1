@@ -40,10 +40,15 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4">Quick Links</h4>
             <ul className="space-y-3">
-              {['Documentation', 'Architecture', 'Research', 'Dashboard'].map((link) => (
-                <li key={link}>
-                  <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                    {link}
+              {[
+                { label: "Documentation", href: "/docs" },
+                { label: "Architecture", href: "/#architecture" },
+                { label: "Research", href: "/#research" },
+                { label: "Dashboard", href: "/dashboard" },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
+                    {link.label}
                   </Link>
                 </li>
               ))}
@@ -54,10 +59,15 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-bold mb-4">Legal</h4>
             <ul className="space-y-3">
-              {['Privacy Policy', 'Terms of Service', 'Security Policy', 'Contact'].map((link) => (
-                <li key={link}>
-                  <Link href="#" className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
-                    {link}
+              {[
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms of Service", href: "/privacy" },
+                { label: "Security Policy", href: "/privacy" },
+                { label: "Contact", href: "/#contact" },
+              ].map((link) => (
+                <li key={link.label}>
+                  <Link href={link.href} className="text-gray-400 hover:text-blue-400 transition-colors text-sm">
+                    {link.label}
                   </Link>
                 </li>
               ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { Shield, Mail, Brain, Network, Lock, AlertTriangle, ArrowRight, ChevronRight } from "lucide-react";
 
@@ -37,13 +38,19 @@ export default function Hero() {
             </p>
             
             <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5">
-              <button className="w-full sm:w-auto px-8 py-4 bg-white text-black hover:bg-gray-200 rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2 group">
+              <Link
+                href="/signup"
+                className="w-full sm:w-auto px-8 py-4 bg-white text-black hover:bg-gray-200 rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2 group"
+              >
                 Start Free Trial
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/[0.05] text-white rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2">
-                View Documentation
-              </button>
+              </Link>
+              <Link
+                href="/dashboard"
+                className="w-full sm:w-auto px-8 py-4 glass hover:bg-white/[0.05] text-white rounded-full font-semibold text-lg transition-all flex items-center justify-center gap-2"
+              >
+                View Demo
+              </Link>
             </div>
           </motion.div>
 
