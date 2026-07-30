@@ -38,7 +38,7 @@ const phases = [
 
 export default function ResearchTimeline() {
   return (
-    <section id="research" className="py-24 relative z-10">
+    <section id="research" className="py-24 relative z-10 bg-black">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2 
@@ -47,7 +47,7 @@ export default function ResearchTimeline() {
             viewport={{ once: true }}
             className="font-heading text-3xl md:text-5xl font-bold mb-6"
           >
-            Research <span className="text-gradient-blue">Objectives</span>
+            Research <span className="text-gray-400">Objectives</span>
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -65,7 +65,7 @@ export default function ResearchTimeline() {
           <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-white/10 md:-translate-x-1/2" />
           
           <motion.div 
-            className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-blue-500 md:-translate-x-1/2 origin-top"
+            className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-white/30 md:-translate-x-1/2 origin-top"
             initial={{ scaleY: 0 }}
             whileInView={{ scaleY: 1 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -79,9 +79,9 @@ export default function ResearchTimeline() {
                 {/* Timeline Node */}
                 <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-black border-4 border-black z-10">
                   {phase.status === "completed" ? (
-                    <CheckCircle2 className="w-6 h-6 text-blue-500 bg-black rounded-full" />
+                    <CheckCircle2 className="w-6 h-6 text-white bg-black rounded-full" />
                   ) : phase.status === "in-progress" ? (
-                    <div className="w-4 h-4 rounded-full bg-blue-500 animate-pulse" />
+                    <div className="w-4 h-4 rounded-full bg-white/60 animate-pulse" />
                   ) : (
                     <Circle className="w-5 h-5 text-gray-600" />
                   )}
@@ -93,9 +93,9 @@ export default function ResearchTimeline() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className={`ml-16 md:ml-0 md:w-1/2 glass-card p-6 rounded-2xl border border-white/10 hover:border-blue-500/30 transition-colors ${index % 2 === 0 ? 'md:pl-12' : 'md:pr-12 text-left md:text-right'}`}
+                  className={`ml-16 md:ml-0 md:w-1/2 glass-card p-6 rounded-2xl border border-white/[0.06] hover:border-white/10 transition-colors ${index % 2 === 0 ? "md:pl-12" : "md:pr-12 text-left md:text-right"}`}
                 >
-                  <div className={`text-sm font-mono mb-2 ${phase.status === 'completed' ? 'text-blue-400' : phase.status === 'in-progress' ? 'text-blue-300' : 'text-gray-500'}`}>
+                  <div className={`text-sm font-mono mb-2 ${phase.status === "completed" ? "text-gray-300" : phase.status === "in-progress" ? "text-white" : "text-gray-600"}`}>
                     {phase.phase}
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{phase.title}</h3>

@@ -86,16 +86,16 @@ export default function SignupPage() {
         <label className="flex items-start gap-3 cursor-pointer pt-2">
           <input
             type="checkbox"
-            className="w-4 h-4 mt-0.5 rounded border-white/20 bg-black/40 text-blue-600 focus:ring-blue-500/50"
+            className="w-4 h-4 mt-0.5 rounded border-white/20 bg-black text-white focus:ring-white/20"
             required
           />
           <span className="text-sm text-gray-400 leading-relaxed">
             I agree to the{" "}
-            <Link href="/privacy" className="text-blue-400 hover:text-blue-300">
+            <Link href="/privacy" className="text-gray-400 hover:text-white">
               Terms of Service
             </Link>{" "}
             and{" "}
-            <Link href="/privacy" className="text-blue-400 hover:text-blue-300">
+            <Link href="/privacy" className="text-gray-400 hover:text-white">
               Privacy Policy
             </Link>
           </span>
@@ -109,7 +109,7 @@ export default function SignupPage() {
 
       <p className="mt-8 text-center text-sm text-gray-400">
         Already have an account?{" "}
-        <Link href="/login" className="text-blue-400 hover:text-blue-300 font-medium">
+        <Link href="/login" className="text-gray-400 hover:text-white font-medium">
           Sign in
         </Link>
       </p>

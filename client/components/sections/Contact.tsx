@@ -5,7 +5,7 @@ import { Send, Mail, User, MessageSquare } from "lucide-react";
 
 export default function Contact() {
   return (
-    <section id="contact" className="py-24 relative z-10">
+    <section id="contact" className="py-24 relative z-10 bg-black">
       <div className="container mx-auto px-6">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
@@ -19,7 +19,7 @@ export default function Contact() {
             >
               <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6">
                 Ready to secure your <br />
-                <span className="text-gradient-blue">infrastructure?</span>
+                <span className="text-gray-400">infrastructure?</span>
               </h2>
               <p className="text-gray-400 text-lg mb-8">
                 Get in touch with our security experts for a personalized demo or to discuss your organization's specific requirements.
@@ -27,8 +27,8 @@ export default function Contact() {
               
               <div className="space-y-6">
                 <div className="flex items-center gap-4 text-gray-300">
-                  <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-                    <Mail className="w-5 h-5 text-blue-400" />
+                  <div className="w-12 h-12 rounded-full bg-white/[0.04] flex items-center justify-center border border-white/[0.08]">
+                    <Mail className="w-5 h-5 text-gray-400" />
                   </div>
                   <div>
                     <div className="text-sm text-gray-500">Email Us</div>
@@ -47,7 +47,7 @@ export default function Contact() {
             >
               <form className="glass-card p-8 rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
                 {/* Background Glow */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full pointer-events-none" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] blur-[100px] rounded-full pointer-events-none" />
                 
                 <div className="relative z-10 space-y-6">
                   <div>
@@ -57,7 +57,7 @@ export default function Contact() {
                       <input 
                         type="text" 
                         placeholder="John Doe"
-                        className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                        className="w-full bg-black border border-white/[0.08] rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all"
                       />
                     </div>
                   </div>
@@ -69,7 +69,7 @@ export default function Contact() {
                       <input 
                         type="email" 
                         placeholder="john@company.com"
-                        className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                        className="w-full bg-black border border-white/[0.08] rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all"
                       />
                     </div>
                   </div>
@@ -81,14 +81,14 @@ export default function Contact() {
                       <textarea 
                         rows={4}
                         placeholder="How can we help you?"
-                        className="w-full bg-black/50 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all resize-none"
+                        className="w-full bg-black border border-white/[0.08] rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all resize-none"
                       />
                     </div>
                   </div>
 
                   <button 
                     type="button"
-                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-medium transition-all neon-glow-hover flex items-center justify-center gap-2 group"
+                    className="w-full py-4 bg-white text-black hover:bg-neutral-200 rounded-xl font-medium transition-all flex items-center justify-center gap-2 group"
                   >
                     Send Message
                     <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />

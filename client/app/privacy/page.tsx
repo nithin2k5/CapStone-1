@@ -64,7 +64,7 @@ export default function PrivacyPage() {
               <h2 className="text-xl font-bold text-white mb-3">5. Contact</h2>
               <p>
                 For privacy-related inquiries, contact our Data Protection Officer at{" "}
-                <span className="text-blue-400">privacy@gateway.local</span>.
+                <span className="text-gray-400">privacy@gateway.local</span>.
               </p>
             </section>
           </div>

@@ -34,13 +34,13 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
           <input
             type="search"
             placeholder="Search threats, emails..."
-            className="w-64 bg-black/40 border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 transition-all"
+            className="w-64 bg-black border border-white/[0.08] rounded-xl py-2.5 pl-10 pr-4 text-sm text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all"
           />
         </div>
 
         <button className="relative p-2.5 rounded-xl glass hover:bg-white/[0.05] transition-colors">
           <Bell className="w-5 h-5 text-gray-400" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-white/50 rounded-full animate-pulse" />
         </button>
 
         <div className="flex items-center gap-3 pl-3 border-l border-white/10">
@@ -57,8 +57,8 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
               className="w-10 h-10 rounded-xl border border-white/10 object-cover"
             />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-              <User className="w-5 h-5 text-blue-400" />
+            <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
+              <User className="w-5 h-5 text-gray-400" />
             </div>
           )}
         </div>

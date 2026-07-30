@@ -25,8 +25,8 @@ export default function DocsPage() {
         </Link>
 
         <div className="flex items-center gap-4 mb-12">
-          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-            <Shield className="w-7 h-7 text-blue-400" />
+          <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
+            <Shield className="w-7 h-7 text-gray-400" />
           </div>
           <div>
             <h1 className="font-heading text-4xl font-bold text-white">Documentation</h1>
@@ -40,10 +40,10 @@ export default function DocsPage() {
             return (
               <div
                 key={section.title}
-                className="glass-card rounded-2xl p-6 border border-white/[0.05] hover:border-blue-500/20 transition-colors"
+                className="glass-card rounded-2xl p-6 border border-white/[0.06] hover:border-white/10 transition-colors"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Icon className="w-5 h-5 text-blue-400" />
+                  <Icon className="w-5 h-5 text-gray-500" />
                   <h2 className="font-heading text-xl font-bold text-white">{section.title}</h2>
                 </div>
                 <ul className="space-y-2">
@@ -51,7 +51,7 @@ export default function DocsPage() {
                     <li key={item}>
                       <Link
                         href="#"
-                        className="text-gray-400 hover:text-blue-400 transition-colors text-sm block py-1.5"
+                        className="text-gray-500 hover:text-white transition-colors text-sm block py-1.5"
                       >
                         {item}
                       </Link>

@@ -52,7 +52,7 @@ export default function LoginPage() {
             </label>
             <Link
               href="/forgot-password"
-              className="text-sm text-blue-400 hover:text-blue-300 transition-colors"
+              className="text-sm text-gray-400 hover:text-white transition-colors"
             >
               Forgot password?
             </Link>
@@ -71,7 +71,7 @@ export default function LoginPage() {
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
-            className="w-4 h-4 rounded border-white/20 bg-black/40 text-blue-600 focus:ring-blue-500/50"
+            className="w-4 h-4 rounded border-white/20 bg-black text-white focus:ring-white/20"
           />
           <span className="text-sm text-gray-400">Remember me for 30 days</span>
         </label>
@@ -84,7 +84,7 @@ export default function LoginPage() {
 
       <p className="mt-8 text-center text-sm text-gray-400">
         Don&apos;t have an account?{" "}
-        <Link href="/signup" className="text-blue-400 hover:text-blue-300 font-medium">
+        <Link href="/signup" className="text-gray-400 hover:text-white font-medium">
           Create account
         </Link>
       </p>

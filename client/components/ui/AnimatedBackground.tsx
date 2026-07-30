@@ -32,22 +32,21 @@ export default function AnimatedBackground() {
       constructor() {
         this.x = Math.random() * canvas!.width;
         this.y = Math.random() * canvas!.height;
-        this.vx = (Math.random() - 0.5) * 0.5;
-        this.vy = (Math.random() - 0.5) * 0.5;
-        this.size = Math.random() * 2;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.size = Math.random() * 1.5;
       }
 
       update() {
         this.x += this.vx;
         this.y += this.vy;
-
         if (this.x < 0 || this.x > canvas!.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas!.height) this.vy *= -1;
       }
 
       draw() {
         if (!ctx) return;
-        ctx.fillStyle = "rgba(59, 130, 246, 0.5)";
+        ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
         ctx.fill();
@@ -56,7 +55,7 @@ export default function AnimatedBackground() {
 
     const initParticles = () => {
       particles = [];
-      const numParticles = Math.floor((canvas.width * canvas.height) / 15000);
+      const numParticles = Math.floor((canvas.width * canvas.height) / 18000);
       for (let i = 0; i < numParticles; i++) {
         particles.push(new Particle());
       }
@@ -68,10 +67,9 @@ export default function AnimatedBackground() {
           const dx = particles[i].x - particles[j].x;
           const dy = particles[i].y - particles[j].y;
           const distance = Math.sqrt(dx * dx + dy * dy);
-
-          if (distance < 150) {
+          if (distance < 120) {
             ctx!.beginPath();
-            ctx!.strokeStyle = `rgba(59, 130, 246, ${0.15 - distance / 1000})`;
+            ctx!.strokeStyle = `rgba(255, 255, 255, ${0.04 - distance / 3000})`;
             ctx!.lineWidth = 1;
             ctx!.moveTo(particles[i].x, particles[i].y);
             ctx!.lineTo(particles[j].x, particles[j].y);
@@ -83,12 +81,10 @@ export default function AnimatedBackground() {
 
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      particles.forEach((particle) => {
-        particle.update();
-        particle.draw();
+      particles.forEach((p) => {
+        p.update();
+        p.draw();
       });
-      
       drawLines();
       animationFrameId = requestAnimationFrame(animate);
     };
@@ -105,65 +101,24 @@ export default function AnimatedBackground() {
 
   return (
     <div className="fixed inset-0 z-[-1] overflow-hidden bg-black">
-      {/* Moving Grid */}
-      <div 
-        className="absolute inset-0 opacity-[0.03]"
+      <div
+        className="absolute inset-0 opacity-[0.02]"
         style={{
-          backgroundImage: `linear-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 1) 1px, transparent 1px)`,
-          backgroundSize: '50px 50px',
-          backgroundPosition: 'center center'
+          backgroundImage: `linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)`,
+          backgroundSize: "50px 50px",
         }}
       />
-      
-      {/* Network Particles */}
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 opacity-60"
-      />
-
-      {/* Radial Gradient for depth */}
+      <canvas ref={canvasRef} className="absolute inset-0 opacity-40" />
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#000000_100%)]" />
-
-      {/* Animated Light Beams */}
       <motion.div
-        animate={{
-          opacity: [0.1, 0.3, 0.1],
-          scale: [1, 1.2, 1],
-          x: [0, 100, 0],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px]"
+        animate={{ opacity: [0.03, 0.06, 0.03] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+        className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-white/[0.02] rounded-full blur-[120px]"
       />
-      
       <motion.div
-        animate={{
-          opacity: [0.1, 0.2, 0.1],
-          scale: [1, 1.5, 1],
-          x: [0, -100, 0],
-        }}
-        transition={{
-          duration: 15,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[150px]"
-      />
-
-      {/* Digital Scanning Effect */}
-      <motion.div
-        animate={{
-          y: ['-100%', '100%']
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: "linear"
-        }}
-        className="absolute inset-0 w-full h-1 bg-blue-500/20 blur-sm"
+        animate={{ y: ["-100%", "100%"] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute inset-0 w-full h-px bg-white/[0.04]"
       />
     </div>
   );

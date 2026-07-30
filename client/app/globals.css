@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  --color-background: #030712; /* Deeper, richer black */
-  --color-foreground: #f9fafb;
-  --color-secondary: #111827;
-  --color-card: rgba(17, 24, 39, 0.4);
-  --color-border: rgba(255, 255, 255, 0.06);
-  
+  --color-background: #000000;
+  --color-foreground: #ffffff;
+  --color-secondary: #0a0a0a;
+  --color-card: rgba(17, 17, 17, 0.6);
+  --color-border: rgba(255, 255, 255, 0.08);
+
   --color-muted-foreground: #9ca3af;
-  
-  --color-accent: #3b82f6;
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
+
+  --color-accent: #ffffff;
+  --color-success: #a3a3a3;
+  --color-warning: #737373;
+  --color-danger: #525252;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
@@ -20,50 +20,49 @@
 
 @layer base {
   :root {
-    --background: #030712;
-    --foreground: #f9fafb;
+    --background: #000000;
+    --foreground: #ffffff;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60;
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-400;
   }
   .text-gradient-blue {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400;
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white to-neutral-500;
   }
   .glass {
-    @apply bg-white/[0.02] backdrop-blur-xl border border-white/[0.05];
+    @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.06];
   }
   .glass-card {
-    @apply bg-gray-900/40 backdrop-blur-2xl border border-white/[0.05] shadow-2xl;
+    @apply bg-neutral-950/80 backdrop-blur-2xl border border-white/[0.06];
   }
   .neon-glow {
-    box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.05);
   }
   .neon-glow-hover:hover {
-    box-shadow: 0 0 30px rgba(59, 130, 246, 0.5);
+    box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
   }
 }
 
 body {
-  background: var(--background);
+  background: #000000;
   color: var(--foreground);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: #030712;
+  background: #000000;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1f2937;
+  background: #262626;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #374151;
+  background: #404040;
 }

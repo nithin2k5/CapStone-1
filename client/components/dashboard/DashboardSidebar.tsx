@@ -46,8 +46,8 @@ export default function DashboardSidebar() {
     >
       <div className="p-6 border-b border-white/[0.05] flex items-center justify-between">
         <Link href="/" className="flex items-center gap-3 group overflow-hidden">
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20">
-            <Shield className="w-5 h-5 text-blue-400" />
+          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.08]">
+            <Shield className="w-5 h-5 text-gray-400" />
           </div>
           {!collapsed && (
             <span className="font-heading font-bold text-sm tracking-tight text-white whitespace-nowrap">
@@ -76,8 +76,8 @@ export default function DashboardSidebar() {
                 className={cn(
                   "flex items-center gap-3 px-4 py-3 rounded-xl transition-all",
                   isActive
-                    ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                    : "text-gray-400 hover:text-white hover:bg-white/[0.03]"
+                    ? "bg-white/[0.06] text-white border border-white/10"
+                    : "text-gray-500 hover:text-white hover:bg-white/[0.03]"
                 )}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -98,7 +98,7 @@ export default function DashboardSidebar() {
         <button
           type="button"
           onClick={handleSignOut}
-          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/5 transition-all"
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-500 hover:text-white hover:bg-white/[0.03] transition-all"
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
           {!collapsed && <span className="text-sm font-medium">Sign Out</span>}

@@ -24,7 +24,7 @@ export function AuthInput({ label, icon, className, id, ...props }: InputProps) 
         <input
           id={inputId}
           className={cn(
-            "w-full bg-black/40 border border-white/10 rounded-xl py-3 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all",
+            "w-full bg-black border border-white/[0.08] rounded-xl py-3 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all",
             icon ? "pl-12" : "pl-4",
             className
           )}
@@ -50,9 +50,9 @@ export function AuthButton({
       className={cn(
         "w-full py-3.5 rounded-xl font-semibold text-base transition-all flex items-center justify-center gap-2",
         variant === "primary" &&
-          "bg-blue-600 hover:bg-blue-500 text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]",
+          "bg-white hover:bg-neutral-200 text-black",
         variant === "secondary" &&
-          "bg-white/5 hover:bg-white/10 text-white border border-white/10",
+          "bg-white/[0.04] hover:bg-white/[0.08] text-white border border-white/[0.08]",
         variant === "ghost" && "text-gray-400 hover:text-white bg-transparent",
         className
       )}
@@ -78,7 +78,7 @@ export function AuthDivider() {
 
 export function AuthError({ message }: { message: string }) {
   return (
-    <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+    <div className="mb-4 p-3 rounded-lg bg-white/[0.04] border border-white/[0.08] text-gray-400 text-sm">
       {message}
     </div>
   );

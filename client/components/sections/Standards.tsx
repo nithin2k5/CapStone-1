@@ -14,23 +14,23 @@ const standards = [
 
 export default function Standards() {
   return (
-    <section className="py-24 relative z-10 bg-black/40 border-y border-white/5">
+    <section className="py-24 relative z-10 bg-black border-y border-white/[0.06]">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
-          <motion.h2 
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
           >
-            Compliant with <span className="text-gradient-blue">Global Standards</span>
+            Compliant with <span className="text-gray-400">Global Standards</span>
           </motion.h2>
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-400 text-lg"
+            className="text-gray-500 text-lg"
           >
             Built from the ground up to meet and exceed industry security requirements.
           </motion.p>
@@ -45,15 +45,11 @@ export default function Standards() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
               whileHover={{ y: -5 }}
-              className="glass-card p-6 rounded-2xl flex flex-col items-center text-center group border-white/5 hover:border-blue-500/50 transition-all duration-300 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)] relative overflow-hidden"
+              className="glass-card p-6 rounded-2xl flex flex-col items-center text-center group border-white/[0.06] hover:border-white/10 transition-all duration-300"
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              
-              <std.icon className="w-8 h-8 text-gray-400 group-hover:text-blue-400 transition-colors mb-4" />
+              <std.icon className="w-8 h-8 text-gray-500 group-hover:text-white transition-colors mb-4" />
               <h3 className="font-bold text-white mb-2">{std.name}</h3>
-              <p className="text-xs text-gray-500 group-hover:text-gray-300 transition-colors">
-                {std.desc}
-              </p>
+              <p className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">{std.desc}</p>
             </motion.div>
           ))}
         </div>

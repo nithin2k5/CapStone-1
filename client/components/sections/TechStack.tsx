@@ -11,7 +11,7 @@ const technologies = [
 
 export default function TechStack() {
   return (
-    <section className="py-24 relative z-10 overflow-hidden">
+    <section className="py-24 relative z-10 overflow-hidden bg-black">
       <div className="container mx-auto px-6">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <motion.h2 
@@ -20,7 +20,7 @@ export default function TechStack() {
             viewport={{ once: true }}
             className="font-heading text-3xl md:text-5xl font-bold mb-6"
           >
-            Powered by <span className="text-gradient-blue">Modern Tech</span>
+            Powered by <span className="text-gray-400">Modern Tech</span>
           </motion.h2>
         </div>
 
@@ -38,7 +38,7 @@ export default function TechStack() {
             {[...technologies, ...technologies].map((tech, index) => (
               <div 
                 key={index}
-                className="glass px-8 py-4 rounded-xl border border-white/10 text-gray-300 font-medium hover:text-white hover:border-blue-500/50 hover:bg-blue-500/10 transition-all cursor-default shadow-[0_0_15px_rgba(0,0,0,0.5)]"
+                className="glass px-8 py-4 rounded-xl border border-white/[0.06] text-gray-500 font-medium hover:text-white hover:border-white/10 hover:bg-white/[0.03] transition-all cursor-default"
               >
                 {tech}
               </div>

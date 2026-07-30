@@ -39,8 +39,8 @@ export default function Navbar() {
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-blue-500/10 border border-blue-500/20 group-hover:border-blue-500/50 transition-colors">
-              <Shield className="w-5 h-5 text-blue-400 group-hover:text-blue-300" />
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 group-hover:border-white/20 transition-colors">
+              <Shield className="w-5 h-5 text-gray-300 group-hover:text-white" />
             </div>
             <span className="font-heading font-bold text-lg tracking-tight hidden lg:block text-white">
               Gateway
@@ -77,7 +77,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="/signup"
-              className="px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded-full transition-all shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]"
+              className="px-6 py-2.5 text-sm font-semibold text-black bg-white hover:bg-neutral-200 rounded-full transition-all"
             >
               Get Started
             </Link>
@@ -114,7 +114,7 @@ export default function Navbar() {
               <div className="flex flex-col gap-4 pt-6 border-t border-white/10">
                 <Link
                   href="/signup"
-                  className="w-full px-6 py-3 text-base font-semibold text-white bg-blue-600 rounded-xl text-center"
+                  className="w-full px-6 py-3 text-base font-semibold text-black bg-white rounded-xl text-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Get Started
