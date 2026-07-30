@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
+import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
 
 export default function AuthLayout({
   children,
@@ -11,7 +12,8 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-6">
+    <GoogleAuthProvider>
+      <div className="relative min-h-screen flex items-center justify-center p-6">
       <AnimatedBackground />
 
       <motion.div
@@ -34,5 +36,6 @@ export default function AuthLayout({
         </div>
       </motion.div>
     </div>
+    </GoogleAuthProvider>
   );
 }

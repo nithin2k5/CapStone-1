@@ -1,0 +1,47 @@
+export type AuthProvider = "email" | "google";
+
+export type AuthSession = {
+  provider: AuthProvider;
+  email: string;
+  name: string;
+  picture?: string;
+};
+
+const SESSION_KEY = "seg_auth_session";
+
+export function setAuthSession(session: AuthSession) {
+  if (typeof window === "undefined") return;
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+export function getAuthSession(): AuthSession | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as AuthSession;
+  } catch {
+    return null;
+  }
+}
+
+export function clearAuthSession() {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+export function decodeGoogleCredential(credential: string): AuthSession {
+  const payload = JSON.parse(atob(credential.split(".")[1])) as {
+    email?: string;
+    name?: string;
+    picture?: string;
+  };
+
+  return {
+    provider: "google",
+    email: payload.email ?? "unknown@gmail.com",
+    name: payload.name ?? "Google User",
+    picture: payload.picture,
+  };
+}

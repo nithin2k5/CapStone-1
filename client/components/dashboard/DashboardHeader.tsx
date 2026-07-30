@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Bell, Search, User } from "lucide-react";
+import { getAuthSession, type AuthSession } from "@/lib/auth";
+import Image from "next/image";
 
 type DashboardHeaderProps = {
   title: string;
@@ -8,6 +11,16 @@ type DashboardHeaderProps = {
 };
 
 export default function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
+  const [session, setSession] = useState<AuthSession | null>(null);
+
+  useEffect(() => {
+    setSession(getAuthSession());
+  }, []);
+
+  const displayName = session?.name ?? "Admin User";
+  const role =
+    session?.provider === "google" ? "Google Account" : "SOC Analyst";
+
   return (
     <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
       <div>
@@ -32,12 +45,22 @@ export default function DashboardHeader({ title, subtitle }: DashboardHeaderProp
 
         <div className="flex items-center gap-3 pl-3 border-l border-white/10">
           <div className="hidden sm:block text-right">
-            <div className="text-sm font-medium text-white">Admin User</div>
-            <div className="text-xs text-gray-500">SOC Analyst</div>
+            <div className="text-sm font-medium text-white">{displayName}</div>
+            <div className="text-xs text-gray-500">{role}</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-            <User className="w-5 h-5 text-blue-400" />
-          </div>
+          {session?.picture ? (
+            <Image
+              src={session.picture}
+              alt={displayName}
+              width={40}
+              height={40}
+              className="w-10 h-10 rounded-xl border border-white/10 object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+              <User className="w-5 h-5 text-blue-400" />
+            </div>
+          )}
         </div>
       </div>
     </header>

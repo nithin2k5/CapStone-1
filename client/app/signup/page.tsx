@@ -4,13 +4,25 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Building2, ArrowRight } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { AuthInput, AuthButton } from "@/components/auth/AuthForm";
+import { AuthInput, AuthButton, AuthDivider } from "@/components/auth/AuthForm";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { setAuthSession } from "@/lib/auth";
 
 export default function SignupPage() {
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const firstName = form.get("firstName") as string;
+    const lastName = form.get("lastName") as string;
+    const email = form.get("email") as string;
+
+    setAuthSession({
+      provider: "email",
+      email: email || "user@company.com",
+      name: `${firstName} ${lastName}`.trim() || "New User",
+    });
     router.push("/dashboard");
   };
 
@@ -21,10 +33,15 @@ export default function SignupPage() {
         <p className="text-gray-400">Start protecting your organization today</p>
       </div>
 
+      <GoogleSignInButton label="Sign up with Google" />
+
+      <AuthDivider />
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <AuthInput
             label="First Name"
+            name="firstName"
             type="text"
             placeholder="John"
             icon={<User className="w-5 h-5" />}
@@ -32,6 +49,7 @@ export default function SignupPage() {
           />
           <AuthInput
             label="Last Name"
+            name="lastName"
             type="text"
             placeholder="Doe"
             required
@@ -40,6 +58,7 @@ export default function SignupPage() {
 
         <AuthInput
           label="Work Email"
+          name="email"
           type="email"
           placeholder="john@company.com"
           icon={<Mail className="w-5 h-5" />}
@@ -48,6 +67,7 @@ export default function SignupPage() {
 
         <AuthInput
           label="Organization"
+          name="organization"
           type="text"
           placeholder="Acme Corp"
           icon={<Building2 className="w-5 h-5" />}
@@ -56,6 +76,7 @@ export default function SignupPage() {
 
         <AuthInput
           label="Password"
+          name="password"
           type="password"
           placeholder="Min. 8 characters"
           icon={<Lock className="w-5 h-5" />}

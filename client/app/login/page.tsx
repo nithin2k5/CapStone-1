@@ -4,13 +4,23 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, ArrowRight } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { AuthInput, AuthButton } from "@/components/auth/AuthForm";
+import { AuthInput, AuthButton, AuthDivider } from "@/components/auth/AuthForm";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { setAuthSession } from "@/lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const form = new FormData(e.currentTarget);
+    const email = form.get("email") as string;
+
+    setAuthSession({
+      provider: "email",
+      email: email || "admin@company.com",
+      name: email?.split("@")[0] ?? "Admin User",
+    });
     router.push("/dashboard");
   };
 
@@ -21,9 +31,14 @@ export default function LoginPage() {
         <p className="text-gray-400">Sign in to your SOC dashboard</p>
       </div>
 
+      <GoogleSignInButton label="Sign in with Google" />
+
+      <AuthDivider />
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <AuthInput
           label="Email Address"
+          name="email"
           type="email"
           placeholder="admin@company.com"
           icon={<Mail className="w-5 h-5" />}
@@ -45,6 +60,7 @@ export default function LoginPage() {
           <AuthInput
             id="password"
             label=""
+            name="password"
             type="password"
             placeholder="••••••••"
             icon={<Lock className="w-5 h-5" />}
