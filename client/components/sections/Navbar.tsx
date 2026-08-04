@@ -33,17 +33,19 @@ export default function Navbar() {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: "easeOut" }}
         className={`pointer-events-auto w-full max-w-[70%] transition-all duration-500 rounded-full ${
-          scrolled ? "glass shadow-2xl py-3 px-6" : "bg-transparent py-4 px-6"
+          scrolled
+            ? "glass shadow-[0_8px_32px_rgba(139,92,246,0.2)] py-3 px-6 border-indigo-500/25"
+            : "bg-transparent py-4 px-6"
         }`}
       >
         <div className="flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-white/5 border border-white/10 group-hover:border-white/20 transition-colors">
-              <Shield className="w-5 h-5 text-gray-300 group-hover:text-white" />
+            <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/40 group-hover:border-purple-400/80 shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all">
+              <Shield className="w-5 h-5 text-purple-400 group-hover:text-purple-300 transition-colors" />
             </div>
             <span className="font-heading font-bold text-lg tracking-tight hidden lg:block text-white">
-              Gateway
+              Gateway <span className="text-purple-400 font-extrabold">.ai</span>
             </span>
           </Link>
 
@@ -53,7 +55,7 @@ export default function Navbar() {
               <Link
                 key={link.name}
                 href={link.href}
-                className="text-sm font-medium text-gray-400 hover:text-white transition-colors relative group"
+                className="text-sm font-medium text-gray-400 hover:text-purple-300 transition-colors relative group"
               >
                 {link.name}
               </Link>
@@ -65,19 +67,19 @@ export default function Navbar() {
             <Link
               href="https://github.com"
               target="_blank"
-              className="p-2.5 text-gray-400 hover:text-white transition-colors rounded-full hover:bg-white/5"
+              className="p-2.5 text-gray-400 hover:text-purple-300 transition-colors rounded-full hover:bg-purple-500/10"
             >
               <GithubIcon />
             </Link>
             <Link
               href="/login"
-              className="px-6 py-2.5 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 border border-white/10 rounded-full transition-all backdrop-blur-md"
+              className="px-6 py-2.5 text-sm font-semibold btn-secondary rounded-full"
             >
               Sign In
             </Link>
             <Link
               href="/signup"
-              className="px-6 py-2.5 text-sm font-semibold text-black bg-white hover:bg-neutral-200 rounded-full transition-all"
+              className="px-6 py-2.5 text-sm font-semibold btn-primary rounded-full"
             >
               Get Started
             </Link>
@@ -88,7 +90,7 @@ export default function Navbar() {
             className="md:hidden p-2 text-gray-400 hover:text-white"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            {mobileMenuOpen ? <X className="w-6 h-6 text-purple-400" /> : <Menu className="w-6 h-6 text-purple-400" />}
           </button>
         </div>
 
@@ -98,30 +100,30 @@ export default function Navbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden absolute top-full left-0 right-0 mt-4 glass rounded-3xl overflow-hidden"
+            className="md:hidden absolute top-full left-0 right-0 mt-4 glass rounded-3xl overflow-hidden border-indigo-500/30 bg-neutral-950 shadow-2xl"
           >
             <div className="flex flex-col px-6 py-6 gap-6">
               {navLinks.map((link) => (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className="text-lg font-medium text-gray-300 hover:text-white transition-colors"
+                  className="text-lg font-medium text-gray-300 hover:text-purple-400 transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   {link.name}
                 </Link>
               ))}
-              <div className="flex flex-col gap-4 pt-6 border-t border-white/10">
+              <div className="flex flex-col gap-4 pt-6 border-t border-indigo-500/20">
                 <Link
                   href="/signup"
-                  className="w-full px-6 py-3 text-base font-semibold text-black bg-white rounded-xl text-center"
+                  className="w-full px-6 py-3 text-base font-semibold btn-primary rounded-xl text-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Get Started
                 </Link>
                 <Link
                   href="/login"
-                  className="w-full px-6 py-3 text-base font-semibold text-white bg-white/5 border border-white/10 rounded-xl text-center"
+                  className="w-full px-6 py-3 text-base font-semibold btn-secondary rounded-xl text-center"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   Sign In

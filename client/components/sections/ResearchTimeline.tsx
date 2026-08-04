@@ -45,9 +45,9 @@ export default function ResearchTimeline() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
           >
-            Research <span className="text-gray-400">Objectives</span>
+            Research <span className="text-gradient">Objectives</span>
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -56,16 +56,16 @@ export default function ResearchTimeline() {
             transition={{ delay: 0.1 }}
             className="text-gray-400 text-lg"
           >
-            Our roadmap to building the ultimate phishing prevention gateway.
+            Our roadmap to building the ultimate quantum-resistant phishing prevention gateway.
           </motion.p>
         </div>
 
         <div className="max-w-3xl mx-auto relative">
           {/* Vertical Line */}
-          <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-white/10 md:-translate-x-1/2" />
+          <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-purple-500/20 md:-translate-x-1/2" />
           
           <motion.div 
-            className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-white/30 md:-translate-x-1/2 origin-top"
+            className="absolute left-8 md:left-1/2 top-0 bottom-0 w-1 bg-gradient-to-b from-purple-500 via-indigo-500 to-blue-500 md:-translate-x-1/2 origin-top rounded-full shadow-[0_0_15px_rgba(139,92,246,0.6)]"
             initial={{ scaleY: 0 }}
             whileInView={{ scaleY: 1 }}
             viewport={{ once: true, margin: "-100px" }}
@@ -77,13 +77,13 @@ export default function ResearchTimeline() {
               <div key={index} className={`relative flex flex-col md:flex-row gap-8 items-start md:items-center ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
                 
                 {/* Timeline Node */}
-                <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-black border-4 border-black z-10">
+                <div className="absolute left-8 md:left-1/2 -translate-x-1/2 flex items-center justify-center w-8 h-8 rounded-full bg-black border-2 border-purple-500 shadow-[0_0_15px_rgba(139,92,246,0.7)] z-10">
                   {phase.status === "completed" ? (
-                    <CheckCircle2 className="w-6 h-6 text-white bg-black rounded-full" />
+                    <CheckCircle2 className="w-6 h-6 text-purple-400 bg-black rounded-full drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" />
                   ) : phase.status === "in-progress" ? (
-                    <div className="w-4 h-4 rounded-full bg-white/60 animate-pulse" />
+                    <div className="w-4 h-4 rounded-full bg-blue-400 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
                   ) : (
-                    <Circle className="w-5 h-5 text-gray-600" />
+                    <Circle className="w-5 h-5 text-indigo-900" />
                   )}
                 </div>
 
@@ -93,10 +93,10 @@ export default function ResearchTimeline() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true, margin: "-50px" }}
                   transition={{ duration: 0.5, delay: 0.2 }}
-                  className={`ml-16 md:ml-0 md:w-1/2 glass-card p-6 rounded-2xl border border-white/[0.06] hover:border-white/10 transition-colors ${index % 2 === 0 ? "md:pl-12" : "md:pr-12 text-left md:text-right"}`}
+                  className={`ml-16 md:ml-0 md:w-1/2 glass-card p-6 rounded-2xl border border-indigo-500/20 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(139,92,246,0.2)] transition-all ${index % 2 === 0 ? "md:pl-12" : "md:pr-12 text-left md:text-right"}`}
                 >
-                  <div className={`text-sm font-mono mb-2 ${phase.status === "completed" ? "text-gray-300" : phase.status === "in-progress" ? "text-white" : "text-gray-600"}`}>
-                    {phase.phase}
+                  <div className={`text-xs font-mono tracking-wider mb-2 uppercase font-bold ${phase.status === "completed" ? "text-purple-400" : phase.status === "in-progress" ? "text-blue-400 animate-pulse" : "text-zinc-500"}`}>
+                    {phase.phase} // {phase.status}
                   </div>
                   <h3 className="text-xl font-bold text-white mb-3">{phase.title}</h3>
                   <p className="text-gray-400 leading-relaxed">

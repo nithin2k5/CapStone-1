@@ -17,22 +17,22 @@ export default function Contact() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6">
+              <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6 text-white">
                 Ready to secure your <br />
-                <span className="text-gray-400">infrastructure?</span>
+                <span className="text-gradient">infrastructure?</span>
               </h2>
-              <p className="text-gray-400 text-lg mb-8">
-                Get in touch with our security experts for a personalized demo or to discuss your organization's specific requirements.
+              <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+                Get in touch with our cybersecurity specialists for an enterprise evaluation, neural inspection demo, or custom architecture deployment.
               </p>
               
               <div className="space-y-6">
-                <div className="flex items-center gap-4 text-gray-300">
-                  <div className="w-12 h-12 rounded-full bg-white/[0.04] flex items-center justify-center border border-white/[0.08]">
-                    <Mail className="w-5 h-5 text-gray-400" />
+                <div className="flex items-center gap-4 text-gray-200">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500/15 flex items-center justify-center border border-purple-500/40 shadow-[0_0_20px_rgba(139,92,246,0.25)]">
+                    <Mail className="w-6 h-6 text-purple-400" />
                   </div>
                   <div>
-                    <div className="text-sm text-gray-500">Email Us</div>
-                    <div className="font-medium">security@gateway.local</div>
+                    <div className="text-xs font-mono uppercase text-purple-300/70 tracking-wider">Email Us</div>
+                    <div className="font-bold text-lg text-white">security@gateway.local</div>
                   </div>
                 </div>
               </div>
@@ -45,50 +45,51 @@ export default function Contact() {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <form className="glass-card p-8 rounded-3xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative overflow-hidden">
-                {/* Background Glow */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-white/[0.02] blur-[100px] rounded-full pointer-events-none" />
-                
+              <form className="glass-card p-8 rounded-3xl border border-indigo-500/30 shadow-[0_0_60px_rgba(139,92,246,0.2)] relative overflow-hidden bg-neutral-950/90">
+                {/* Background Purple Glow */}
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/20 blur-[120px] rounded-full pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/15 blur-[120px] rounded-full pointer-events-none" />
+
                 <div className="relative z-10 space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Full Name</label>
+                    <label className="block text-sm font-semibold text-indigo-200 mb-2">Full Name</label>
                     <div className="relative">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
                       <input 
                         type="text" 
                         placeholder="John Doe"
-                        className="w-full bg-black border border-white/[0.08] rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all"
+                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Work Email</label>
+                    <label className="block text-sm font-semibold text-indigo-200 mb-2">Work Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-400" />
                       <input 
                         type="email" 
                         placeholder="john@company.com"
-                        className="w-full bg-black border border-white/[0.08] rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all"
+                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">Message</label>
+                    <label className="block text-sm font-semibold text-indigo-200 mb-2">Message</label>
                     <div className="relative">
-                      <MessageSquare className="absolute left-4 top-4 w-5 h-5 text-gray-500" />
+                      <MessageSquare className="absolute left-4 top-4 w-5 h-5 text-purple-400" />
                       <textarea 
                         rows={4}
-                        placeholder="How can we help you?"
-                        className="w-full bg-black border border-white/[0.08] rounded-xl py-3 pl-12 pr-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-white/20 transition-all resize-none"
+                        placeholder="Describe your security infrastructure goals..."
+                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all resize-none"
                       />
                     </div>
                   </div>
 
                   <button 
                     type="button"
-                    className="w-full py-4 bg-white text-black hover:bg-neutral-200 rounded-xl font-medium transition-all flex items-center justify-center gap-2 group"
+                    className="w-full py-4 btn-primary rounded-xl text-base flex items-center justify-center gap-2 group shadow-[0_0_30px_rgba(139,92,246,0.45)]"
                   >
                     Send Message
                     <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
