@@ -5,6 +5,7 @@ export type AuthSession = {
   email: string;
   name: string;
   picture?: string;
+  accessToken?: string;
 };
 
 const SESSION_KEY = "seg_auth_session";

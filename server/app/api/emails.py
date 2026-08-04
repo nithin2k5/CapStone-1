@@ -67,10 +67,11 @@ async def fetch_emails(
     )
 
     messages = await gmail_service.fetch_messages(
-        current_user.id,
+        current_user,
         current_user.google_access_token,
         payload.mailbox,
         payload.max_results,
+        db=db,
     )
 
     repo = EmailRepository(db)

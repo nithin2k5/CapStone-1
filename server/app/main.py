@@ -46,6 +46,7 @@ def create_app() -> FastAPI:
 
     api_prefix = settings.api_prefix
     app.include_router(auth.router, prefix=api_prefix)
+    app.include_router(auth.router)  # Support direct calls like http://localhost:8000/auth/google/callback
     app.include_router(emails.router, prefix=api_prefix)
     app.include_router(scan.router, prefix=api_prefix)
     app.include_router(dashboard.router, prefix=api_prefix)

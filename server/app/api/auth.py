@@ -1,23 +1,25 @@
+import uuid
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user
 from app.core.logging import get_logger
 from app.core.security import (
+    TokenType,
     UserRole,
     create_access_token,
     create_refresh_token,
     decode_token,
     hash_password,
     verify_password,
-    TokenType,
 )
 from app.database.database import get_db
 from app.database.models import User
-from app.api.deps import get_current_user
 from app.schemas.auth import (
+    GoogleTokenRequest,
     RefreshTokenRequest,
     TokenResponse,
     UserLogin,
@@ -67,6 +69,9 @@ async def login(payload: UserLogin, db: AsyncSession = Depends(get_db)) -> Token
     return TokenResponse(
         access_token=create_access_token(user.id, user.role),
         refresh_token=create_refresh_token(user.id, user.role),
+        user_id=user.id,
+        user_email=user.email,
+        user_name=user.name,
     )
 
 
@@ -93,9 +98,93 @@ async def refresh_token(
     return TokenResponse(
         access_token=create_access_token(user.id, user.role),
         refresh_token=create_refresh_token(user.id, user.role),
+        user_id=user.id,
+        user_email=user.email,
+        user_name=user.name,
     )
 
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)) -> User:
     return current_user
+
+
+@router.get("/google/login", summary="Initiate Google OAuth login")
+async def google_login(state: str = "default_state"):
+    from app.services.gmail_service import GmailService
+
+    service = GmailService()
+    url = service.get_oauth_url(state=state)
+    return {"url": url}
+
+
+async def _process_google_code(
+    code: str, redirect_uri: str | None, db: AsyncSession
+) -> TokenResponse:
+    from app.services.gmail_service import GmailService
+
+    service = GmailService()
+    tokens = await service.exchange_code(code, redirect_uri=redirect_uri)
+    if "access_token" not in tokens:
+        logger.error("Google token exchange error: %s", tokens)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Failed to exchange OAuth code: {tokens.get('error', 'unknown error')}",
+        )
+
+    access_token = tokens["access_token"]
+    refresh_token = tokens.get("refresh_token")
+    user_info = await service.get_user_info(access_token)
+    email = user_info.get("email")
+    name = user_info.get("name", "Google User")
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Google profile did not contain an email address",
+        )
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        user = User(
+            name=name,
+            email=email,
+            hashed_password=hash_password(f"sso_{uuid.uuid4().hex}"),
+            role=UserRole.USER,
+            google_access_token=access_token,
+            google_refresh_token=refresh_token,
+        )
+        db.add(user)
+    else:
+        user.google_access_token = access_token
+        if refresh_token:
+            user.google_refresh_token = refresh_token
+        db.add(user)
+
+    await db.flush()
+    await db.refresh(user)
+    logger.info("User authenticated via Google: %s", user.email)
+
+    return TokenResponse(
+        access_token=create_access_token(user.id, user.role),
+        refresh_token=create_refresh_token(user.id, user.role),
+        user_id=user.id,
+        user_email=user.email,
+        user_name=user.name,
+    )
+
+
+@router.get("/google/callback", response_model=TokenResponse, summary="Google OAuth redirect callback")
+async def google_callback(
+    code: str, state: str | None = None, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    return await _process_google_code(code, None, db)
+
+
+@router.post("/google", response_model=TokenResponse, summary="Google OAuth SPA code exchange")
+async def google_post_auth(
+    payload: GoogleTokenRequest, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    return await _process_google_code(payload.code, payload.redirect_uri, db)

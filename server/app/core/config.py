@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     google_client_id: str = Field(default="", alias="GOOGLE_CLIENT_ID")
     google_client_secret: str = Field(default="", alias="GOOGLE_CLIENT_SECRET")
     google_redirect_uri: str = Field(
-        default="http://localhost:8000/api/v1/auth/google/callback",
+        default="http://localhost:8000/auth/google/callback",
         alias="GOOGLE_REDIRECT_URI",
     )
 
