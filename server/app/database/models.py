@@ -8,11 +8,12 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     Integer,
+    JSON as JSONB,
     String,
     Text,
+    Uuid as UUID,
     func,
 )
-from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 

@@ -21,7 +21,7 @@ class Settings(BaseSettings):
 
     # Database
     database_url: str = Field(
-        default="postgresql+asyncpg://postgres:postgres@localhost:5432/seg_db",
+        default="mysql+aiomysql://root@localhost:3306/seg_db",
         alias="DATABASE_URL",
     )
 
