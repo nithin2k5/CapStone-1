@@ -136,7 +136,7 @@ async def get_dashboard(
     monthly_rows = (
         await db.execute(
             select(
-                func.date_trunc("month", Email.created_at).label("month"),
+                func.date_format(Email.created_at, "%Y-%m").label("month"),
                 func.count().label("total"),
             )
             .where(Email.user_id == user_id)
