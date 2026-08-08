@@ -1,0 +1,127 @@
+"use client";
+
+import { GlassCard } from "@/components/ui/GlassCard";
+import { Badge } from "@/components/ui/Badge";
+import { MoreVertical, ShieldAlert, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+
+const mockEmails = [
+  {
+    id: "1",
+    sender: "Microsoft Security",
+    email: "alerts@microsoft-security-verify.com",
+    subject: "Unusual login attempt detected",
+    time: "2 min ago",
+    level: "HIGH",
+    status: "BLOCKED",
+  },
+  {
+    id: "2",
+    sender: "HR Department",
+    email: "hr@acme-corp.net",
+    subject: "Updated 2026 Salary Packages",
+    time: "15 min ago",
+    level: "CRITICAL",
+    status: "QUARANTINED",
+  },
+  {
+    id: "3",
+    sender: "John Doe",
+    email: "john.doe@gmail.com",
+    subject: "Meeting notes from yesterday",
+    time: "1 hour ago",
+    level: "SAFE",
+    status: "DELIVERED",
+  },
+  {
+    id: "4",
+    sender: "PayPal Support",
+    email: "support@pay-pal-secure.com",
+    subject: "Your account has been limited",
+    time: "3 hours ago",
+    level: "HIGH",
+    status: "BLOCKED",
+  },
+];
+
+export function RecentEmails() {
+  return (
+    <GlassCard className="col-span-1 lg:col-span-3 flex flex-col relative z-10">
+      <div className="p-6 border-b border-white/5 flex items-center justify-between">
+        <div>
+          <h3 className="text-base font-heading font-bold text-white tracking-wide">Recent Emails</h3>
+          <p className="text-xs text-gray-500 mt-1">Latest inbound traffic analyzed by the gateway.</p>
+        </div>
+        <Link href="/emails" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+          View All Traffic &rarr;
+        </Link>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left">
+          <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
+            <tr>
+              <th className="px-6 py-4 font-medium tracking-wider">Sender</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Subject</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Received</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Threat Level</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Status</th>
+              <th className="px-6 py-4 font-medium tracking-wider text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {mockEmails.map((email, i) => (
+              <motion.tr 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                key={email.id} 
+                className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+              >
+                <td className="px-6 py-4">
+                  <div className="font-medium text-white">{email.sender}</div>
+                  <div className="text-xs text-gray-500">{email.email}</div>
+                </td>
+                <td className="px-6 py-4 text-gray-300">
+                  {email.subject}
+                </td>
+                <td className="px-6 py-4 text-gray-500 text-xs">
+                  {email.time}
+                </td>
+                <td className="px-6 py-4">
+                  <Badge 
+                    variant={
+                      email.level === "SAFE" ? "safe" :
+                      email.level === "CRITICAL" ? "blocked" :
+                      "suspicious"
+                    }
+                  >
+                    {email.level}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    {email.status === "DELIVERED" ? (
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    ) : (
+                      <ShieldAlert className="w-4 h-4 text-red-400" />
+                    )}
+                    <span className="text-xs font-semibold tracking-wider text-gray-400">
+                      {email.status}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <button className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all">
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </td>
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </GlassCard>
+  );
+}
