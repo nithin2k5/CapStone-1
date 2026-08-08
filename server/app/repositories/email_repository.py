@@ -78,6 +78,7 @@ class EmailRepository:
     async def save_scan_result(self, scan_result: ScanResult) -> ScanResult:
         self.db.add(scan_result)
         await self.db.flush()
+        await self.db.refresh(scan_result)
         return scan_result
 
     async def get_user(self, user_id: UUID) -> User | None:
