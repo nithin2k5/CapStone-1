@@ -87,6 +87,7 @@ class EmailRepository:
     async def get_pending_emails(self, user_id: UUID, limit: int = 50) -> list[Email]:
         result = await self.db.execute(
             select(Email)
+            .options(selectinload(Email.scan_result))
             .where(
                 Email.user_id == user_id,
                 Email.status.in_([EmailStatus.PENDING, EmailStatus.SCANNED]),
