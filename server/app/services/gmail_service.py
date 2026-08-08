@@ -45,7 +45,6 @@ class GmailService:
 
     SCOPES = [
         "https://www.googleapis.com/auth/gmail.readonly",
-        "https://www.googleapis.com/auth/gmail.modify",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
     ]
@@ -183,11 +182,10 @@ class GmailService:
             except Exception as e:
                 logger.error("Error fetching live Gmail API messages: %s", e)
 
-        logger.info(
-            "Using mock Gmail data for user=%s mailbox=%s", user_id, mailbox
+        logger.warning(
+            "Failed to fetch live Gmail API messages for user=%s mailbox=%s. Token or configuration may be missing.", user_id, mailbox
         )
-        return self._generate_mock_messages(mailbox, max_results)
-
+        return []
     async def _fetch_from_gmail_api(
         self,
         access_token: str,
@@ -293,7 +291,7 @@ class GmailService:
                 size = part_body.get("size", 0)
                 attachments.append(
                     ParsedAttachment(
-                        filename=filename, mime_type=mime_type, size=size
+                        filename=filename, content_type=mime_type, size=size
                     )
                 )
             else:

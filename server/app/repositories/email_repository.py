@@ -43,7 +43,7 @@ class EmailRepository:
         total = (await self.db.execute(count_query)).scalar() or 0
 
         result = await self.db.execute(
-            query.order_by(Email.received_at.desc().nullslast(), Email.created_at.desc())
+            query.order_by(Email.received_at.desc(), Email.created_at.desc())
             .offset((page - 1) * page_size)
             .limit(page_size)
         )
@@ -72,6 +72,7 @@ class EmailRepository:
         )
         self.db.add(email)
         await self.db.flush()
+        await self.db.refresh(email)
         return email
 
     async def save_scan_result(self, scan_result: ScanResult) -> ScanResult:

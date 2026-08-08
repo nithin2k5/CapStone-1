@@ -10,11 +10,15 @@ from app.database.database import init_db
 from app.middleware.error_handler import register_exception_handlers
 
 
+from app.core.scheduler import start_scheduler, stop_scheduler
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
     await init_db()
+    start_scheduler()
     yield
+    stop_scheduler()
 
 
 def create_app() -> FastAPI:
