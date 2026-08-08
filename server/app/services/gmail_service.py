@@ -149,6 +149,30 @@ class GmailService:
             )
             return None
 
+    async def modify_message_labels(
+        self,
+        access_token: str,
+        message_id: str,
+        add_labels: list[str],
+        remove_labels: list[str]
+    ) -> bool:
+        """Modify labels of a Gmail message (e.g., move to SPAM or TRASH)."""
+        if access_token == "mock_access_token":
+            logger.info("Mock modifying labels for message %s: add=%s remove=%s", message_id, add_labels, remove_labels)
+            return True
+
+        url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}/modify"
+        headers = {"Authorization": f"Bearer {access_token}"}
+        data = {"addLabelIds": add_labels, "removeLabelIds": remove_labels}
+        
+        async with httpx.AsyncClient() as client:
+            res = await client.post(url, headers=headers, json=data)
+            if res.status_code == 200:
+                logger.info("Successfully modified labels for message %s", message_id)
+                return True
+            logger.error("Failed to modify labels for message %s: %s - %s", message_id, res.status_code, res.text)
+            return False
+
     async def fetch_messages(
         self,
         user: User | UUID,
@@ -197,7 +221,7 @@ class GmailService:
     ) -> list[GmailMessage] | None:
         """Fetch messages via live Gmail REST API using httpx."""
         headers = {"Authorization": f"Bearer {access_token}"}
-        query = "in:inbox" if mailbox.lower() == "inbox" else f"in:{mailbox}"
+        query = "in:inbox" if mailbox.lower() == "inbox" else (f"label:{mailbox}" if mailbox == "PendingScan" else f"in:{mailbox}")
         list_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults={max_results}&q={query}"
 
         async with httpx.AsyncClient(timeout=15.0) as client:

@@ -42,5 +42,5 @@ class EmailListResponse(BaseModel):
 
 
 class FetchEmailsRequest(BaseModel):
-    mailbox: str = Field(default="inbox", pattern="^(inbox|spam|trash|unread|recent)$")
+    mailbox: str = Field(default="PendingScan", pattern="^(inbox|spam|trash|unread|recent|PendingScan)$")
     max_results: int = Field(default=20, ge=1, le=100)
