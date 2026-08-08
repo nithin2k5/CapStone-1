@@ -12,6 +12,8 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+import { AppLayout } from "@/components/layout/AppLayout";
+
 export const metadata: Metadata = {
   title: "Secure Email Gateway | Phishing Prevention",
   description: "An AI-powered secure email gateway that detects phishing attempts, malicious URLs, spoofed domains, and dangerous attachments.",
@@ -27,8 +29,8 @@ export default function RootLayout({
       lang="en"
       className={`${spaceGrotesk.variable} ${inter.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-black text-white font-sans overflow-x-hidden selection:bg-white/20">
-        {children}
+      <body className="min-h-full flex flex-col bg-black text-white font-sans overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+        <AppLayout>{children}</AppLayout>
       </body>
     </html>
   );
