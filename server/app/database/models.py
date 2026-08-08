@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     Enum,
     Float,
@@ -61,6 +62,31 @@ class User(Base):
     )
 
     emails: Mapped[list["Email"]] = relationship(back_populates="owner", cascade="all, delete-orphan")
+    settings: Mapped["UserSettings | None"] = relationship(back_populates="user", cascade="all, delete-orphan", uselist=False)
+
+class UserSettings(Base):
+    __tablename__ = "user_settings"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
+
+    organization_name: Mapped[str] = mapped_column(String(255), default="Acme Corporation")
+    admin_email: Mapped[str] = mapped_column(String(255), default="admin@acme.com")
+    domain: Mapped[str] = mapped_column(String(255), default="acme.com")
+
+    notif_critical: Mapped[bool] = mapped_column(Boolean, default=True)
+    notif_daily: Mapped[bool] = mapped_column(Boolean, default=True)
+    notif_quarantine: Mapped[bool] = mapped_column(Boolean, default=False)
+    notif_weekly: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    sens_phishing: Mapped[int] = mapped_column(Integer, default=85)
+    sens_malware: Mapped[int] = mapped_column(Integer, default=92)
+    sens_url: Mapped[int] = mapped_column(Integer, default=78)
+    sens_ai: Mapped[int] = mapped_column(Integer, default=88)
+
+    api_key: Mapped[str] = mapped_column(String(255), default=lambda: f"seg_live_{uuid.uuid4().hex}")
+
+    user: Mapped["User"] = relationship(back_populates="settings")
 
 
 class Email(Base):
