@@ -1,0 +1,114 @@
+"use client";
+
+import { GlassCard } from "@/components/ui/GlassCard";
+import { Badge } from "@/components/ui/Badge";
+import { Search, Filter, ShieldCheck, ShieldAlert, AlertTriangle, ArrowRight } from "lucide-react";
+import Link from "next/link";
+
+const emails = [
+  { id: "e1", sender: "support@pay-pal-secure.com", subject: "Your account has been limited", time: "10:23 AM", level: "HIGH", status: "BLOCKED", analysis: "Phishing link detected" },
+  { id: "e2", sender: "hr@acme-corp.net", subject: "Updated 2026 Salary Packages", time: "09:45 AM", level: "CRITICAL", status: "QUARANTINED", analysis: "Malicious macro attachment" },
+  { id: "e3", sender: "john.doe@gmail.com", subject: "Meeting notes from yesterday", time: "09:12 AM", level: "SAFE", status: "DELIVERED", analysis: "Passed all checks" },
+  { id: "e4", sender: "newsletter@marketing.io", subject: "Your weekly digest", time: "Yesterday", level: "SAFE", status: "DELIVERED", analysis: "Passed all checks" },
+  { id: "e5", sender: "admin@it-support-desk.com", subject: "Password expiry notice", time: "Yesterday", level: "MEDIUM", status: "QUARANTINED", analysis: "Suspicious sender domain" },
+];
+
+export function EmailTable() {
+  return (
+    <GlassCard className="flex flex-col relative z-10 w-full">
+      <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h3 className="text-base font-heading font-bold text-white tracking-wide">Email Traffic</h3>
+          <p className="text-xs text-gray-500 mt-1">All scanned inbound emails.</p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Search emails..." 
+              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-white w-64"
+            />
+          </div>
+          <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
+            <Filter className="w-4 h-4" />
+            Filters
+          </button>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm text-left whitespace-nowrap">
+          <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
+            <tr>
+              <th className="px-6 py-4 font-medium tracking-wider">Sender</th>
+              <th className="px-6 py-4 font-medium tracking-wider w-1/3">Subject</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Received</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Threat Level</th>
+              <th className="px-6 py-4 font-medium tracking-wider">Status</th>
+              <th className="px-6 py-4 font-medium tracking-wider text-right">Details</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-white/5">
+            {emails.map((email) => (
+              <tr key={email.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer">
+                <td className="px-6 py-4">
+                  <div className="font-medium text-white">{email.sender}</div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-gray-300 truncate max-w-xs md:max-w-md">{email.subject}</div>
+                  <div className="text-xs text-gray-500 mt-0.5 truncate">{email.analysis}</div>
+                </td>
+                <td className="px-6 py-4 text-gray-500 text-xs">
+                  {email.time}
+                </td>
+                <td className="px-6 py-4">
+                  <Badge 
+                    variant={
+                      email.level === "SAFE" ? "safe" :
+                      email.level === "CRITICAL" ? "blocked" :
+                      email.level === "HIGH" ? "blocked" : "suspicious"
+                    }
+                  >
+                    {email.level}
+                  </Badge>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    {email.status === "DELIVERED" ? (
+                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    ) : email.status === "QUARANTINED" ? (
+                      <AlertTriangle className="w-4 h-4 text-amber-400" />
+                    ) : (
+                      <ShieldAlert className="w-4 h-4 text-red-400" />
+                    )}
+                    <span className="text-xs font-semibold tracking-wider text-gray-400">
+                      {email.status}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-right">
+                  <Link 
+                    href={`/emails/${email.id}`}
+                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all"
+                  >
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      
+      <div className="p-4 border-t border-white/5 flex items-center justify-between text-xs text-gray-500">
+        <div>Showing 1-5 of 12,482 emails</div>
+        <div className="flex gap-2">
+          <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50" disabled>Previous</button>
+          <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</button>
+        </div>
+      </div>
+    </GlassCard>
+  );
+}
