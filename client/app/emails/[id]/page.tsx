@@ -42,6 +42,25 @@ export default function EmailDetailPage() {
   const riskLevel = email.risk_score > 80 ? "CRITICAL" : email.risk_score > 50 ? "HIGH" : "SAFE";
   const receivedAt = email.received_at || email.created_at;
 
+  const authResults = email.raw_headers?.["Authentication-Results"] || "";
+  const spfMatch = authResults.match(/spf=([a-z]+)/i);
+  const dkimMatch = authResults.match(/dkim=([a-z]+)/i);
+  const dmarcMatch = authResults.match(/dmarc=([a-z]+)/i);
+  
+  const spf = spfMatch ? spfMatch[1].toUpperCase() : "NONE";
+  const dkim = dkimMatch ? dkimMatch[1].toUpperCase() : "NONE";
+  const dmarc = dmarcMatch ? dmarcMatch[1].toUpperCase() : "NONE";
+
+  const allPassed = (spf === "PASS" || spf === "NONE") && 
+                    (dkim === "PASS" || dkim === "NONE") && 
+                    (dmarc === "PASS" || dmarc === "NONE");
+  const authStatus = allPassed ? "PASSED" : "FAILED";
+
+  const contentStr = (email.body_text || "") + (email.body_html || "");
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  const urlsFound = Array.from(new Set(contentStr.match(urlRegex) || []));
+  const suspiciousUrls = riskLevel !== "SAFE" ? urlsFound.slice(0, 3) : [];
+
   return (
     <div className="flex flex-col gap-6">
       <Link href="/emails" className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors w-max">
@@ -90,22 +109,22 @@ export default function EmailDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-400">Authentication</span>
-                <Badge variant={riskLevel === "CRITICAL" ? "blocked" : "safe"}>
-                  {riskLevel === "CRITICAL" ? "FAILED" : "PASSED"}
+                <Badge variant={authStatus === "FAILED" ? "blocked" : "safe"}>
+                  {authStatus}
                 </Badge>
               </div>
               <div className="grid grid-cols-3 gap-2 pt-2">
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                <div className={`border rounded-lg p-3 text-center ${spf === 'PASS' ? 'bg-emerald-500/10 border-emerald-500/20' : spf === 'NONE' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
                   <div className="text-xs text-gray-500 mb-1">SPF</div>
-                  <div className="text-sm font-semibold text-red-400">FAIL</div>
+                  <div className={`text-sm font-semibold ${spf === 'PASS' ? 'text-emerald-400' : spf === 'NONE' ? 'text-amber-400' : 'text-red-400'}`}>{spf}</div>
                 </div>
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
+                <div className={`border rounded-lg p-3 text-center ${dkim === 'PASS' ? 'bg-emerald-500/10 border-emerald-500/20' : dkim === 'NONE' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
                   <div className="text-xs text-gray-500 mb-1">DKIM</div>
-                  <div className="text-sm font-semibold text-red-400">FAIL</div>
+                  <div className={`text-sm font-semibold ${dkim === 'PASS' ? 'text-emerald-400' : dkim === 'NONE' ? 'text-amber-400' : 'text-red-400'}`}>{dkim}</div>
                 </div>
-                <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-center">
+                <div className={`border rounded-lg p-3 text-center ${dmarc === 'PASS' ? 'bg-emerald-500/10 border-emerald-500/20' : dmarc === 'NONE' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
                   <div className="text-xs text-gray-500 mb-1">DMARC</div>
-                  <div className="text-sm font-semibold text-amber-400">NONE</div>
+                  <div className={`text-sm font-semibold ${dmarc === 'PASS' ? 'text-emerald-400' : dmarc === 'NONE' ? 'text-amber-400' : 'text-red-400'}`}>{dmarc}</div>
                 </div>
               </div>
             </div>
@@ -137,14 +156,20 @@ export default function EmailDetailPage() {
             </h3>
             
             <div className="space-y-4">
-              <div>
-                <div className="text-xs text-gray-500 mb-2 flex items-center gap-2">
-                  <LinkIcon className="w-3 h-3" /> Suspicious Links (1)
+              {suspiciousUrls.length > 0 ? (
+                <div>
+                  <div className="text-xs text-gray-500 mb-2 flex items-center gap-2">
+                    <LinkIcon className="w-3 h-3" /> Suspicious Links ({suspiciousUrls.length})
+                  </div>
+                  {suspiciousUrls.map((url, i) => (
+                    <div key={i} className="p-3 bg-white/5 rounded-lg border border-red-500/30 text-sm text-red-400 break-all mb-2">
+                      {url}
+                    </div>
+                  ))}
                 </div>
-                <div className="p-3 bg-white/5 rounded-lg border border-red-500/30 text-sm text-red-400 break-all">
-                  https://microsoft-security-verify.com/login?token=abc123xyz
-                </div>
-              </div>
+              ) : (
+                <div className="text-sm text-gray-400">No suspicious entities detected.</div>
+              )}
             </div>
           </GlassCard>
 
