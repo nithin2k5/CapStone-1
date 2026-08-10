@@ -7,12 +7,13 @@ import { ReactNode } from "react";
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
-  const isAuthPage = 
+  const isPublicPage = 
+    pathname === "/" || 
     pathname === "/login" || 
     pathname === "/signup" || 
     pathname === "/forgot-password";
 
-  if (isAuthPage) {
+  if (isPublicPage) {
     return <main className="min-h-screen bg-black flex flex-col">{children}</main>;
   }
 
