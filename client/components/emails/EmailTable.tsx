@@ -4,6 +4,8 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/Badge";
 import { Search, Filter, ShieldCheck, ShieldAlert, AlertTriangle, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
 
 const emails = [
   { id: "e1", sender: "support@pay-pal-secure.com", subject: "Your account has been limited", time: "10:23 AM", level: "HIGH", status: "BLOCKED", analysis: "Phishing link detected" },
@@ -14,6 +16,50 @@ const emails = [
 ];
 
 export function EmailTable() {
+  const [emailsState, setEmailsState] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const pageSize = 50;
+
+  useEffect(() => {
+    async function loadEmails() {
+      setLoading(true);
+      try {
+        let data = await getEmailQueue(page, pageSize);
+        if (data.items.length === 0 && page === 1) {
+          data = await fetchLiveGmailMessages("inbox", pageSize);
+        }
+        
+        setTotal(data.total || 0);
+
+        if (data.items.length > 0) {
+          const formatted = data.items.map((item: EmailItem) => {
+            const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
+            return {
+              id: item.id,
+              sender: senderName,
+              subject: item.subject || "No Subject",
+              time: new Date(item.received_at || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "SAFE",
+              status: item.status === "pending" ? "BLOCKED" : item.status.toUpperCase(),
+              analysis: item.risk_score > 80 ? "Malicious attachment/link" : "Passed all checks"
+            };
+          });
+          setEmailsState(formatted);
+        } else {
+          setEmailsState([]);
+        }
+      } catch (err) {
+        console.error("Failed to fetch emails", err);
+        setEmailsState(emails); // fallback to mock on error
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadEmails();
+  }, [page]);
+
   return (
     <GlassCard className="flex flex-col relative z-10 w-full">
       <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -51,7 +97,14 @@ export function EmailTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {emails.map((email) => (
+            {emailsState.length === 0 && !loading && (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  No emails found in the database.
+                </td>
+              </tr>
+            )}
+            {emailsState.map((email) => (
               <tr key={email.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer">
                 <td className="px-6 py-4">
                   <div className="font-medium text-white">{email.sender}</div>
@@ -103,10 +156,25 @@ export function EmailTable() {
       </div>
       
       <div className="p-4 border-t border-white/5 flex items-center justify-between text-xs text-gray-500">
-        <div>Showing 1-5 of 12,482 emails</div>
+        <div>
+          Showing {emailsState.length === 0 ? 0 : (page - 1) * pageSize + 1}-
+          {Math.min(page * pageSize, total)} of {total} emails
+        </div>
         <div className="flex gap-2">
-          <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50" disabled>Previous</button>
-          <button className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5">Next</button>
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1 || loading}
+            className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50 transition-colors"
+          >
+            Previous
+          </button>
+          <button 
+            onClick={() => setPage(p => p + 1)}
+            disabled={page * pageSize >= total || loading}
+            className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50 transition-colors"
+          >
+            Next
+          </button>
         </div>
       </div>
     </GlassCard>
