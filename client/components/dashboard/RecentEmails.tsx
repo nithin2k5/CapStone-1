@@ -8,47 +8,10 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
 
-const mockEmails = [
-  {
-    id: "1",
-    sender: "Microsoft Security",
-    email: "alerts@microsoft-security-verify.com",
-    subject: "Unusual login attempt detected",
-    time: "2 min ago",
-    level: "HIGH",
-    status: "BLOCKED",
-  },
-  {
-    id: "2",
-    sender: "HR Department",
-    email: "hr@acme-corp.net",
-    subject: "Updated 2026 Salary Packages",
-    time: "15 min ago",
-    level: "CRITICAL",
-    status: "QUARANTINED",
-  },
-  {
-    id: "3",
-    sender: "John Doe",
-    email: "john.doe@gmail.com",
-    subject: "Meeting notes from yesterday",
-    time: "1 hour ago",
-    level: "SAFE",
-    status: "DELIVERED",
-  },
-  {
-    id: "4",
-    sender: "PayPal Support",
-    email: "support@pay-pal-secure.com",
-    subject: "Your account has been limited",
-    time: "3 hours ago",
-    level: "HIGH",
-    status: "BLOCKED",
-  },
-];
+// Mock data removed in favor of dynamic backend fetching
 
 export function RecentEmails() {
-  const [emails, setEmails] = useState(mockEmails);
+  const [emails, setEmails] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -73,9 +36,12 @@ export function RecentEmails() {
             };
           });
           setEmails(formatted);
+        } else {
+          setEmails([]);
         }
       } catch (err) {
-        console.error("Failed to fetch real emails, using mock data", err);
+        console.error("Failed to fetch real emails", err);
+        setEmails([]);
       } finally {
         setLoading(false);
       }
@@ -108,6 +74,13 @@ export function RecentEmails() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
+            {emails.length === 0 && !loading && (
+              <tr>
+                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                  No emails found.
+                </td>
+              </tr>
+            )}
             {emails.map((email, i) => (
               <motion.tr 
                 initial={{ opacity: 0, y: 10 }}

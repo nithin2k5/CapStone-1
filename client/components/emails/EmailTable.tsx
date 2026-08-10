@@ -7,13 +7,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
 
-const emails = [
-  { id: "e1", sender: "support@pay-pal-secure.com", subject: "Your account has been limited", time: "10:23 AM", level: "HIGH", status: "BLOCKED", analysis: "Phishing link detected" },
-  { id: "e2", sender: "hr@acme-corp.net", subject: "Updated 2026 Salary Packages", time: "09:45 AM", level: "CRITICAL", status: "QUARANTINED", analysis: "Malicious macro attachment" },
-  { id: "e3", sender: "john.doe@gmail.com", subject: "Meeting notes from yesterday", time: "09:12 AM", level: "SAFE", status: "DELIVERED", analysis: "Passed all checks" },
-  { id: "e4", sender: "newsletter@marketing.io", subject: "Your weekly digest", time: "Yesterday", level: "SAFE", status: "DELIVERED", analysis: "Passed all checks" },
-  { id: "e5", sender: "admin@it-support-desk.com", subject: "Password expiry notice", time: "Yesterday", level: "MEDIUM", status: "QUARANTINED", analysis: "Suspicious sender domain" },
-];
+// Mock data removed in favor of dynamic backend fetching
 
 export function EmailTable() {
   const [emailsState, setEmailsState] = useState<any[]>([]);
@@ -52,7 +46,7 @@ export function EmailTable() {
         }
       } catch (err) {
         console.error("Failed to fetch emails", err);
-        setEmailsState(emails); // fallback to mock on error
+        setEmailsState([]); // Fallback to empty on error
       } finally {
         setLoading(false);
       }
