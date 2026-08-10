@@ -3,16 +3,36 @@
 import { motion } from "framer-motion";
 import { ThreatCard } from "@/components/security/ThreatCard";
 
-const mockThreats = [
-  { id: "1", severity: "CRITICAL" as const, type: "Credential Phishing", source: "alerts@microsoft-security-verify.com", time: "4 minutes ago", actionTaken: "BLOCKED" as const },
-  { id: "2", severity: "HIGH" as const, type: "Malicious Attachment (Macro)", source: "hr@acme-corp.net", time: "15 minutes ago", actionTaken: "QUARANTINED" as const },
-  { id: "3", severity: "CRITICAL" as const, type: "Spear Phishing", source: "ceo.name.imposter@gmail.com", time: "2 hours ago", actionTaken: "BLOCKED" as const },
-  { id: "4", severity: "HIGH" as const, type: "Drive-by Download Link", source: "support@pay-pal-secure.com", time: "3 hours ago", actionTaken: "BLOCKED" as const },
-  { id: "5", severity: "MEDIUM" as const, type: "Spoofed Sender Domain", source: "admin@it-support-desk.com", time: "5 hours ago", actionTaken: "QUARANTINED" as const },
-  { id: "6", severity: "MEDIUM" as const, type: "Suspicious PDF payload", source: "invoice@billing-department-update.com", time: "6 hours ago", actionTaken: "QUARANTINED" as const },
-];
-
+import { useEffect, useState } from "react";
+import { getDashboardStats, RecentThreat } from "@/lib/api";
 export default function ThreatsPage() {
+  const [threats, setThreats] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchThreats() {
+      try {
+        const stats = await getDashboardStats();
+        if (stats?.recent_threats) {
+          const formatted = stats.recent_threats.map((t: RecentThreat) => ({
+            id: t.email_id,
+            severity: t.risk_level.toUpperCase() as any,
+            type: t.subject || "Unknown Threat",
+            source: t.sender,
+            time: t.received_at ? new Date(t.received_at).toLocaleTimeString() : "Unknown",
+            actionTaken: t.risk_score > 80 ? "BLOCKED" : "QUARANTINED"
+          }));
+          setThreats(formatted);
+        }
+      } catch (err) {
+        console.error("Failed to fetch threats", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchThreats();
+  }, []);
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -23,7 +43,10 @@ export default function ThreatsPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {mockThreats.map((threat, i) => (
+        {threats.length === 0 && !loading && (
+          <div className="col-span-full text-center text-gray-500 py-8">No threats detected.</div>
+        )}
+        {threats.map((threat, i) => (
           <motion.div
             key={threat.id}
             initial={{ opacity: 0, scale: 0.95, y: 20 }}

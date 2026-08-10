@@ -5,18 +5,18 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 
-const data = [
-  { time: "00:00", clean: 120, threats: 4 },
-  { time: "04:00", clean: 85, threats: 2 },
-  { time: "08:00", clean: 340, threats: 15 },
-  { time: "12:00", clean: 520, threats: 42 },
-  { time: "16:00", clean: 480, threats: 28 },
-  { time: "20:00", clean: 210, threats: 8 },
-  { time: "24:00", clean: 95, threats: 3 },
+const fallbackData = [
+  { time: "00:00", clean: 0, threats: 0 },
 ];
 
-export function ThreatOverview() {
-  const [range, setRange] = useState<"24H" | "7D" | "30D">("24H");
+export function ThreatOverview({ data }: { data?: any[] }) {
+  const [range, setRange] = useState<"24H" | "7D" | "30D">("30D");
+
+  const chartData = data && data.length > 0 ? data.map(d => ({
+    time: d.month,
+    clean: d.safe,
+    threats: d.blocked
+  })) : fallbackData;
 
   return (
     <GlassCard className="p-6 col-span-1 lg:col-span-2 relative overflow-hidden">
@@ -50,7 +50,7 @@ export function ThreatOverview() {
 
       <div className="h-[250px] w-full relative z-10">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorClean" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#34d399" stopOpacity={0.15}/>

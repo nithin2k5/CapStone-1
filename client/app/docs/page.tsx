@@ -1,7 +1,25 @@
 import Link from "next/link";
 import { Shield, ArrowLeft, Book, Code, Plug, Key } from "lucide-react";
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
-import { docsSections } from "@/lib/mock-data";
+
+const docsSections = [
+  {
+    title: "Getting Started",
+    items: ["Quick Start Guide", "Installation", "Configuration", "API Keys"],
+  },
+  {
+    title: "Detection Engine",
+    items: ["Header Analysis", "URL Scanning", "Attachment Scanning", "AI Models"],
+  },
+  {
+    title: "Integration",
+    items: ["SMTP Relay", "Microsoft 365", "Google Workspace", "Webhooks"],
+  },
+  {
+    title: "API Reference",
+    items: ["Authentication", "Threat Reports", "Quarantine API", "Analytics"],
+  },
+];
 
 export const metadata = {
   title: "Documentation | Secure Email Gateway",

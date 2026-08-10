@@ -6,8 +6,16 @@ import { SecurityScore } from "@/components/dashboard/SecurityScore";
 import { ThreatOverview } from "@/components/dashboard/ThreatOverview";
 import { RecentEmails } from "@/components/dashboard/RecentEmails";
 import { Mail, ShieldAlert, AlertTriangle, ShieldCheck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getDashboardStats, DashboardData } from "@/lib/api";
 
 export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardData | null>(null);
+
+  useEffect(() => {
+    getDashboardStats().then(setStats).catch(console.error);
+  }, []);
+
   return (
     <div className="flex flex-col gap-8 pb-12">
       <motion.div 
@@ -34,8 +42,8 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <MetricCard
             title="Emails Scanned"
-            value="12,482"
-            trend="12.4% from last week"
+            value={stats ? stats.scanned_emails.toLocaleString() : "..."}
+            trend=""
             trendUp={true}
             icon={Mail}
             description="Total volume"
@@ -46,8 +54,8 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.10 }}>
           <MetricCard
             title="Threats Blocked"
-            value="327"
-            trend="4.2% from last week"
+            value={stats ? stats.blocked_emails.toLocaleString() : "..."}
+            trend=""
             trendUp={false}
             icon={ShieldAlert}
             description="Malicious emails"
@@ -58,8 +66,8 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
           <MetricCard
             title="Suspicious"
-            value="42"
-            trend="1.1% from last week"
+            value={stats ? stats.quarantined_emails.toLocaleString() : "..."}
+            trend=""
             trendUp={true}
             icon={AlertTriangle}
             description="Quarantined"
@@ -70,8 +78,8 @@ export default function DashboardPage() {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.20 }}>
           <MetricCard
             title="Safe Deliveries"
-            value="12,113"
-            trend="13.2% from last week"
+            value={stats ? stats.safe_emails.toLocaleString() : "..."}
+            trend=""
             trendUp={true}
             icon={ShieldCheck}
             description="Passed analysis"
@@ -82,10 +90,10 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
-          <SecurityScore score={98.7} />
+          <SecurityScore score={stats ? ((stats.safe_emails / (stats.scanned_emails || 1)) * 100) : 100} />
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.30 }} className="col-span-1 lg:col-span-2">
-          <ThreatOverview />
+          <ThreatOverview data={stats?.monthly_statistics} />
         </motion.div>
       </div>
 
