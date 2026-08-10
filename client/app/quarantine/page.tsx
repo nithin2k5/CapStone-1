@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { Search, Filter, ShieldAlert, CheckCircle2, ShieldX, Box } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 import { useEffect } from "react";
 import { getEmailQueue, EmailItem } from "@/lib/api";
@@ -122,6 +123,7 @@ export default function QuarantinePage() {
                 <th className="px-6 py-4 font-medium tracking-wider">Subject & Reason</th>
                 <th className="px-6 py-4 font-medium tracking-wider">Quarantined</th>
                 <th className="px-6 py-4 font-medium tracking-wider">Threat Level</th>
+                <th className="px-6 py-4 font-medium tracking-wider text-right">Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
@@ -170,6 +172,14 @@ export default function QuarantinePage() {
                     >
                       {email.level}
                     </Badge>
+                  </td>
+                  <td className="px-6 py-4 text-right">
+                    <Link 
+                      href={`/emails/${email.id}`}
+                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-white bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] opacity-0 group-hover:opacity-100"
+                    >
+                      Analysis
+                    </Link>
                   </td>
                 </motion.tr>
               ))}

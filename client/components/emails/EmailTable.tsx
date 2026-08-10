@@ -87,7 +87,7 @@ export function EmailTable() {
               <th className="px-6 py-4 font-medium tracking-wider">Received</th>
               <th className="px-6 py-4 font-medium tracking-wider">Threat Level</th>
               <th className="px-6 py-4 font-medium tracking-wider">Status</th>
-              <th className="px-6 py-4 font-medium tracking-wider text-right">Details</th>
+              <th className="px-6 py-4 font-medium tracking-wider text-right">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
@@ -138,9 +138,9 @@ export function EmailTable() {
                 <td className="px-6 py-4 text-right">
                   <Link 
                     href={`/emails/${email.id}`}
-                    className="inline-flex items-center justify-center p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all"
+                    className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-white bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)]"
                   >
-                    <ArrowRight className="w-4 h-4" />
+                    Analysis
                   </Link>
                 </td>
               </tr>
