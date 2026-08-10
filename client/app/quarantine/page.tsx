@@ -7,14 +7,40 @@ import { Search, Filter, ShieldAlert, CheckCircle2, ShieldX, Box } from "lucide-
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-const quarantinedEmails = [
-  { id: "q1", sender: "hr@acme-corp.net", subject: "Updated 2026 Salary Packages", time: "09:45 AM", level: "CRITICAL", reason: "Malicious macro attachment" },
-  { id: "q2", sender: "admin@it-support-desk.com", subject: "Password expiry notice", time: "Yesterday", level: "MEDIUM", reason: "Spoofed Sender Domain" },
-  { id: "q3", sender: "invoice@billing-department-update.com", subject: "Invoice #99281", time: "Yesterday", level: "HIGH", reason: "Suspicious PDF payload" },
-];
+import { useEffect } from "react";
+import { getEmailQueue, EmailItem } from "@/lib/api";
 
 export default function QuarantinePage() {
   const [selected, setSelected] = useState<string[]>([]);
+  const [emails, setEmails] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadQuarantine() {
+      try {
+        const data = await getEmailQueue(1, 50, "quarantined");
+        if (data.items.length > 0) {
+          const formatted = data.items.map((item: EmailItem) => ({
+            id: item.id,
+            sender: item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender,
+            subject: item.subject || "No Subject",
+            time: new Date(item.received_at || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "MEDIUM",
+            reason: item.risk_score > 80 ? "Malicious payload detected" : "Suspicious sender/content"
+          }));
+          setEmails(formatted);
+        } else {
+          setEmails([]);
+        }
+      } catch (err) {
+        console.error("Failed to load quarantine queue", err);
+        setEmails([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadQuarantine();
+  }, []);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => 
@@ -23,10 +49,10 @@ export default function QuarantinePage() {
   };
 
   const selectAll = () => {
-    if (selected.length === quarantinedEmails.length) {
+    if (selected.length === emails.length) {
       setSelected([]);
     } else {
-      setSelected(quarantinedEmails.map(e => e.id));
+      setSelected(emails.map(e => e.id));
     }
   };
 
@@ -88,7 +114,7 @@ export default function QuarantinePage() {
                   <input 
                     type="checkbox" 
                     className="rounded border-white/20 bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
-                    checked={selected.length === quarantinedEmails.length && quarantinedEmails.length > 0}
+                    checked={selected.length === emails.length && emails.length > 0}
                     onChange={selectAll}
                   />
                 </th>
@@ -99,7 +125,14 @@ export default function QuarantinePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5">
-              {quarantinedEmails.map((email, i) => (
+              {emails.length === 0 && !loading && (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                    No emails in quarantine.
+                  </td>
+                </tr>
+              )}
+              {emails.map((email, i) => (
                 <motion.tr 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}

@@ -75,6 +75,12 @@ export interface EmailItem {
   mailbox: string;
 }
 
+export interface EmailDetail extends EmailItem {
+  body_text?: string;
+  body_html?: string;
+  raw_headers?: any;
+}
+
 export interface EmailListResponse {
   items: EmailItem[];
   total: number;
@@ -86,8 +92,9 @@ export async function getDashboardStats(): Promise<DashboardData> {
   return fetchWithAuth("/dashboard");
 }
 
-export async function getEmailQueue(page = 1, pageSize = 50): Promise<EmailListResponse> {
-  return fetchWithAuth(`/emails?page=${page}&page_size=${pageSize}`);
+export async function getEmailQueue(page = 1, pageSize = 50, status?: string): Promise<EmailListResponse> {
+  const statusParam = status ? `&status=${status}` : '';
+  return fetchWithAuth(`/emails?page=${page}&page_size=${pageSize}${statusParam}`);
 }
 
 export async function fetchLiveGmailMessages(mailbox = "inbox", maxResults = 20): Promise<EmailListResponse> {
@@ -102,4 +109,8 @@ export async function runThreatScan(maxEmails = 50): Promise<any> {
     method: "POST",
     body: JSON.stringify({ max_emails: maxEmails }),
   });
+}
+
+export async function getEmailById(id: string): Promise<EmailDetail> {
+  return fetchWithAuth(`/emails/${id}`);
 }

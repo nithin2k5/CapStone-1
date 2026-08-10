@@ -7,10 +7,41 @@ import { ArrowLeft, ShieldAlert, CheckCircle2, ShieldX, Link as LinkIcon, FileTe
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { getEmailById, EmailDetail } from "@/lib/api";
 
 export default function EmailDetailPage() {
   const params = useParams();
-  
+  const [email, setEmail] = useState<EmailDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadEmail() {
+      if (params.id) {
+        try {
+          const data = await getEmailById(params.id as string);
+          setEmail(data);
+        } catch (err) {
+          console.error("Failed to load email details", err);
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+    loadEmail();
+  }, [params.id]);
+
+  if (loading) {
+    return <div className="text-gray-400 p-8">Loading analysis...</div>;
+  }
+
+  if (!email) {
+    return <div className="text-red-400 p-8">Email not found or could not be loaded.</div>;
+  }
+
+  const riskLevel = email.risk_score > 80 ? "CRITICAL" : email.risk_score > 50 ? "HIGH" : "SAFE";
+  const receivedAt = email.received_at || email.created_at;
+
   return (
     <div className="flex flex-col gap-6">
       <Link href="/emails" className="inline-flex items-center text-sm text-gray-400 hover:text-white transition-colors w-max">
@@ -20,19 +51,19 @@ export default function EmailDetailPage() {
 
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
         <div className="flex-1">
-          <h1 className="text-2xl font-heading font-bold text-white mb-2">Unusual login attempt</h1>
+          <h1 className="text-2xl font-heading font-bold text-white mb-2">{email.subject || "No Subject"}</h1>
           <div className="flex flex-wrap items-center gap-4 text-sm text-gray-400">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-300">From:</span>
-              <span>Microsoft Security &lt;alerts@microsoft-security-verify.com&gt;</span>
+              <span>{email.sender}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-300">To:</span>
-              <span>admin@your-company.com</span>
+              <span>{email.recipient}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-gray-300">Time:</span>
-              <span>Oct 24, 2026, 10:23 AM</span>
+              <span>{receivedAt ? new Date(receivedAt).toLocaleString() : "Unknown"}</span>
             </div>
           </div>
         </div>
@@ -59,7 +90,9 @@ export default function EmailDetailPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-400">Authentication</span>
-                <Badge variant="blocked">FAILED</Badge>
+                <Badge variant={riskLevel === "CRITICAL" ? "blocked" : "safe"}>
+                  {riskLevel === "CRITICAL" ? "FAILED" : "PASSED"}
+                </Badge>
               </div>
               <div className="grid grid-cols-3 gap-2 pt-2">
                 <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-center">
@@ -83,17 +116,17 @@ export default function EmailDetailPage() {
             </h3>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                <span className="text-sm text-gray-300">Malware</span>
-                <Badge variant="safe">CLEAN</Badge>
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-red-500/5 border border-red-500/10">
-                <span className="text-sm text-gray-300">Phishing</span>
-                <Badge variant="blocked">HIGH</Badge>
+              <div className={`flex items-center justify-between p-3 rounded-lg ${riskLevel === "CRITICAL" ? "bg-red-500/5 border border-red-500/10" : "bg-white/5"}`}>
+                <span className="text-sm text-gray-300">Overall Risk</span>
+                <Badge variant={riskLevel === "CRITICAL" ? "blocked" : riskLevel === "HIGH" ? "suspicious" : "safe"}>
+                  {riskLevel} ({email.risk_score.toFixed(1)})
+                </Badge>
               </div>
               <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                <span className="text-sm text-gray-300">Spam</span>
-                <Badge variant="safe">LOW</Badge>
+                <span className="text-sm text-gray-300">Status</span>
+                <Badge variant={email.status === "blocked" ? "blocked" : email.status === "quarantined" ? "suspicious" : "safe"}>
+                  {email.status.toUpperCase()}
+                </Badge>
               </div>
             </div>
           </GlassCard>
@@ -132,28 +165,11 @@ export default function EmailDetailPage() {
             <div className="flex-1 p-8 overflow-y-auto bg-white/[0.01]">
               {/* Sanitized email content preview */}
               <div className="max-w-2xl mx-auto bg-white text-black p-8 rounded shadow-lg font-sans">
-                <div className="flex items-center justify-between mb-8 border-b pb-4">
-                  <h2 className="text-2xl font-semibold text-gray-800">Microsoft</h2>
-                </div>
-                <h3 className="text-xl mb-4 font-medium text-gray-800">Unusual sign-in activity</h3>
-                <p className="mb-4 text-gray-700">
-                  We detected something unusual about a recent sign-in for the Microsoft account ad***@your-company.com. 
-                </p>
-                <div className="bg-gray-100 p-4 rounded mb-6 text-sm text-gray-600 space-y-2">
-                  <div><strong>Sign-in details:</strong></div>
-                  <div>Country/region: Russia</div>
-                  <div>IP address: 192.168.1.1</div>
-                  <div>Date: {new Date().toLocaleDateString()}</div>
-                </div>
-                <p className="mb-6 text-gray-700">
-                  Please go to your recent activity page to let us know whether or not this was you. If this wasn't you, we'll help you secure your account.
-                </p>
-                <div className="text-center mb-6">
-                  {/* The link is disabled in the preview */}
-                  <span className="inline-block bg-[#0067b8] text-white px-8 py-3 rounded cursor-not-allowed font-medium">
-                    Review recent activity
-                  </span>
-                </div>
+                {email.body_html ? (
+                  <div dangerouslySetInnerHTML={{ __html: email.body_html }} />
+                ) : (
+                  <pre className="whitespace-pre-wrap font-sans text-sm">{email.body_text || "No preview available for this email."}</pre>
+                )}
               </div>
             </div>
           </GlassCard>
