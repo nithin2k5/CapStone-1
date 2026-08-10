@@ -1,118 +1,194 @@
 "use client";
 
+import { motion } from "framer-motion";
+import { ShieldCheck, Mail, Lock, User, Building2, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User, Building2, ArrowRight } from "lucide-react";
-import AuthLayout from "@/components/auth/AuthLayout";
-import { AuthInput, AuthButton, AuthDivider } from "@/components/auth/AuthForm";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { setAuthSession } from "@/lib/auth";
+import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { AuthDivider } from "@/components/auth/AuthForm";
 
 export default function SignupPage() {
   const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+    
     const form = new FormData(e.currentTarget);
     const firstName = form.get("firstName") as string;
     const lastName = form.get("lastName") as string;
     const email = form.get("email") as string;
 
-    setAuthSession({
-      provider: "email",
-      email: email || "user@company.com",
-      name: `${firstName} ${lastName}`.trim() || "New User",
-    });
-    router.push("/dashboard");
+    setTimeout(() => {
+      setAuthSession({
+        provider: "email",
+        email: email || "user@company.com",
+        name: `${firstName} ${lastName}`.trim() || "New User",
+      });
+      router.push("/dashboard");
+    }, 1000);
   };
 
   return (
-    <AuthLayout>
-      <div className="mb-8 text-center">
-        <h1 className="font-heading text-3xl font-bold text-white mb-2">Create account</h1>
-        <p className="text-gray-400">Start protecting your organization today</p>
-      </div>
+    <GoogleAuthProvider>
+      <div className="min-h-screen bg-black flex relative overflow-hidden">
+        {/* Background glow effects */}
+        <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
+        
+        {/* Subtle grid background */}
+        <div 
+          className="absolute inset-0 pointer-events-none opacity-[0.03]" 
+          style={{ backgroundImage: "linear-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 1) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
+        />
 
-      <GoogleSignInButton label="Sign up with Google" />
+        <div className="w-full flex flex-col md:flex-row max-w-[1400px] mx-auto relative z-10">
+          
+          {/* Left column (Branding) */}
+          <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-white/5 bg-black/40 backdrop-blur-md">
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-8 neon-glow-blue">
+                <ShieldCheck className="w-8 h-8 text-indigo-400" />
+              </div>
+              
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white leading-tight tracking-wide mb-6">
+                SECURE<br />
+                EMAIL<br />
+                GATEWAY
+              </h1>
+              
+              <p className="text-lg text-gray-400 max-w-md">
+                Join thousands of organizations securing their email infrastructure with AI-powered protection.
+              </p>
+            </motion.div>
+          </div>
 
-      <AuthDivider />
+          {/* Right column (Signup Form) */}
+          <div className="flex-1 p-8 md:p-16 lg:p-16 flex flex-col justify-center overflow-y-auto">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="max-w-md w-full mx-auto my-8">
+              
+              <h2 className="text-2xl font-heading font-semibold text-white mb-8 text-center md:text-left">
+                Create account
+              </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <AuthInput
-            label="First Name"
-            name="firstName"
-            type="text"
-            placeholder="John"
-            icon={<User className="w-5 h-5" />}
-            required
-          />
-          <AuthInput
-            label="Last Name"
-            name="lastName"
-            type="text"
-            placeholder="Doe"
-            required
-          />
+              <GoogleSignInButton label="Sign up with Google" />
+              
+              <AuthDivider />
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">First Name</label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                      <input 
+                        name="firstName"
+                        type="text" 
+                        required
+                        placeholder="John" 
+                        className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Last Name</label>
+                    <input 
+                      name="lastName"
+                      type="text" 
+                      required
+                      placeholder="Doe" 
+                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Work Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <input 
+                      name="email"
+                      type="email" 
+                      required
+                      placeholder="john@company.com" 
+                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Organization</label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <input 
+                      name="organization"
+                      type="text" 
+                      required
+                      placeholder="Acme Corp" 
+                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <input 
+                      name="password"
+                      type="password" 
+                      required
+                      placeholder="••••••••••••" 
+                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                    />
+                  </div>
+                </div>
+
+                <label className="flex items-start gap-3 cursor-pointer pt-2">
+                  <input
+                    type="checkbox"
+                    className="w-4 h-4 mt-0.5 rounded border-white/20 bg-black text-white focus:ring-white/20"
+                    required
+                  />
+                  <span className="text-sm text-gray-400 leading-relaxed">
+                    I agree to the{" "}
+                    <Link href="/privacy" className="text-gray-400 hover:text-white">
+                      Terms of Service
+                    </Link>{" "}
+                    and{" "}
+                    <Link href="/privacy" className="text-gray-400 hover:text-white">
+                      Privacy Policy
+                    </Link>
+                  </span>
+                </label>
+
+                <div className="pt-2">
+                  <Button className="w-full h-12 text-base flex items-center justify-center gap-2" isLoading={isLoading}>
+                    Create Account
+                    {!isLoading && <ArrowRight className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </form>
+
+              <div className="mt-8 flex items-center justify-center">
+                <p className="text-sm text-gray-400">
+                  Already have an account?{" "}
+                  <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+                    Sign in
+                  </Link>
+                </p>
+              </div>
+              
+            </motion.div>
+          </div>
+
         </div>
-
-        <AuthInput
-          label="Work Email"
-          name="email"
-          type="email"
-          placeholder="john@company.com"
-          icon={<Mail className="w-5 h-5" />}
-          required
-        />
-
-        <AuthInput
-          label="Organization"
-          name="organization"
-          type="text"
-          placeholder="Acme Corp"
-          icon={<Building2 className="w-5 h-5" />}
-          required
-        />
-
-        <AuthInput
-          label="Password"
-          name="password"
-          type="password"
-          placeholder="Min. 8 characters"
-          icon={<Lock className="w-5 h-5" />}
-          required
-        />
-
-        <label className="flex items-start gap-3 cursor-pointer pt-2">
-          <input
-            type="checkbox"
-            className="w-4 h-4 mt-0.5 rounded border-white/20 bg-black text-white focus:ring-white/20"
-            required
-          />
-          <span className="text-sm text-gray-400 leading-relaxed">
-            I agree to the{" "}
-            <Link href="/privacy" className="text-gray-400 hover:text-white">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-gray-400 hover:text-white">
-              Privacy Policy
-            </Link>
-          </span>
-        </label>
-
-        <AuthButton type="submit">
-          Create Account
-          <ArrowRight className="w-4 h-4" />
-        </AuthButton>
-      </form>
-
-      <p className="mt-8 text-center text-sm text-gray-400">
-        Already have an account?{" "}
-        <Link href="/login" className="text-gray-400 hover:text-white font-medium">
-          Sign in
-        </Link>
-      </p>
-    </AuthLayout>
+      </div>
+    </GoogleAuthProvider>
   );
 }

@@ -7,6 +7,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { setAuthSession } from "@/lib/auth";
+import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { AuthDivider } from "@/components/auth/AuthForm";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,7 +25,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black flex relative overflow-hidden">
+    <GoogleAuthProvider>
+      <div className="min-h-screen bg-black flex relative overflow-hidden">
       {/* Background glow effects */}
       <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
       <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
@@ -61,6 +65,10 @@ export default function LoginPage() {
             <h2 className="text-2xl font-heading font-semibold text-white mb-8 text-center md:text-left">
               Welcome back
             </h2>
+
+            <GoogleSignInButton label="Sign in with Google" />
+            
+            <AuthDivider />
 
             <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-1">
@@ -110,6 +118,7 @@ export default function LoginPage() {
         </div>
 
       </div>
-    </div>
+      </div>
+    </GoogleAuthProvider>
   );
 }
