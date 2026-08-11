@@ -6,6 +6,8 @@ export type AuthSession = {
   name: string;
   picture?: string;
   accessToken?: string;
+  refreshToken?: string;
+  expiresAt?: number;
 };
 
 const SESSION_KEY = "seg_auth_session";
@@ -45,4 +47,16 @@ export function decodeGoogleCredential(credential: string): AuthSession {
     name: payload.name ?? "Google User",
     picture: payload.picture,
   };
+}
+
+export function getJwtExpiration(token: string): number | undefined {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (payload.exp) {
+      return payload.exp * 1000;
+    }
+  } catch {
+    // Ignore error
+  }
+  return undefined;
 }

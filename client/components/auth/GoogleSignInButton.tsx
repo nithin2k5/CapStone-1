@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 import { AuthButton, AuthError } from "@/components/auth/AuthForm";
 import { isGoogleAuthConfigured } from "@/components/auth/GoogleAuthProvider";
 import { GoogleIcon } from "@/components/ui/GoogleIcon";
-import { setAuthSession } from "@/lib/auth";
+import { setAuthSession, getJwtExpiration } from "@/lib/auth";
 
 type GoogleSignInButtonProps = {
   label?: string;
@@ -49,6 +49,8 @@ export default function GoogleSignInButton({
           email: data.user_email || "user@company.com",
           name: data.user_name || "Google User",
           accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          expiresAt: getJwtExpiration(data.access_token),
         });
       } catch (err: unknown) {
         const errObj = err as { message?: string; name?: string };

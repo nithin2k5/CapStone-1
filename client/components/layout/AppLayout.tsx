@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { PageContainer } from "./PageContainer";
 import { ReactNode } from "react";
+import { SessionExtendModal } from "@/components/auth/SessionExtendModal";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -17,5 +18,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
     return <main className="min-h-screen bg-black flex flex-col">{children}</main>;
   }
 
-  return <PageContainer>{children}</PageContainer>;
+  return (
+    <PageContainer>
+      {children}
+      <SessionExtendModal />
+    </PageContainer>
+  );
 }
