@@ -16,13 +16,42 @@ export default function LoginPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setTimeout(() => {
-      setAuthSession("dummy-token");
+    setError("");
+    
+    try {
+      const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Invalid email or password");
+      }
+
+      const data = await res.json();
+      setAuthSession({
+        provider: "email",
+        email: data.user_email || email,
+        name: data.user_name || "User",
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: data.access_token ? Date.now() + 30 * 60 * 1000 : undefined,
+      });
       router.push("/dashboard");
-    }, 1000);
+    } catch (err: any) {
+      setError(err.message || "Failed to sign in");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -75,6 +104,11 @@ export default function LoginPage() {
             <AuthDivider />
 
             <form onSubmit={handleLogin} className="space-y-5">
+              {error && (
+                <div className="p-3 mb-4 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg">
+                  {error}
+                </div>
+              )}
               <div className="space-y-1">
                 <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Email</label>
                 <div className="relative">
@@ -82,6 +116,8 @@ export default function LoginPage() {
                   <input 
                     type="email" 
                     required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@your-company.com" 
                     className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                   />
@@ -95,6 +131,8 @@ export default function LoginPage() {
                   <input 
                     type="password" 
                     required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••" 
                     className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                   />
