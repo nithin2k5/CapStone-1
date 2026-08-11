@@ -114,3 +114,21 @@ export async function runThreatScan(maxEmails = 50): Promise<any> {
 export async function getEmailById(id: string): Promise<EmailDetail> {
   return fetchWithAuth(`/emails/${id}`);
 }
+
+export interface ScanResult {
+  id: string;
+  email_id: string;
+  header_score: number;
+  url_score: number;
+  attachment_score: number;
+  ai_score: number;
+  final_score: number;
+  risk_level: string;
+  explanation: string;
+  findings: any;
+  scan_time: string;
+}
+
+export async function getScanResult(emailId: string): Promise<ScanResult> {
+  return fetchWithAuth(`/scan/result/${emailId}`);
+}

@@ -19,7 +19,7 @@ from app.core.security import (
 from app.database.database import get_db
 from app.database.models import User
 from app.schemas.auth import (
-    GoogleTokenRequest,
+    OAuthTokenRequest,
     RefreshTokenRequest,
     TokenResponse,
     UserLogin,
@@ -185,6 +185,83 @@ async def google_callback(
 
 @router.post("/google", response_model=TokenResponse, summary="Google OAuth SPA code exchange")
 async def google_post_auth(
-    payload: GoogleTokenRequest, db: AsyncSession = Depends(get_db)
+    payload: OAuthTokenRequest, db: AsyncSession = Depends(get_db)
 ) -> TokenResponse:
     return await _process_google_code(payload.code, payload.redirect_uri, db)
+
+@router.get("/microsoft/login", summary="Initiate Microsoft OAuth login")
+async def microsoft_login(state: str = "default_state"):
+    from app.services.microsoft_service import MicrosoftService
+
+    service = MicrosoftService()
+    url = service.get_oauth_url(state=state)
+    return {"url": url}
+
+async def _process_microsoft_code(
+    code: str, redirect_uri: str | None, db: AsyncSession
+) -> TokenResponse:
+    from app.services.microsoft_service import MicrosoftService
+
+    service = MicrosoftService()
+    tokens = await service.exchange_code(code, redirect_uri=redirect_uri)
+    if "access_token" not in tokens:
+        logger.error("Microsoft token exchange error: %s", tokens)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Failed to exchange OAuth code: {tokens.get('error', 'unknown error')}",
+        )
+
+    access_token = tokens["access_token"]
+    refresh_token = tokens.get("refresh_token")
+    user_info = await service.get_user_info(access_token)
+    email = user_info.get("email")
+    name = user_info.get("name", "Microsoft User")
+
+    if not email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Microsoft profile did not contain an email address",
+        )
+
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        user = User(
+            name=name,
+            email=email,
+            hashed_password=hash_password(f"sso_{uuid.uuid4().hex}"),
+            role=UserRole.USER,
+            microsoft_access_token=access_token,
+            microsoft_refresh_token=refresh_token,
+        )
+        db.add(user)
+    else:
+        user.microsoft_access_token = access_token
+        if refresh_token:
+            user.microsoft_refresh_token = refresh_token
+        db.add(user)
+
+    await db.flush()
+    await db.refresh(user)
+    logger.info("User authenticated via Microsoft: %s", user.email)
+
+    return TokenResponse(
+        access_token=create_access_token(user.id, user.role),
+        refresh_token=create_refresh_token(user.id, user.role),
+        user_id=user.id,
+        user_email=user.email,
+        user_name=user.name,
+    )
+
+@router.get("/microsoft/callback", response_model=TokenResponse, summary="Microsoft OAuth redirect callback")
+async def microsoft_callback(
+    code: str, state: str | None = None, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    return await _process_microsoft_code(code, None, db)
+
+@router.post("/microsoft", response_model=TokenResponse, summary="Microsoft OAuth SPA code exchange")
+async def microsoft_post_auth(
+    payload: OAuthTokenRequest, db: AsyncSession = Depends(get_db)
+) -> TokenResponse:
+    return await _process_microsoft_code(payload.code, payload.redirect_uri, db)

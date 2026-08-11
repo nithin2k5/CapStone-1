@@ -26,7 +26,7 @@ class TokenResponse(BaseModel):
     user_name: str | None = None
 
 
-class GoogleTokenRequest(BaseModel):
+class OAuthTokenRequest(BaseModel):
     code: str
     redirect_uri: str | None = "postmessage"
 

@@ -39,6 +39,14 @@ class Settings(BaseSettings):
         alias="GOOGLE_REDIRECT_URI",
     )
 
+    # Microsoft OAuth
+    microsoft_client_id: str = Field(default="", alias="MICROSOFT_CLIENT_ID")
+    microsoft_client_secret: str = Field(default="", alias="MICROSOFT_CLIENT_SECRET")
+    microsoft_redirect_uri: str = Field(
+        default="http://localhost:8000/auth/microsoft/callback",
+        alias="MICROSOFT_REDIRECT_URI",
+    )
+
     # Redis (optional, architecture ready)
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     redis_enabled: bool = Field(default=False, alias="REDIS_ENABLED")

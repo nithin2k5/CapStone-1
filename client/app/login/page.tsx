@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { setAuthSession } from "@/lib/auth";
 import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import MicrosoftSignInButton from "@/components/auth/MicrosoftSignInButton";
 import { AuthDivider } from "@/components/auth/AuthForm";
 
 export default function LoginPage() {
@@ -66,7 +67,10 @@ export default function LoginPage() {
               Welcome back
             </h2>
 
-            <GoogleSignInButton label="Sign in with Google" />
+            <div className="space-y-3">
+              <GoogleSignInButton label="Sign in with Google" />
+              <MicrosoftSignInButton label="Sign in with Microsoft" />
+            </div>
             
             <AuthDivider />
 

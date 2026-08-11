@@ -57,6 +57,8 @@ class User(Base):
     )
     google_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     google_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    microsoft_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    microsoft_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

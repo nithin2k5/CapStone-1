@@ -303,10 +303,11 @@ class GmailService:
             pass
 
         body_text = ""
+        body_html = ""
         attachments: list[ParsedAttachment] = []
 
         def _extract_parts(part: dict[str, Any]):
-            nonlocal body_text
+            nonlocal body_text, body_html
             filename = part.get("filename", "")
             mime_type = part.get("mimeType", "text/plain")
             part_body = part.get("body", {})
@@ -322,8 +323,10 @@ class GmailService:
                 data = part_body.get("data")
                 if data and mime_type in ["text/plain", "text/html"]:
                     decoded = _decode_base64url(data)
-                    if mime_type == "text/plain" or not body_text:
+                    if mime_type == "text/plain":
                         body_text += decoded
+                    elif mime_type == "text/html":
+                        body_html += decoded
 
             for sub in part.get("parts", []):
                 _extract_parts(sub)
@@ -332,7 +335,12 @@ class GmailService:
             for p in payload["parts"]:
                 _extract_parts(p)
         elif payload.get("body", {}).get("data"):
-            body_text = _decode_base64url(payload["body"]["data"])
+            mime_type = payload.get("mimeType", "text/plain")
+            decoded = _decode_base64url(payload["body"]["data"])
+            if mime_type == "text/html":
+                body_html = decoded
+            else:
+                body_text = decoded
 
         spf = (
             "spf=pass"
@@ -360,8 +368,9 @@ class GmailService:
             spf=spf,
             dkim=dkim,
             dmarc=dmarc,
-            body_text=body_text or "(Empty Body)",
-            urls=extract_urls(body_text or ""),
+            body_text=body_text or ("(Empty Body)" if not body_html else ""),
+            body_html=body_html,
+            urls=extract_urls((body_text or "") + " " + (body_html or "")),
             attachments=attachments,
             raw_headers=headers,
         )

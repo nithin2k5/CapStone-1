@@ -13,14 +13,19 @@ import { getEmailById, EmailDetail } from "@/lib/api";
 export default function EmailDetailPage() {
   const params = useParams();
   const [email, setEmail] = useState<EmailDetail | null>(null);
+  const [scanResult, setScanResult] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadEmail() {
+    async function loadData() {
       if (params.id) {
         try {
-          const data = await getEmailById(params.id as string);
-          setEmail(data);
+          const [emailData, scanData] = await Promise.all([
+            getEmailById(params.id as string),
+            getScanResult(params.id as string).catch(() => null)
+          ]);
+          setEmail(emailData);
+          setScanResult(scanData);
         } catch (err) {
           console.error("Failed to load email details", err);
         } finally {
@@ -28,7 +33,7 @@ export default function EmailDetailPage() {
         }
       }
     }
-    loadEmail();
+    loadData();
   }, [params.id]);
 
   if (loading) {
@@ -56,10 +61,7 @@ export default function EmailDetailPage() {
                     (dmarc === "PASS" || dmarc === "NONE");
   const authStatus = allPassed ? "PASSED" : "FAILED";
 
-  const contentStr = (email.body_text || "") + (email.body_html || "");
-  const urlRegex = /(https?:\/\/[^\s<]+)/g;
-  const urlsFound = Array.from(new Set(contentStr.match(urlRegex) || []));
-  const suspiciousUrls = riskLevel !== "SAFE" ? urlsFound.slice(0, 3) : [];
+  const suspiciousUrls = scanResult?.findings?.urls || [];
 
   return (
     <div className="flex flex-col gap-6">
@@ -192,6 +194,8 @@ export default function EmailDetailPage() {
               <div className="max-w-2xl mx-auto bg-white text-black p-8 rounded shadow-lg font-sans">
                 {email.body_html ? (
                   <div dangerouslySetInnerHTML={{ __html: email.body_html }} />
+                ) : email.body_text?.trim().startsWith('<') && email.body_text?.includes('>') ? (
+                  <div dangerouslySetInnerHTML={{ __html: email.body_text }} />
                 ) : (
                   <pre className="whitespace-pre-wrap font-sans text-sm">{email.body_text || "No preview available for this email."}</pre>
                 )}

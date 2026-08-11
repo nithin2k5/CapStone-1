@@ -49,6 +49,9 @@ def extract_urls(text: str) -> list[str]:
     for url in urls:
         if url.lower().startswith("www."):
             url = f"http://{url}"
+        
+        url = url.rstrip(".,;:'\"!?")
+        
         normalized.append(url)
     return list(dict.fromkeys(normalized))
 
