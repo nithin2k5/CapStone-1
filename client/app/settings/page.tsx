@@ -18,6 +18,8 @@ const tabs = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("email");
+  const currentTab = tabs.find(t => t.id === activeTab) || tabs[0];
+  const ActiveIcon = currentTab.icon;
 
   return (
     <div className="flex flex-col gap-6">
@@ -114,8 +116,8 @@ export default function SettingsPage() {
 
           {activeTab !== "email" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 text-center text-gray-500">
-              <tab.icon className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p>Settings panel for {tabs.find(t => t.id === activeTab)?.label} coming soon.</p>
+              <ActiveIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
+              <p>Settings panel for {currentTab.label} coming soon.</p>
             </motion.div>
           )}
         </main>
