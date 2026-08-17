@@ -32,6 +32,22 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <button 
+            onClick={async () => {
+              try {
+                const { fetchLiveGmailMessages } = await import("@/lib/api");
+                await fetchLiveGmailMessages("inbox", 10);
+                window.location.reload();
+              } catch (err) {
+                console.error(err);
+                alert("Failed to scan emails.");
+              }
+            }}
+            className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-sm font-medium rounded-xl border border-indigo-500/30 transition-colors flex items-center gap-2"
+          >
+            <Mail className="w-4 h-4" />
+            Scan Inbox Now
+          </button>
           <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-xl border border-white/10 transition-colors">
             Generate Report
           </button>
