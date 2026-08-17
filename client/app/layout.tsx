@@ -13,6 +13,8 @@ const inter = Inter({
 });
 
 import { AppLayout } from "@/components/layout/AppLayout";
+import { MicrosoftCallbackHandler } from "@/components/auth/MicrosoftCallbackHandler";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
   title: "Secure Email Gateway | Phishing Prevention",
@@ -30,6 +32,9 @@ export default function RootLayout({
       className={`${spaceGrotesk.variable} ${inter.variable} dark h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-black text-white font-sans overflow-x-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+        <Suspense fallback={null}>
+          <MicrosoftCallbackHandler />
+        </Suspense>
         <AppLayout>{children}</AppLayout>
       </body>
     </html>

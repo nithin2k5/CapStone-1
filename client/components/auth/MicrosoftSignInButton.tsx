@@ -39,17 +39,19 @@ export default function MicrosoftSignInButton({
   const login = async () => {
     setLoading(true);
     setError("");
+    
+    const clientId = process.env.NEXT_PUBLIC_MICROSOFT_CLIENT_ID;
+    const redirectUri = process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URI;
+
+    if (!clientId || !redirectUri) {
+      console.warn("Microsoft OAuth credentials not found in frontend env, falling back to demo mode.");
+      handleDemoMicrosoftSignIn();
+      return;
+    }
+
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/microsoft/login");
-      if (!res.ok) {
-        throw new Error("Failed to get Microsoft login URL");
-      }
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        handleDemoMicrosoftSignIn();
-      }
+      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile%20User.Read&prompt=select_account&state=microsoft`;
+      window.location.href = authUrl;
     } catch (err) {
       console.error(err);
       handleDemoMicrosoftSignIn();
