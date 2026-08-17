@@ -8,16 +8,30 @@ import { RecentEmails } from "@/components/dashboard/RecentEmails";
 import { Mail, ShieldAlert, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getDashboardStats, DashboardData } from "@/lib/api";
+import { ScanModal } from "@/components/dashboard/ScanModal";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardData | null>(null);
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+
+  const loadStats = () => {
+    getDashboardStats().then(setStats).catch(console.error);
+  };
 
   useEffect(() => {
-    getDashboardStats().then(setStats).catch(console.error);
+    loadStats();
   }, []);
 
   return (
     <div className="flex flex-col gap-8 pb-12">
+      <ScanModal 
+        isOpen={isScanModalOpen} 
+        onClose={() => {
+          setIsScanModalOpen(false);
+          loadStats(); // Reload stats when modal closes
+        }} 
+      />
+
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -33,16 +47,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-4">
           <button 
-            onClick={async () => {
-              try {
-                const { fetchLiveGmailMessages } = await import("@/lib/api");
-                await fetchLiveGmailMessages("inbox", 10);
-                window.location.reload();
-              } catch (err) {
-                console.error(err);
-                alert("Failed to scan emails.");
-              }
-            }}
+            onClick={() => setIsScanModalOpen(true)}
             className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-sm font-medium rounded-xl border border-indigo-500/30 transition-colors flex items-center gap-2"
           >
             <Mail className="w-4 h-4" />
