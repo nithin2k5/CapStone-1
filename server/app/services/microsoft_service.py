@@ -109,8 +109,8 @@ class MicrosoftService:
         db: Any = None,
     ) -> list[Any]:
         if not access_token or access_token == "mock_microsoft_access_token" or not self.is_configured():
-            from app.services.gmail_service import GmailService
-            return GmailService()._generate_mock_messages(mailbox, max_results)
+            logger.warning("Failed to fetch Microsoft messages: Token or configuration missing.")
+            return []
 
         folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
         # Only select basic fields to avoid large payloads, standard permissions suffice for most
@@ -120,8 +120,7 @@ class MicrosoftService:
             res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
             if res.status_code != 200:
                 logger.error("Failed to fetch Microsoft messages: %s", res.text)
-                from app.services.gmail_service import GmailService
-                return GmailService()._generate_mock_messages(mailbox, max_results)
+                return []
             
             data = res.json()
             messages = []
