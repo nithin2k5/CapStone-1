@@ -4,6 +4,12 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const session = getAuthSession();
+
+  if (!session?.accessToken && typeof window !== "undefined") {
+    window.location.href = "/login";
+    return new Promise(() => {}); // Prevent further execution
+  }
+
   const headers = {
     "Content-Type": "application/json",
     ...(session?.accessToken ? { Authorization: `Bearer ${session.accessToken}` } : {}),
@@ -14,6 +20,11 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     ...options,
     headers,
   });
+
+  if (res.status === 401 && typeof window !== "undefined") {
+    window.location.href = "/login";
+    return new Promise(() => {}); // Prevent throwing error
+  }
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

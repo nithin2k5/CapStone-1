@@ -60,6 +60,9 @@ async def fetch_emails(
     db: AsyncSession = Depends(get_db),
     gmail_service: GmailService = Depends(get_gmail_service),
 ) -> EmailListResponse:
+    from app.services.scan_service import ScanService
+    scan_service = ScanService()
+
     logger.info(
         "Fetching emails for user=%s mailbox=%s",
         current_user.id,
@@ -74,15 +77,51 @@ async def fetch_emails(
         db=db,
     )
 
-    repo = EmailRepository(db)
-    created: list = []
+    import uuid
+    from datetime import datetime, timezone
+    results = []
+
     for msg in messages:
-        email = await repo.create_from_gmail(current_user.id, msg)
-        created.append(email)
+        parsed = msg.parsed
+        
+        header_result = scan_service.header_service.analyze(parsed)
+        url_result = scan_service.url_service.analyze(parsed.urls)
+        attachment_result = scan_service.attachment_service.analyze(parsed.attachments)
+        ai_result = scan_service.ai_service.analyze(parsed)
+
+        risk = scan_service.risk_engine.calculate(
+            header_result, url_result, attachment_result, ai_result
+        )
+
+        status = "safe"
+        if risk.risk_level.value in ["high", "critical"]:
+            status = "blocked"
+            await gmail_service.modify_message_labels(
+                current_user.google_access_token,
+                msg.message_id,
+                add_labels=["SPAM"],
+                remove_labels=["INBOX"]
+            )
+        else:
+            status = "safe"
+
+        fake_email = EmailResponse(
+            id=uuid.uuid4(),
+            gmail_message_id=msg.message_id,
+            sender=parsed.sender,
+            recipient=parsed.recipient,
+            subject=parsed.subject,
+            received_at=parsed.date if parsed.date else datetime.now(timezone.utc),
+            status=status,
+            risk_score=risk.final_score,
+            mailbox=msg.mailbox,
+            created_at=datetime.now(timezone.utc)
+        )
+        results.append(fake_email)
 
     return EmailListResponse(
-        items=[EmailResponse.model_validate(e) for e in created],
-        total=len(created),
+        items=results,
+        total=len(results),
         page=1,
-        page_size=len(created),
+        page_size=len(results),
     )

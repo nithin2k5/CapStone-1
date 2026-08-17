@@ -35,16 +35,33 @@ async def fetch_emails_job():
                         max_results=10,
                         db=db,
                     )
-                    
-                    new_emails = 0
+                    scanned_emails = 0
                     for msg in messages:
-                        email = await repo.create_from_gmail(user.id, msg)
-                        # if it's new, it will be in pending status
-                        if email and email.status.value == "pending":
-                            new_emails += 1
-                            await scan_service.scan_email(db, email)
+                        parsed = msg.parsed
+                        
+                        header_result = scan_service.header_service.analyze(parsed)
+                        url_result = scan_service.url_service.analyze(parsed.urls)
+                        attachment_result = scan_service.attachment_service.analyze(parsed.attachments)
+                        ai_result = scan_service.ai_service.analyze(parsed)
+
+                        risk = scan_service.risk_engine.calculate(
+                            header_result, url_result, attachment_result, ai_result
+                        )
+
+                        if risk.risk_level.value in ["high", "critical"]:
+                            logger.info(f"Email {msg.message_id} is unsafe ({risk.risk_level.value}). Moving to SPAM.")
+                            await gmail_service.modify_message_labels(
+                                user.google_access_token,
+                                msg.message_id,
+                                add_labels=["SPAM"],
+                                remove_labels=["INBOX"]
+                            )
+                        else:
+                            logger.info(f"Email {msg.message_id} is safe ({risk.risk_level.value}). Leaving in INBOX.")
+                        
+                        scanned_emails += 1
                     
-                    logger.info(f"Fetched and scanned {new_emails} new emails for user {user.email}")
+                    logger.info(f"Fetched and scanned {scanned_emails} emails for user {user.email}")
                 except Exception as e:
                     logger.error(f"Failed to fetch/scan for user {user.id}: {e}")
     except Exception as e:
