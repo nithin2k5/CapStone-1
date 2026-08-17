@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { setAuthSession, getJwtExpiration } from "@/lib/auth";
 
 export function MicrosoftCallbackHandler() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [processing, setProcessing] = useState(false);
+  const exchanged = useRef(false);
+  const [processing, setProcessing] = useState(() => {
+    return !!(searchParams.get("code") && searchParams.get("state") === "microsoft");
+  });
 
   useEffect(() => {
     const code = searchParams.get("code");
     const state = searchParams.get("state");
 
-    if (code && state === "microsoft" && !processing) {
+    if (code && state === "microsoft" && !exchanged.current) {
+      exchanged.current = true;
       setProcessing(true);
       
       const exchangeCode = async () => {
@@ -30,7 +34,14 @@ export function MicrosoftCallbackHandler() {
           });
 
           if (!res.ok) {
-            throw new Error("Microsoft OAuth code exchange failed");
+            let errorDetail = "Unknown error";
+            try {
+              const errData = await res.json();
+              errorDetail = JSON.stringify(errData);
+            } catch (e) {
+              errorDetail = "Could not parse error response";
+            }
+            throw new Error(`Microsoft OAuth code exchange failed: ${errorDetail}`);
           }
 
           const data = await res.json();
