@@ -207,9 +207,9 @@ class GmailService:
                 logger.error("Error fetching live Gmail API messages: %s", e)
 
         logger.warning(
-            "Failed to fetch live Gmail API messages for user=%s mailbox=%s. Token or configuration may be missing.", user_id, mailbox
+            "Failed to fetch live API messages for user=%s mailbox=%s. Token or configuration may be missing. Falling back to mock emails.", user_id, mailbox
         )
-        return []
+        return self._generate_mock_messages(mailbox, max_results)
     async def _fetch_from_gmail_api(
         self,
         access_token: str,
