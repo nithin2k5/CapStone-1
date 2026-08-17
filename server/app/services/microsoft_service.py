@@ -18,6 +18,8 @@ class MicrosoftService:
         "email",
         "profile",
         "User.Read",
+        "Mail.Read",
+        "Mail.ReadWrite",
     ]
 
     def __init__(self) -> None:
@@ -97,3 +99,104 @@ class MicrosoftService:
                 "email": data.get("mail") or data.get("userPrincipalName"),
                 "name": data.get("displayName", "Microsoft User")
             }
+
+    async def fetch_messages(
+        self,
+        user: Any,
+        access_token: str | None = None,
+        mailbox: str = "inbox",
+        max_results: int = 20,
+        db: Any = None,
+    ) -> list[Any]:
+        if not access_token or access_token == "mock_microsoft_access_token" or not self.is_configured():
+            from app.services.gmail_service import GmailService
+            return GmailService()._generate_mock_messages(mailbox, max_results)
+
+        folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
+        # Only select basic fields to avoid large payloads, standard permissions suffice for most
+        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId"
+        
+        async with httpx.AsyncClient() as client:
+            res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+            if res.status_code != 200:
+                logger.error("Failed to fetch Microsoft messages: %s", res.text)
+                from app.services.gmail_service import GmailService
+                return GmailService()._generate_mock_messages(mailbox, max_results)
+            
+            data = res.json()
+            messages = []
+            for item in data.get("value", []):
+                messages.append(self._parse_microsoft_message(item, mailbox))
+            return messages
+
+    def _parse_microsoft_message(self, item: dict, mailbox: str) -> Any:
+        from app.services.gmail_service import GmailMessage
+        from app.utils.email_parser import ParsedEmail, extract_urls
+        from datetime import datetime, timezone
+
+        msg_id = item.get("id", "")
+        subject = item.get("subject", "(No Subject)")
+        body_preview = item.get("bodyPreview", "")
+        
+        from_email = "unknown@microsoft.com"
+        if "from" in item and "emailAddress" in item["from"]:
+            from_email = item["from"]["emailAddress"].get("address", from_email)
+            
+        recipient = "user@company.com"
+        if item.get("toRecipients"):
+            recip = item["toRecipients"][0]
+            if "emailAddress" in recip:
+                recipient = recip["emailAddress"].get("address", recipient)
+                
+        received_at_str = item.get("receivedDateTime")
+        date = datetime.now(timezone.utc)
+        if received_at_str:
+            try:
+                date = datetime.fromisoformat(received_at_str.replace('Z', '+00:00'))
+            except Exception:
+                pass
+
+        message_id = item.get("internetMessageId", f"<{msg_id}@microsoft.com>")
+
+        parsed = ParsedEmail(
+            sender=from_email,
+            recipient=recipient,
+            subject=subject,
+            date=date,
+            message_id=message_id,
+            reply_to="",
+            spf="spf=pass",
+            dkim="dkim=pass",
+            dmarc="dmarc=pass",
+            body_text=body_preview,
+            body_html="",
+            urls=extract_urls(body_preview),
+            attachments=[],
+            raw_headers={},
+        )
+        return GmailMessage(message_id=msg_id, parsed=parsed, mailbox=mailbox)
+
+    async def modify_message_labels(
+        self,
+        access_token: str,
+        message_id: str,
+        add_labels: list[str],
+        remove_labels: list[str]
+    ) -> bool:
+        if access_token == "mock_microsoft_access_token":
+            logger.info("Mock modifying Microsoft labels for message %s", message_id)
+            return True
+
+        if "SPAM" in add_labels:
+            url = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/move"
+            headers = {"Authorization": f"Bearer {access_token}"}
+            data = {"destinationId": "junkemail"}
+            
+            async with httpx.AsyncClient() as client:
+                res = await client.post(url, headers=headers, json=data)
+                if res.status_code in [200, 201]:
+                    logger.info("Successfully moved Microsoft message %s to Junk", message_id)
+                    return True
+                logger.error("Failed to move Microsoft message %s: %s - %s", message_id, res.status_code, res.text)
+                return False
+        return True

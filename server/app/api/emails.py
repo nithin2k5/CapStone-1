@@ -61,7 +61,10 @@ async def fetch_emails(
     gmail_service: GmailService = Depends(get_gmail_service),
 ) -> EmailListResponse:
     from app.services.scan_service import ScanService
+    from app.services.microsoft_service import MicrosoftService
+    
     scan_service = ScanService()
+    microsoft_service = MicrosoftService()
 
     logger.info(
         "Fetching emails for user=%s mailbox=%s",
@@ -69,13 +72,26 @@ async def fetch_emails(
         payload.mailbox,
     )
 
-    messages = await gmail_service.fetch_messages(
-        current_user,
-        current_user.google_access_token,
-        payload.mailbox,
-        payload.max_results,
-        db=db,
-    )
+    if current_user.microsoft_access_token and not current_user.google_access_token:
+        messages = await microsoft_service.fetch_messages(
+            current_user,
+            current_user.microsoft_access_token,
+            payload.mailbox,
+            payload.max_results,
+            db=db,
+        )
+        provider_service = microsoft_service
+        access_token = current_user.microsoft_access_token
+    else:
+        messages = await gmail_service.fetch_messages(
+            current_user,
+            current_user.google_access_token,
+            payload.mailbox,
+            payload.max_results,
+            db=db,
+        )
+        provider_service = gmail_service
+        access_token = current_user.google_access_token
 
     import uuid
     from datetime import datetime, timezone
@@ -96,8 +112,8 @@ async def fetch_emails(
         status = "safe"
         if risk.risk_level.value in ["high", "critical"]:
             status = "blocked"
-            await gmail_service.modify_message_labels(
-                current_user.google_access_token,
+            await provider_service.modify_message_labels(
+                access_token,
                 msg.message_id,
                 add_labels=["SPAM"],
                 remove_labels=["INBOX"]
