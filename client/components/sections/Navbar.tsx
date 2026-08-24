@@ -23,11 +23,11 @@ export default function Navbar() {
         
         {/* Logo / System ID */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="flex items-center justify-center w-8 h-8 bg-[#FF3366] text-[#050505]">
+          <div className="flex items-center justify-center w-8 h-8 bg-[#B026FF] text-[#050505]">
             <Terminal className="w-5 h-5" />
           </div>
           <span className="font-heading font-black text-xl tracking-tighter text-[#e0e0e0] uppercase">
-            SECURE.EMAIL<span className="text-[#FF3366]">_GW</span>
+            SECURE.EMAIL<span className="text-[#B026FF]">_GW</span>
           </span>
         </Link>
 
@@ -62,7 +62,7 @@ export default function Navbar() {
           </Link>
           <Link
             href="/signup"
-            className="px-4 py-2 font-bold bg-[#FF3366] text-[#050505] hover:bg-[#e0e0e0] transition-colors flex items-center gap-2"
+            className="px-4 py-2 font-bold bg-[#B026FF] text-[#050505] hover:bg-[#e0e0e0] transition-colors flex items-center gap-2"
           >
             <Power className="w-4 h-4" />
             INITIATE
@@ -71,7 +71,7 @@ export default function Navbar() {
 
         {/* Mobile Toggle */}
         <button
-          className="md:hidden p-2 text-[#FF3366]"
+          className="md:hidden p-2 text-[#B026FF]"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
           {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -106,7 +106,7 @@ export default function Navbar() {
               </Link>
               <Link
                 href="/signup"
-                className="w-full p-3 font-bold bg-[#FF3366] text-[#050505] text-center uppercase flex justify-center items-center gap-2"
+                className="w-full p-3 font-bold bg-[#B026FF] text-[#050505] text-center uppercase flex justify-center items-center gap-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
                 <Power className="w-4 h-4" />
