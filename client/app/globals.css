@@ -60,10 +60,10 @@
     box-shadow: none;
   }
   .btn-primary {
-    @apply bg-[#10B981] text-[#050505] font-bold uppercase tracking-widest border-2 border-[#10B981] shadow-[4px_4px_0px_0px_rgba(224,224,224,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(224,224,224,1)] transition-all duration-150;
+    @apply bg-[#10B981] text-[#050505] font-bold border-2 border-[#10B981] shadow-[4px_4px_0px_0px_rgba(224,224,224,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(224,224,224,1)] transition-all duration-150;
   }
   .btn-secondary {
-    @apply bg-transparent text-[#00F0FF] font-bold uppercase tracking-widest border-2 border-[#00F0FF] shadow-[4px_4px_0px_0px_rgba(0,240,255,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,240,255,0.3)] hover:bg-[#00F0FF] hover:text-[#050505] transition-all duration-150;
+    @apply bg-transparent text-[#3B82F6] font-bold border-2 border-[#3B82F6] shadow-[4px_4px_0px_0px_rgba(59,130,246,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(59,130,246,0.3)] hover:bg-[#3B82F6] hover:text-[#050505] transition-all duration-150;
   }
   
   /* Brutalist Grid Background */
@@ -123,8 +123,7 @@ body {
 
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-syne), sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
+  font-weight: 700;
   letter-spacing: -0.02em;
 }
 

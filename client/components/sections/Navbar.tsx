@@ -7,27 +7,27 @@ import Link from "next/link";
 import { GithubIcon } from "@/components/ui/SocialIcons";
 
 const navLinks = [
-  { name: "[ FEATURES ]", href: "/#features" },
-  { name: "[ ARCHITECTURE ]", href: "/#architecture" },
-  { name: "[ DASHBOARD ]", href: "/dashboard" },
-  { name: "[ RESEARCH ]", href: "/#research" },
-  { name: "[ DOCS ]", href: "/docs" },
+  { name: "Features", href: "/#features" },
+  { name: "Architecture", href: "/#architecture" },
+  { name: "Dashboard", href: "/dashboard" },
+  { name: "Research", href: "/#research" },
+  { name: "Docs", href: "/docs" },
 ];
 
 export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 bg-[#050505] border-b-2 border-[#333333]">
-      <nav className="w-full flex items-center justify-between px-4 sm:px-6 h-16 font-mono text-sm">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-[#050505] border-b border-[#333333]">
+      <nav className="w-full flex items-center justify-between px-4 sm:px-6 h-16 font-sans text-sm">
         
         {/* Logo / System ID */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="flex items-center justify-center w-8 h-8 bg-[#10B981] text-[#050505]">
+          <div className="flex items-center justify-center w-8 h-8 bg-[#10B981] text-[#050505] rounded-md">
             <Terminal className="w-5 h-5" />
           </div>
-          <span className="font-heading font-black text-xl tracking-tighter text-[#e0e0e0] uppercase">
-            SECURE.EMAIL<span className="text-[#10B981]">_GW</span>
+          <span className="font-heading font-bold text-lg tracking-tight text-[#e0e0e0]">
+            Secure.Email<span className="text-[#10B981]">_GW</span>
           </span>
         </Link>
 

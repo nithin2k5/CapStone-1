@@ -22,13 +22,11 @@ export default function Hero() {
               SYSTEM.STATUS: ARMED
             </div>
 
-            <h1 className="font-heading text-6xl sm:text-7xl md:text-9xl font-black leading-[0.85] tracking-tighter mb-8 text-[#e0e0e0] uppercase">
-              SECURE<br/>
-              EMAIL<br/>
-              <span className="text-[#10B981]">GATEWAY</span>
+            <h1 className="font-heading text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-6 text-[#e0e0e0]">
+              Secure Email <span className="text-[#10B981]">Gateway</span>
             </h1>
 
-            <p className="text-lg md:text-2xl text-[#888888] mb-12 max-w-2xl font-mono leading-relaxed border-l-4 border-[#00F0FF] pl-4">
+            <p className="text-lg md:text-xl text-[#888888] mb-10 max-w-2xl font-mono leading-relaxed border-l-4 border-[#3B82F6] pl-4">
               [INITIATING PROTOCOL] AI-powered interception matrix.
               Detecting zero-day payloads, domain spoofing, and semantic phishing algorithms before inbox penetration.
             </p>
@@ -83,14 +81,14 @@ export default function Hero() {
                 
                 <motion.div 
                   initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 3.2 }}
-                  className="text-[#10B981] font-bold mt-2 flex items-center gap-2 bg-[#10B981]/10 p-2 border border-[#10B981]">
+                  className="text-[#EF4444] font-bold mt-2 flex items-center gap-2 bg-[#EF4444]/10 p-2 border border-[#EF4444]">
                   <ShieldAlert className="w-4 h-4 animate-pulse" />
                   WARNING: NESTED MACRO EXECUTABLE DETECTED
                 </motion.div>
                 
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.0 }}
-                  className="text-[#10B981] font-bold uppercase">&gt;&gt; Action: Quarantine initiated.</motion.div>
+                  className="text-[#EF4444] font-bold uppercase">&gt;&gt; Action: Quarantine initiated.</motion.div>
 
                 <div className="absolute bottom-6 left-6 flex items-center gap-2 text-[#00FF41] mt-auto">
                   <span className="animate-pulse">_</span>
