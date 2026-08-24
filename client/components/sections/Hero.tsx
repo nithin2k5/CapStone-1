@@ -67,7 +67,7 @@ export default function Hero() {
               <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden relative">
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                  className="text-[#00F0FF]">> Intercepting payload stream...</motion.div>
+                  className="text-[#00F0FF]">&gt; Intercepting payload stream...</motion.div>
                 
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
@@ -90,7 +90,7 @@ export default function Hero() {
                 
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.0 }}
-                  className="text-[#FF3366] font-bold uppercase">> Action: Quarantine initiated.</motion.div>
+                  className="text-[#FF3366] font-bold uppercase">&gt;&gt; Action: Quarantine initiated.</motion.div>
 
                 <div className="absolute bottom-6 left-6 flex items-center gap-2 text-[#00FF41] mt-auto">
                   <span className="animate-pulse">_</span>
