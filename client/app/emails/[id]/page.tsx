@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { getEmailById, EmailDetail } from "@/lib/api";
+import { getEmailById, EmailDetail, getScanResult } from "@/lib/api";
 
 export default function EmailDetailPage() {
   const params = useParams();
