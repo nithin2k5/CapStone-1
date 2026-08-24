@@ -2,107 +2,103 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Shield, Mail, Brain, Network, Lock, ArrowRight, ChevronRight } from "lucide-react";
+import { ShieldAlert, Terminal, Activity } from "lucide-react";
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center pt-32 pb-20 overflow-hidden">
+    <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden border-b-4 border-[#333333]">
       <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-16 items-center">
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* Left Column: Massive Typography */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: "easeOut" }}
-            className="flex-1 text-center lg:text-left"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="flex-1 w-full"
           >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm font-medium mb-8 shadow-[0_0_20px_rgba(139,92,246,0.15)]">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-400" />
-              </span>
-              Next-Gen SOC Architecture
-              <ChevronRight className="w-4 h-4 text-purple-400" />
+            <div className="inline-flex items-center gap-3 px-4 py-2 border-2 border-[#FF3366] bg-[#FF3366]/10 text-[#FF3366] font-bold uppercase tracking-widest text-xs mb-8">
+              <span className="w-2 h-2 bg-[#FF3366] animate-ping" />
+              SYSTEM.STATUS: ARMED
             </div>
 
-            <h1 className="font-heading text-6xl md:text-8xl font-bold leading-[1.1] tracking-tight mb-8 text-white">
-              Secure Email <br className="hidden md:block" />
-              Gateway <span className="text-indigo-400/60 font-light">for</span> <br className="hidden md:block" />
-              <span className="text-gradient">Phishing Prevention</span>
+            <h1 className="font-heading text-6xl sm:text-7xl md:text-9xl font-black leading-[0.85] tracking-tighter mb-8 text-[#e0e0e0] uppercase">
+              SECURE<br/>
+              EMAIL<br/>
+              <span className="text-[#FF3366]">GATEWAY</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-light">
-              An AI-powered secure email gateway that detects phishing attempts,
-              malicious URLs, spoofed domains, and dangerous attachments before they reach users.
+            <p className="text-lg md:text-2xl text-[#888888] mb-12 max-w-2xl font-mono leading-relaxed border-l-4 border-[#00F0FF] pl-4">
+              [INITIATING PROTOCOL] AI-powered interception matrix.
+              Detecting zero-day payloads, domain spoofing, and semantic phishing algorithms before inbox penetration.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-5">
-              <Link
-                href="/signup"
-                className="w-full sm:w-auto px-8 py-4 btn-primary rounded-full text-lg flex items-center justify-center gap-2 group"
-              >
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            <div className="flex flex-col sm:flex-row items-stretch gap-6 w-full max-w-md">
+              <Link href="/signup" className="btn-primary py-5 px-8 flex items-center justify-between group">
+                <span>Engage Defenses</span>
+                <Terminal className="w-5 h-5 group-hover:scale-110 transition-transform" />
               </Link>
-              <Link
-                href="/dashboard"
-                className="w-full sm:w-auto px-8 py-4 btn-secondary rounded-full text-lg flex items-center justify-center gap-2"
-              >
-                View Demo
+              <Link href="/dashboard" className="btn-secondary py-5 px-8 flex items-center justify-between">
+                <span>View Console</span>
+                <Activity className="w-5 h-5" />
               </Link>
             </div>
           </motion.div>
 
+          {/* Right Column: Terminal Window UI */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 1.2, delay: 0.2, ease: "easeOut" }}
-            className="flex-1 relative h-[600px] w-full hidden lg:flex items-center justify-center"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+            className="flex-1 w-full lg:max-w-xl mt-16 lg:mt-0"
           >
-            <motion.div
-              animate={{ y: [-15, 15, -15] }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-              className="relative z-20 w-64 h-64 glass-card rounded-full flex items-center justify-center border-purple-500/30 shadow-[0_0_50px_rgba(139,92,246,0.3)]"
-            >
-              <Shield className="w-32 h-32 text-purple-400 drop-shadow-[0_0_15px_rgba(139,92,246,0.6)]" />
-            </motion.div>
-
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] border border-purple-500/20 rounded-full shadow-[0_0_30px_rgba(139,92,246,0.1)]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[650px] h-[650px] border border-blue-500/20 rounded-full border-dashed" />
-
-            <div className="absolute inset-0 animate-[spin_30s_linear_infinite]">
-              {[
-                { Icon: Mail, pos: "top-16 left-1/2 -translate-x-1/2", color: "text-purple-400", border: "border-purple-500/30" },
-                { Icon: Brain, pos: "bottom-16 left-1/2 -translate-x-1/2", color: "text-blue-400", border: "border-blue-500/30" },
-                { Icon: Network, pos: "top-1/2 left-16 -translate-y-1/2", color: "text-indigo-400", border: "border-indigo-500/30" },
-                { Icon: Lock, pos: "top-1/2 right-16 -translate-y-1/2", color: "text-violet-400", border: "border-violet-500/30" },
-              ].map(({ Icon, pos, color, border }, i) => (
-                <div
-                  key={i}
-                  className={`absolute ${pos} w-20 h-20 glass-card rounded-2xl flex items-center justify-center animate-[spin_30s_linear_infinite_reverse] ${border} shadow-[0_0_20px_rgba(139,92,246,0.2)]`}
-                >
-                  <Icon className={`w-10 h-10 ${color}`} />
+            <div className="glass-card w-full h-[500px] flex flex-col font-mono text-sm">
+              {/* Terminal Header */}
+              <div className="border-b-2 border-[#333333] p-4 flex justify-between items-center bg-[#121212]">
+                <div className="flex gap-2">
+                  <div className="w-3 h-3 bg-[#FF3366]" />
+                  <div className="w-3 h-3 bg-[#FFD700]" />
+                  <div className="w-3 h-3 bg-[#00FF41]" />
                 </div>
-              ))}
+                <div className="text-[#888888] tracking-widest text-xs">ROOT@GATEWAY:~</div>
+              </div>
+              
+              {/* Terminal Body */}
+              <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden relative">
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+                  className="text-[#00F0FF]">> Intercepting payload stream...</motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+                  className="text-[#888888]">Analyzing headers [DKIM/SPF]: <span className="text-[#00FF41]">VERIFIED</span></motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.8 }}
+                  className="text-[#888888]">Scanning URLs [Typosquatting]: <span className="text-[#00FF41]">CLEAN</span></motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.5 }}
+                  className="text-[#888888]">Executing Heuristic Attachment Scan...</motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 3.2 }}
+                  className="text-[#FF3366] font-bold mt-2 flex items-center gap-2 bg-[#FF3366]/10 p-2 border border-[#FF3366]">
+                  <ShieldAlert className="w-4 h-4 animate-pulse" />
+                  WARNING: NESTED MACRO EXECUTABLE DETECTED
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.0 }}
+                  className="text-[#FF3366] font-bold uppercase">> Action: Quarantine initiated.</motion.div>
+
+                <div className="absolute bottom-6 left-6 flex items-center gap-2 text-[#00FF41] mt-auto">
+                  <span className="animate-pulse">_</span>
+                </div>
+              </div>
             </div>
-
-            <motion.div
-              animate={{ y: [0, -20, 0], opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 5, repeat: Infinity, delay: 1 }}
-              className="absolute top-1/4 right-0 glass-card px-5 py-3 rounded-xl flex items-center gap-3 border-purple-500/30 shadow-[0_0_20px_rgba(139,92,246,0.25)]"
-            >
-              <div className="w-2.5 h-2.5 rounded-full bg-purple-400 animate-pulse shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
-              <span className="text-sm text-purple-200 font-semibold">Threat Blocked</span>
-            </motion.div>
-
-            <motion.div
-              animate={{ y: [0, 20, 0], opacity: [0.8, 1, 0.8] }}
-              transition={{ duration: 6, repeat: Infinity, delay: 2 }}
-              className="absolute bottom-1/3 left-0 glass-card px-5 py-3 rounded-xl flex items-center gap-3 border-blue-500/30 shadow-[0_0_20px_rgba(59,130,246,0.25)]"
-            >
-              <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.8)]" />
-              <span className="text-sm text-blue-200 font-semibold">System Secure</span>
-            </motion.div>
           </motion.div>
+
         </div>
       </div>
     </section>
