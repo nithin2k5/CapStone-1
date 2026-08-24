@@ -17,15 +17,15 @@ export default function Hero() {
             transition={{ duration: 0.5, ease: "easeOut" }}
             className="flex-1 w-full"
           >
-            <div className="inline-flex items-center gap-3 px-4 py-2 border-2 border-[#B026FF] bg-[#B026FF]/10 text-[#B026FF] font-bold uppercase tracking-widest text-xs mb-8">
-              <span className="w-2 h-2 bg-[#B026FF] animate-ping" />
+            <div className="inline-flex items-center gap-3 px-4 py-2 border-2 border-[#10B981] bg-[#10B981]/10 text-[#10B981] font-bold uppercase tracking-widest text-xs mb-8">
+              <span className="w-2 h-2 bg-[#10B981] animate-ping" />
               SYSTEM.STATUS: ARMED
             </div>
 
             <h1 className="font-heading text-6xl sm:text-7xl md:text-9xl font-black leading-[0.85] tracking-tighter mb-8 text-[#e0e0e0] uppercase">
               SECURE<br/>
               EMAIL<br/>
-              <span className="text-[#B026FF]">GATEWAY</span>
+              <span className="text-[#10B981]">GATEWAY</span>
             </h1>
 
             <p className="text-lg md:text-2xl text-[#888888] mb-12 max-w-2xl font-mono leading-relaxed border-l-4 border-[#00F0FF] pl-4">
@@ -56,7 +56,7 @@ export default function Hero() {
               {/* Terminal Header */}
               <div className="border-b-2 border-[#333333] p-4 flex justify-between items-center bg-[#121212]">
                 <div className="flex gap-2">
-                  <div className="w-3 h-3 bg-[#B026FF]" />
+                  <div className="w-3 h-3 bg-[#10B981]" />
                   <div className="w-3 h-3 bg-[#FFD700]" />
                   <div className="w-3 h-3 bg-[#00FF41]" />
                 </div>
@@ -83,14 +83,14 @@ export default function Hero() {
                 
                 <motion.div 
                   initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 3.2 }}
-                  className="text-[#B026FF] font-bold mt-2 flex items-center gap-2 bg-[#B026FF]/10 p-2 border border-[#B026FF]">
+                  className="text-[#10B981] font-bold mt-2 flex items-center gap-2 bg-[#10B981]/10 p-2 border border-[#10B981]">
                   <ShieldAlert className="w-4 h-4 animate-pulse" />
                   WARNING: NESTED MACRO EXECUTABLE DETECTED
                 </motion.div>
                 
                 <motion.div 
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.0 }}
-                  className="text-[#B026FF] font-bold uppercase">&gt;&gt; Action: Quarantine initiated.</motion.div>
+                  className="text-[#10B981] font-bold uppercase">&gt;&gt; Action: Quarantine initiated.</motion.div>
 
                 <div className="absolute bottom-6 left-6 flex items-center gap-2 text-[#00FF41] mt-auto">
                   <span className="animate-pulse">_</span>

@@ -9,7 +9,7 @@
 
   --color-muted-foreground: #888888;
 
-  --color-accent: #B026FF;
+  --color-accent: #10B981;
   --color-accent-blue: #00F0FF;
   --color-success: #00FF41;
   --color-warning: #FFD700;
@@ -29,7 +29,7 @@
 
 @layer utilities {
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#B026FF] to-[#00F0FF];
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#00F0FF];
   }
   .text-gradient-blue {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-[#00F0FF] to-[#ffffff];
@@ -41,26 +41,26 @@
     @apply bg-[#0a0a0a] border border-[#333333] shadow-[4px_4px_0px_0px_rgba(51,51,51,1)];
   }
   .glass-card {
-    @apply bg-[#0a0a0a] border-2 border-[#333333] shadow-[8px_8px_0px_0px_rgba(176,38,255,0.5)] transition-transform duration-300;
+    @apply bg-[#0a0a0a] border-2 border-[#333333] shadow-[8px_8px_0px_0px_rgba(16,185,129,0.5)] transition-transform duration-300;
   }
   .glass-card:hover {
     @apply translate-x-[-4px] translate-y-[-4px] shadow-[12px_12px_0px_0px_rgba(0,240,255,0.8)] border-[#00F0FF];
   }
   .neon-glow {
     box-shadow: none;
-    border-bottom: 2px solid #B026FF;
+    border-bottom: 2px solid #10B981;
   }
   .neon-glow-blue {
     box-shadow: none;
     border-bottom: 2px solid #00F0FF;
   }
   .neon-glow-hover:hover {
-    background-color: #B026FF;
+    background-color: #10B981;
     color: #000;
     box-shadow: none;
   }
   .btn-primary {
-    @apply bg-[#B026FF] text-[#050505] font-bold uppercase tracking-widest border-2 border-[#B026FF] shadow-[4px_4px_0px_0px_rgba(224,224,224,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(224,224,224,1)] transition-all duration-150;
+    @apply bg-[#10B981] text-[#050505] font-bold uppercase tracking-widest border-2 border-[#10B981] shadow-[4px_4px_0px_0px_rgba(224,224,224,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(224,224,224,1)] transition-all duration-150;
   }
   .btn-secondary {
     @apply bg-transparent text-[#00F0FF] font-bold uppercase tracking-widest border-2 border-[#00F0FF] shadow-[4px_4px_0px_0px_rgba(0,240,255,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(0,240,255,0.3)] hover:bg-[#00F0FF] hover:text-[#050505] transition-all duration-150;
@@ -118,7 +118,7 @@ body {
   border: 1px solid #050505;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #B026FF;
+  background: #10B981;
 }
 
 h1, h2, h3, h4, h5, h6 {

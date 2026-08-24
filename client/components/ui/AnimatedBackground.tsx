@@ -19,7 +19,7 @@ export default function AnimatedBackground() {
       <motion.div
         animate={{ opacity: [0, 0, 0.1, 0, 0.05, 0], x: [-10, 10, -5, 5, 0] }}
         transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/4 right-1/4 w-[300px] h-[30px] bg-[#B026FF] mix-blend-overlay"
+        className="absolute top-1/4 right-1/4 w-[300px] h-[30px] bg-[#10B981] mix-blend-overlay"
       />
 
       {/* Sweeping Cyber Line */}
