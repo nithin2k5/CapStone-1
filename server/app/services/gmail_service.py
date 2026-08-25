@@ -141,6 +141,8 @@ class GmailService:
                 res.status_code,
                 res.text,
             )
+            if res.status_code == 400 and "invalid_grant" in res.text:
+                raise ValueError("invalid_grant")
             return None
 
     async def modify_message_labels(
@@ -222,7 +224,19 @@ class GmailService:
                     "Access token expired, attempting refresh for user=%s",
                     user.id if user else "unknown",
                 )
-                new_token = await self.refresh_access_token(refresh_token)
+                try:
+                    new_token = await self.refresh_access_token(refresh_token)
+                except ValueError as e:
+                    if str(e) == "invalid_grant":
+                        if user and db:
+                            logger.warning("Google refresh token invalid. Clearing for user %s", user.id)
+                            user.google_access_token = None
+                            user.google_refresh_token = None
+                            db.add(user)
+                            await db.commit()
+                        return None
+                    new_token = None
+
                 if new_token:
                     access_token = new_token
                     headers = {"Authorization": f"Bearer {access_token}"}

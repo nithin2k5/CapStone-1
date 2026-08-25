@@ -50,7 +50,7 @@ export default function MicrosoftSignInButton({
     }
 
     try {
-      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile%20User.Read&prompt=select_account&state=microsoft`;
+      const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20email%20profile%20User.Read%20offline_access&prompt=select_account&state=microsoft`;
       window.location.href = authUrl;
     } catch (err) {
       console.error(err);

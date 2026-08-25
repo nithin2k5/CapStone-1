@@ -71,6 +71,43 @@ export function EmailTable() {
               className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-white w-64"
             />
           </div>
+          <button 
+            onClick={async () => {
+              setLoading(true);
+              try {
+                await fetchLiveGmailMessages("inbox", pageSize);
+                const data = await getEmailQueue(page, pageSize);
+                
+                setTotal(data.total || 0);
+                if (data.items.length > 0) {
+                  const formatted = data.items.map((item: EmailItem) => {
+                    const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
+                    return {
+                      id: item.id,
+                      sender: senderName,
+                      subject: item.subject || "No Subject",
+                      time: new Date(item.received_at || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "SAFE",
+                      status: item.status === "pending" ? "BLOCKED" : item.status.toUpperCase(),
+                      analysis: item.risk_score > 80 ? "Malicious attachment/link" : "Passed all checks"
+                    };
+                  });
+                  setEmailsState(formatted);
+                } else {
+                  setEmailsState([]);
+                }
+              } catch (err) {
+                console.error("Failed to sync emails", err);
+              } finally {
+                setLoading(false);
+              }
+            }}
+            disabled={loading}
+            className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-xl flex items-center gap-2 text-sm text-indigo-300 transition-colors disabled:opacity-50"
+          >
+            <ShieldCheck className="w-4 h-4" />
+            {loading ? "Syncing..." : "Sync Now"}
+          </button>
           <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
             <Filter className="w-4 h-4" />
             Filters

@@ -142,9 +142,13 @@ async def fetch_emails(
         import json
         scan_record = ScanResult(
             email_id=email_record.id,
-            risk_level=risk.risk_level,
+            header_score=risk.header_score,
+            url_score=risk.url_score,
+            attachment_score=risk.attachment_score,
+            ai_score=risk.ai_score,
             final_score=risk.final_score,
-            findings={"flags": risk.flags}
+            risk_level=risk.risk_level,
+            findings=risk.findings
         )
         await repo.save_scan_result(scan_record)
 

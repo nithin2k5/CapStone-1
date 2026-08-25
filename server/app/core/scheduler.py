@@ -37,6 +37,13 @@ async def fetch_emails_job():
                     )
                     scanned_emails = 0
                     for msg in messages:
+                        # 1. Save email to database first
+                        email_record = await repo.create_from_gmail(user.id, msg)
+                        
+                        # Only scan if it's pending (to avoid rescanning)
+                        if email_record.status != "pending":
+                            continue
+
                         parsed = msg.parsed
                         
                         header_result = scan_service.header_service.analyze(parsed)
@@ -48,8 +55,26 @@ async def fetch_emails_job():
                             header_result, url_result, attachment_result, ai_result
                         )
 
+                        # 2. Save scan result
+                        from app.database.models import ScanResult, EmailStatus, RiskLevel
+                        scan_record = ScanResult(
+                            email_id=email_record.id,
+                            header_score=header_result.score,
+                            url_score=url_result.score,
+                            attachment_score=attachment_result.score,
+                            ai_score=ai_result.score,
+                            final_score=risk.final_score,
+                            risk_level=risk.risk_level,
+                            findings={"headers": header_result.findings, "urls": url_result.findings, "attachments": attachment_result.findings, "ai": ai_result.reasons}
+                        )
+                        await repo.save_scan_result(scan_record)
+
+                        # 3. Update email status
+                        email_record.risk_score = risk.final_score
+
                         if risk.risk_level.value in ["high", "critical"]:
                             logger.info(f"Email {msg.message_id} is unsafe ({risk.risk_level.value}). Moving to SPAM.")
+                            email_record.status = EmailStatus.QUARANTINED
                             await gmail_service.modify_message_labels(
                                 user.google_access_token,
                                 msg.message_id,
@@ -58,8 +83,13 @@ async def fetch_emails_job():
                             )
                         else:
                             logger.info(f"Email {msg.message_id} is safe ({risk.risk_level.value}). Leaving in INBOX.")
+                            email_record.status = EmailStatus.SAFE
                         
+                        db.add(email_record)
                         scanned_emails += 1
+                    
+                    if scanned_emails > 0:
+                        await db.commit()
                     
                     logger.info(f"Fetched and scanned {scanned_emails} emails for user {user.email}")
                 except Exception as e:

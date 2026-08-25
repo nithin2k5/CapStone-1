@@ -79,7 +79,39 @@ class AttachmentAnalysisService:
     def _mock_hash(self, filename: str) -> str:
         return hashlib.sha256(filename.encode()).hexdigest()
 
-    # Future ClamAV integration point
+    # ClamAV integration
     async def scan_with_clamav(self, file_path: str) -> bool:
-        """Placeholder for ClamAV integration."""
-        raise NotImplementedError("ClamAV integration not yet implemented")
+        """
+        Scan a file with ClamAV using the clamscan command-line tool.
+        Returns True if malware is detected, False otherwise.
+        """
+        import asyncio
+        from app.core.logging import get_logger
+        
+        logger = get_logger("clamav")
+        try:
+            process = await asyncio.create_subprocess_exec(
+                "clamscan",
+                "--no-summary",
+                file_path,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+            stdout, stderr = await process.communicate()
+            
+            # clamscan exit code 1 means virus found, 0 means no virus, >1 means error
+            if process.returncode == 1:
+                logger.warning(f"Malware detected by ClamAV in {file_path}")
+                return True
+            elif process.returncode != 0:
+                logger.error(f"ClamAV scan error for {file_path}. Code: {process.returncode}")
+                return False
+                
+            return False
+            
+        except FileNotFoundError:
+            logger.warning("clamscan executable not found. Please install ClamAV to enable malware scanning.")
+            return False
+        except Exception as e:
+            logger.error(f"Failed to run ClamAV scan: {e}")
+            return False

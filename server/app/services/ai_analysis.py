@@ -118,23 +118,42 @@ class AIAnalysisService:
         """
 
         try:
-            # Point the client to your local LLM server (e.g., Ollama, LM Studio, vLLM)
-            # By default, this assumes Ollama running on localhost
-            client = openai.AsyncOpenAI(
-                base_url=os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1"),
-                api_key="local-llm" # API key is required by the python SDK but ignored by local servers
-            )
+            gemini_api_key = os.getenv("GEMINI_API_KEY")
             
-            response = await client.chat.completions.create(
-                model=os.getenv("LOCAL_LLM_MODEL", "llama3"), # Use your local model name (e.g., llama3, mistral)
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": email_content}
-                ],
-                response_format={ "type": "json_object" }
-            )
-            
-            result = json.loads(response.choices[0].message.content)
+            if gemini_api_key:
+                from google import genai
+                from google.genai import types
+                
+                client = genai.Client(api_key=gemini_api_key)
+                
+                response = client.models.generate_content(
+                    model='gemini-2.5-flash',
+                    contents=email_content,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_prompt,
+                        response_mime_type="application/json",
+                        temperature=0.1,
+                    )
+                )
+                result = json.loads(response.text)
+            else:
+                # Fallback to local OpenAI-compatible server if GEMINI_API_KEY is not set
+                import openai
+                client = openai.AsyncOpenAI(
+                    base_url=os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1"),
+                    api_key="local-llm" 
+                )
+                
+                response = await client.chat.completions.create(
+                    model=os.getenv("LOCAL_LLM_MODEL", "llama3"), 
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": email_content}
+                    ],
+                    response_format={ "type": "json_object" }
+                )
+                
+                result = json.loads(response.choices[0].message.content)
             
             score = max(result.get("phishing_probability", 0.0), result.get("spam_probability", 0.0) * 0.7)
             
