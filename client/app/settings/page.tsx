@@ -3,9 +3,10 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Button } from "@/components/ui/Button";
 import { ShieldCheck, Mail, Lock, Bell, Server, KeyRound } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { getAuthSession, clearAuthSession, type AuthSession } from "@/lib/auth";
 
 const tabs = [
   { id: "account", label: "Account", icon: Lock },
@@ -18,6 +19,12 @@ const tabs = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("email");
+  const [session, setSession] = useState<AuthSession | null>(null);
+
+  useEffect(() => {
+    setSession(getAuthSession());
+  }, []);
+
   const currentTab = tabs.find(t => t.id === activeTab) || tabs[0];
   const ActiveIcon = currentTab.icon;
 
@@ -114,7 +121,65 @@ export default function SettingsPage() {
             </motion.div>
           )}
 
-          {activeTab !== "email" && (
+          {activeTab === "account" && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <GlassCard className="p-6 md:p-8">
+                <h3 className="text-lg font-heading font-semibold text-white mb-6 border-b border-white/5 pb-4">
+                  Account Profile
+                </h3>
+                
+                <div className="space-y-6">
+                  <div className="flex items-center gap-4 border border-white/10 p-4 rounded-xl bg-black/20">
+                    <div className="w-16 h-16 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
+                      <Lock className="w-8 h-8 text-indigo-400" />
+                    </div>
+                    <div>
+                      <h4 className="text-lg font-medium text-white">Administrator</h4>
+                      <p className="text-sm text-gray-400">Manage your system credentials</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1 block">Display Name</label>
+                      <input 
+                        type="text" 
+                        value={session?.name || "Admin User"}
+                        onChange={() => {}}
+                        className="w-full max-w-md h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1 block">Email Address</label>
+                      <input 
+                        type="email" 
+                        value={session?.email || "admin@company.com"}
+                        className="w-full max-w-md h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-white/5 flex gap-4">
+                    <Button>Update Profile</Button>
+                    <Button 
+                      variant="secondary" 
+                      onClick={() => {
+                        clearAuthSession();
+                        window.location.href = "/login";
+                      }}
+                      className="border-red-500/20 text-red-400 hover:bg-red-500/10 hover:border-red-500/30"
+                    >
+                      Sign Out
+                    </Button>
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+          )}
+
+          {activeTab !== "email" && activeTab !== "account" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 text-center text-gray-500">
               <ActiveIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p>Settings panel for {currentTab.label} coming soon.</p>
