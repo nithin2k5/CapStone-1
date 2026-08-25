@@ -100,43 +100,57 @@ async def fetch_emails(
     from datetime import datetime, timezone
     results = []
 
+    repo = EmailRepository(db)
+    
     for msg in messages:
+        # Check if already exists
+        existing = await repo.get_by_gmail_id(msg.message_id)
+        if existing:
+            results.append(EmailResponse.model_validate(existing))
+            continue
+
+        # Save new email to DB
+        email_record = await repo.create_from_gmail(current_user.id, msg)
+        
         parsed = msg.parsed
         
         header_result = scan_service.header_service.analyze(parsed)
         url_result = scan_service.url_service.analyze(parsed.urls)
         attachment_result = scan_service.attachment_service.analyze(parsed.attachments)
-        ai_result = scan_service.ai_service.analyze(parsed)
+        ai_result = await scan_service.ai_service.analyze_with_llm(parsed)
 
         risk = scan_service.risk_engine.calculate(
             header_result, url_result, attachment_result, ai_result
         )
 
-        status = "safe"
+        status = EmailStatus.SAFE
         if risk.risk_level.value in ["high", "critical"]:
-            status = "blocked"
+            status = EmailStatus.BLOCKED
             await provider_service.modify_message_labels(
                 access_token,
                 msg.message_id,
                 add_labels=["SPAM"],
                 remove_labels=["INBOX"]
             )
-        else:
-            status = "safe"
-
-        fake_email = EmailResponse(
-            id=uuid.uuid4(),
-            gmail_message_id=msg.message_id,
-            sender=parsed.sender,
-            recipient=parsed.recipient,
-            subject=parsed.subject,
-            received_at=parsed.date if parsed.date else datetime.now(timezone.utc),
-            status=status,
-            risk_score=risk.final_score,
-            mailbox=msg.mailbox,
-            created_at=datetime.now(timezone.utc)
+            
+        email_record.status = status
+        email_record.risk_score = risk.final_score
+        db.add(email_record)
+        
+        # Save scan result
+        from app.database.models import ScanResult
+        import json
+        scan_record = ScanResult(
+            email_id=email_record.id,
+            risk_level=risk.risk_level,
+            final_score=risk.final_score,
+            findings={"flags": risk.flags}
         )
-        results.append(fake_email)
+        await repo.save_scan_result(scan_record)
+
+        results.append(EmailResponse.model_validate(email_record))
+        
+    await db.commit()
 
     return EmailListResponse(
         items=results,
