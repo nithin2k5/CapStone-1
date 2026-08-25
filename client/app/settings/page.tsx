@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getAuthSession, clearAuthSession, type AuthSession } from "@/lib/auth";
+import { getSettings, updateSettings, type UserSettings } from "@/lib/api";
 
 const tabs = [
   { id: "account", label: "Account", icon: Lock },
@@ -20,9 +21,12 @@ const tabs = [
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("email");
   const [session, setSession] = useState<AuthSession | null>(null);
+  const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setSession(getAuthSession());
+    getSettings().then(setUserSettings).catch(console.error);
   }, []);
 
   const currentTab = tabs.find(t => t.id === activeTab) || tabs[0];
@@ -179,7 +183,101 @@ export default function SettingsPage() {
             </motion.div>
           )}
 
-          {activeTab !== "email" && activeTab !== "account" && (
+          {activeTab === "notifications" && userSettings && (
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+              <GlassCard className="p-6 md:p-8">
+                <h3 className="text-lg font-heading font-semibold text-white mb-6 border-b border-white/5 pb-4">
+                  Notification Preferences
+                </h3>
+                
+                <div className="space-y-8">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-white mb-1">Critical Threat Alerts</h4>
+                      <p className="text-xs text-gray-400 max-w-md">Receive immediate email alerts when a highly malicious or targeted threat is detected.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={userSettings.notif_critical} 
+                        onChange={(e) => setUserSettings({...userSettings, notif_critical: e.target.checked})}
+                      />
+                      <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-white mb-1">Quarantine Digests</h4>
+                      <p className="text-xs text-gray-400 max-w-md">Send users a daily digest of emails that were caught and quarantined.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={userSettings.notif_quarantine} 
+                        onChange={(e) => setUserSettings({...userSettings, notif_quarantine: e.target.checked})}
+                      />
+                      <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-white mb-1">Daily System Summary</h4>
+                      <p className="text-xs text-gray-400 max-w-md">Receive a high-level summary of the day's traffic and mitigated threats.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={userSettings.notif_daily} 
+                        onChange={(e) => setUserSettings({...userSettings, notif_daily: e.target.checked})}
+                      />
+                      <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                    </label>
+                  </div>
+
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="text-sm font-medium text-white mb-1">Weekly Analytics Report</h4>
+                      <p className="text-xs text-gray-400 max-w-md">Receive a comprehensive PDF report outlining long-term trends and attack vectors.</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        className="sr-only peer" 
+                        checked={userSettings.notif_weekly} 
+                        onChange={(e) => setUserSettings({...userSettings, notif_weekly: e.target.checked})}
+                      />
+                      <div className="w-11 h-6 bg-white/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                    </label>
+                  </div>
+
+                  <div className="pt-6 border-t border-white/5 flex justify-end">
+                    <Button 
+                      onClick={async () => {
+                        setSaving(true);
+                        try {
+                          await updateSettings(userSettings);
+                        } catch (e) {
+                          console.error(e);
+                        } finally {
+                          setSaving(false);
+                        }
+                      }}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save Preferences"}
+                    </Button>
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+          )}
+
+          {activeTab !== "email" && activeTab !== "account" && activeTab !== "notifications" && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-12 text-center text-gray-500">
               <ActiveIcon className="w-12 h-12 mx-auto mb-4 opacity-20" />
               <p>Settings panel for {currentTab.label} coming soon.</p>

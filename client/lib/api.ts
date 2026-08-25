@@ -143,3 +143,26 @@ export interface ScanResult {
 export async function getScanResult(emailId: string): Promise<ScanResult> {
   return fetchWithAuth(`/scan/result/${emailId}`);
 }
+
+export interface UserSettings {
+  notif_critical: boolean;
+  notif_daily: boolean;
+  notif_quarantine: boolean;
+  notif_weekly: boolean;
+  sens_phishing: number;
+  sens_malware: number;
+  sens_url: number;
+  sens_ai: number;
+  api_key: string;
+}
+
+export async function getSettings(): Promise<UserSettings> {
+  return fetchWithAuth("/settings");
+}
+
+export async function updateSettings(settings: Partial<UserSettings>): Promise<UserSettings> {
+  return fetchWithAuth("/settings", {
+    method: "PUT",
+    body: JSON.stringify(settings),
+  });
+}
