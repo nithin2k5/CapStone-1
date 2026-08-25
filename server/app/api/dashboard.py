@@ -140,11 +140,25 @@ async def get_dashboard(
         else func.date_format(Email.created_at, "%Y-%m")
     )
 
+    from sqlalchemy import case
+
     monthly_rows = (
         await db.execute(
             select(
                 month_expr.label("month"),
                 func.count().label("total"),
+                func.sum(
+                    case(
+                        (Email.status.in_([EmailStatus.BLOCKED, EmailStatus.QUARANTINED]), 1),
+                        else_=0
+                    )
+                ).label("blocked"),
+                func.sum(
+                    case(
+                        (Email.status.in_([EmailStatus.SAFE, EmailStatus.SCANNED, EmailStatus.PENDING]), 1),
+                        else_=0
+                    )
+                ).label("safe"),
             )
             .where(Email.user_id == user_id)
             .group_by("month")
@@ -157,7 +171,7 @@ async def get_dashboard(
     for row in monthly_rows:
         month_label = row[0].strftime("%Y-%m") if isinstance(row[0], datetime) else str(row[0])[:7]
         monthly_stats.append(
-            MonthlyStat(month=month_label, total=row[1], blocked=0, safe=row[1])
+            MonthlyStat(month=month_label, total=row[1], blocked=int(row[2] or 0), safe=int(row[3] or 0))
         )
 
     return DashboardResponse(
