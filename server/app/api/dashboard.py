@@ -132,20 +132,20 @@ async def get_dashboard(
     for level, count in risk_rows:
         setattr(risk_dist, level.value, count)
 
-    # Monthly statistics (mock aggregation from DB)
+    # Hourly statistics for real-time overview (kept in monthly_statistics field for compatibility)
     dialect = db.bind.dialect.name if db.bind else "sqlite"
-    month_expr = (
-        func.strftime("%Y-%m", Email.created_at)
+    time_expr = (
+        func.strftime("%m-%d %H:00", Email.created_at)
         if dialect == "sqlite"
-        else func.date_format(Email.created_at, "%Y-%m")
+        else func.date_format(Email.created_at, "%m-%d %H:00")
     )
 
     from sqlalchemy import case
 
-    monthly_rows = (
+    time_rows = (
         await db.execute(
             select(
-                month_expr.label("month"),
+                time_expr.label("time"),
                 func.count().label("total"),
                 func.sum(
                     case(
@@ -161,17 +161,17 @@ async def get_dashboard(
                 ).label("safe"),
             )
             .where(Email.user_id == user_id)
-            .group_by("month")
-            .order_by("month")
-            .limit(6)
+            .group_by("time")
+            .order_by("time")
+            .limit(24)
         )
     ).all()
 
     monthly_stats: list[MonthlyStat] = []
-    for row in monthly_rows:
-        month_label = row[0].strftime("%Y-%m") if isinstance(row[0], datetime) else str(row[0])[:7]
+    for row in time_rows:
+        time_label = row[0].strftime("%m-%d %H:00") if isinstance(row[0], datetime) else str(row[0])
         monthly_stats.append(
-            MonthlyStat(month=month_label, total=row[1], blocked=int(row[2] or 0), safe=int(row[3] or 0))
+            MonthlyStat(month=time_label, total=row[1], blocked=int(row[2] or 0), safe=int(row[3] or 0))
         )
 
     return DashboardResponse(
