@@ -166,3 +166,32 @@ export async function updateSettings(settings: Partial<UserSettings>): Promise<U
     body: JSON.stringify(settings),
   });
 }
+
+export async function downloadReport(): Promise<void> {
+  const session = getAuthSession();
+  
+  if (!session?.accessToken && typeof window !== "undefined") {
+    window.location.href = "/login";
+    return;
+  }
+  
+  const res = await fetch(`${BASE_URL}/dashboard/report`, {
+    headers: {
+      Authorization: `Bearer ${session?.accessToken}`,
+    },
+  });
+  
+  if (!res.ok) {
+    throw new Error("Failed to generate report");
+  }
+  
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "email_security_report.csv";
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}

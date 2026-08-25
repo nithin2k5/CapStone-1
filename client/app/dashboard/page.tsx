@@ -7,7 +7,7 @@ import { ThreatOverview } from "@/components/dashboard/ThreatOverview";
 import { RecentEmails } from "@/components/dashboard/RecentEmails";
 import { Mail, ShieldAlert, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
-import { getDashboardStats, DashboardData } from "@/lib/api";
+import { getDashboardStats, DashboardData, downloadReport } from "@/lib/api";
 import { ScanModal } from "@/components/dashboard/ScanModal";
 
 export default function DashboardPage() {
@@ -53,7 +53,16 @@ export default function DashboardPage() {
             <Mail className="w-4 h-4" />
             Scan Inbox Now
           </button>
-          <button className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-xl border border-white/10 transition-colors">
+          <button 
+            onClick={async () => {
+              try {
+                await downloadReport();
+              } catch (e) {
+                console.error(e);
+              }
+            }}
+            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-xl border border-white/10 transition-colors"
+          >
             Generate Report
           </button>
         </div>

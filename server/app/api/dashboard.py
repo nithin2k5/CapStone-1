@@ -186,3 +186,53 @@ async def get_dashboard(
         risk_distribution=risk_dist,
         monthly_statistics=monthly_stats,
     )
+
+from fastapi.responses import StreamingResponse
+import io
+import csv
+
+@router.get("/report")
+async def generate_report(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    user_id = current_user.id
+    
+    # Fetch the last 1000 emails
+    emails = (
+        await db.execute(
+            select(Email)
+            .where(Email.user_id == user_id)
+            .order_by(Email.created_at.desc())
+            .limit(1000)
+        )
+    ).scalars().all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Write header
+    writer.writerow([
+        "Message ID", "Received At", "Sender", "Recipient", 
+        "Subject", "Status", "Risk Score"
+    ])
+    
+    # Write data
+    for email in emails:
+        writer.writerow([
+            email.gmail_message_id,
+            email.received_at.isoformat() if email.received_at else "",
+            email.sender,
+            email.recipient,
+            email.subject,
+            email.status.value.upper(),
+            email.risk_score
+        ])
+        
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=email_security_report.csv"}
+    )
