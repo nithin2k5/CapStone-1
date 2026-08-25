@@ -61,7 +61,7 @@ class ScanService:
         header_result = self.header_service.analyze(parsed)
         url_result = self.url_service.analyze(parsed.urls)
         attachment_result = self.attachment_service.analyze(parsed.attachments)
-        ai_result = self.ai_service.analyze(parsed)
+        ai_result = await self.ai_service.analyze_with_llm(parsed)
 
         risk = self.risk_engine.calculate(
             header_result, url_result, attachment_result, ai_result

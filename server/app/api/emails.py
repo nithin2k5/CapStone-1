@@ -72,27 +72,30 @@ async def fetch_emails(
         payload.mailbox,
     )
 
-    if current_user.microsoft_access_token and not current_user.google_access_token:
-        messages = await microsoft_service.fetch_messages(
-            current_user,
-            current_user.microsoft_access_token,
-            payload.mailbox,
-            payload.max_results,
-            db=db,
-        )
-        provider_service = microsoft_service
-        access_token = current_user.microsoft_access_token
-    else:
-        messages = await gmail_service.fetch_messages(
-            current_user,
-            current_user.google_access_token,
-            payload.mailbox,
-            payload.max_results,
-            db=db,
-        )
-        provider_service = gmail_service
-        access_token = current_user.google_access_token
-
+    try:
+        if current_user.microsoft_access_token and not current_user.google_access_token:
+            messages = await microsoft_service.fetch_messages(
+                current_user,
+                current_user.microsoft_access_token,
+                payload.mailbox,
+                payload.max_results,
+                db=db,
+            )
+            provider_service = microsoft_service
+            access_token = current_user.microsoft_access_token
+        else:
+            messages = await gmail_service.fetch_messages(
+                current_user,
+                current_user.google_access_token,
+                payload.mailbox,
+                payload.max_results,
+                db=db,
+            )
+            provider_service = gmail_service
+            access_token = current_user.google_access_token
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    
     import uuid
     from datetime import datetime, timezone
     results = []

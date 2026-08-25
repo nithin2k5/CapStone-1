@@ -78,12 +78,8 @@ class GmailService:
     ) -> dict[str, Any]:
         """Exchange authorization code for tokens via Google's token endpoint."""
         if not self.is_configured():
-            logger.warning("Google OAuth not configured, returning mock tokens")
-            return {
-                "access_token": "mock_access_token",
-                "refresh_token": "mock_refresh_token",
-                "expires_in": 3600,
-            }
+            logger.warning("Google OAuth not configured.")
+            raise ValueError("Google OAuth is not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.")
 
         url = "https://oauth2.googleapis.com/token"
         data = {
@@ -106,8 +102,6 @@ class GmailService:
 
     async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Fetch user profile from Google UserInfo endpoint."""
-        if access_token == "mock_access_token":
-            return {"email": "mock.google@user.com", "name": "Mock Google User"}
 
         url = "https://www.googleapis.com/oauth2/v3/userinfo"
         async with httpx.AsyncClient() as client:
@@ -125,8 +119,8 @@ class GmailService:
 
     async def refresh_access_token(self, refresh_token: str) -> str | None:
         """Refresh an expired access token using a stored refresh token."""
-        if not self.is_configured() or refresh_token == "mock_refresh_token":
-            return "mock_access_token"
+        if not self.is_configured():
+            return None
 
         url = "https://oauth2.googleapis.com/token"
         data = {
@@ -157,9 +151,6 @@ class GmailService:
         remove_labels: list[str]
     ) -> bool:
         """Modify labels of a Gmail message (e.g., move to SPAM or TRASH)."""
-        if access_token == "mock_access_token":
-            logger.info("Mock modifying labels for message %s: add=%s remove=%s", message_id, add_labels, remove_labels)
-            return True
 
         url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}/modify"
         headers = {"Authorization": f"Bearer {access_token}"}
@@ -196,7 +187,7 @@ class GmailService:
             refresh = None
             user = None
 
-        if token and token != "mock_access_token" and self.is_configured():
+        if token and self.is_configured():
             try:
                 messages = await self._fetch_from_gmail_api(
                     token, refresh, user, db, mailbox, max_results
@@ -209,7 +200,7 @@ class GmailService:
         logger.warning(
             "Failed to fetch live API messages for user=%s mailbox=%s. Token or configuration may be missing.", user_id, mailbox
         )
-        return []
+        raise ValueError("Unable to fetch emails: Token or configuration missing.")
     async def _fetch_from_gmail_api(
         self,
         access_token: str,
@@ -376,95 +367,3 @@ class GmailService:
         )
         return GmailMessage(message_id=msg_id, parsed=parsed, mailbox=mailbox)
 
-    def _generate_mock_messages(
-        self, mailbox: str, max_results: int
-    ) -> list[GmailMessage]:
-        mock_data = [
-            {
-                "sender": "admin@paypaI.com",
-                "recipient": "user@company.com",
-                "subject": "Account Suspended - Verify Now",
-                "body": "Your account has been suspended. Click here to verify: http://bit.ly/fake-login",
-                "spf": "spf=fail",
-                "dkim": "dkim=fail",
-                "dmarc": "dmarc=fail",
-                "reply_to": "support@phishing-site.com",
-            },
-            {
-                "sender": "hr@company-portal.net",
-                "recipient": "all-staff@company.com",
-                "subject": "Q3 Bonus Document Attached",
-                "body": "Please review the attached bonus document.",
-                "attachments": [
-                    ParsedAttachment(
-                        "bonus_Q3.pdf.exe", "application/octet-stream", 204800
-                    ),
-                ],
-            },
-            {
-                "sender": "notifications@slack.com",
-                "recipient": "user@company.com",
-                "subject": "New message in #security",
-                "body": "You have a new message in the security channel.",
-                "spf": "spf=pass",
-                "dkim": "dkim=pass",
-                "dmarc": "dmarc=pass",
-            },
-            {
-                "sender": "support@microsoft-update.com",
-                "recipient": "user@company.com",
-                "subject": "Action Required: Password Reset",
-                "body": "Reset your password immediately at http://192.168.1.1/login",
-            },
-            {
-                "sender": "ceo@company.com",
-                "recipient": "finance@company.com",
-                "subject": "Urgent Wire Transfer Request",
-                "body": "Please process an urgent wire transfer. Act now!",
-                "spf": "spf=pass",
-                "dkim": "dkim=pass",
-            },
-        ]
-
-        messages: list[GmailMessage] = []
-        for i, data in enumerate(mock_data[:max_results]):
-            msg_id = f"mock_{mailbox}_{uuid4().hex[:12]}"
-            headers = {
-                "From": data["sender"],
-                "To": data["recipient"],
-                "Subject": data["subject"],
-                "Date": datetime.now(timezone.utc).strftime(
-                    "%a, %d %b %Y %H:%M:%S +0000"
-                ),
-                "Message-ID": f"<{msg_id}@mail.example.com>",
-                "Authentication-Results": f"{data.get('spf', 'spf=none')}; {data.get('dkim', 'dkim=none')}; {data.get('dmarc', 'dmarc=none')}",
-            }
-            if data.get("reply_to"):
-                headers["Reply-To"] = data["reply_to"]
-
-            parsed = ParsedEmail(
-                sender=data["sender"],
-                recipient=data["recipient"],
-                subject=data["subject"],
-                date=datetime.now(timezone.utc),
-                message_id=headers["Message-ID"],
-                reply_to=data.get("reply_to", ""),
-                spf=data.get("spf"),
-                dkim=data.get("dkim"),
-                dmarc=data.get("dmarc"),
-                body_text=data["body"],
-                urls=[],
-                attachments=data.get("attachments", []),
-                raw_headers=headers,
-            )
-            from app.utils.email_parser import extract_urls
-
-            parsed.urls = extract_urls(parsed.body_text)
-
-            messages.append(
-                GmailMessage(
-                    message_id=msg_id, parsed=parsed, mailbox=mailbox
-                )
-            )
-
-        return messages

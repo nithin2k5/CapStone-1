@@ -133,10 +133,17 @@ async def get_dashboard(
         setattr(risk_dist, level.value, count)
 
     # Monthly statistics (mock aggregation from DB)
+    dialect = db.bind.dialect.name if db.bind else "sqlite"
+    month_expr = (
+        func.strftime("%Y-%m", Email.created_at)
+        if dialect == "sqlite"
+        else func.date_format(Email.created_at, "%Y-%m")
+    )
+
     monthly_rows = (
         await db.execute(
             select(
-                func.date_format(Email.created_at, "%Y-%m").label("month"),
+                month_expr.label("month"),
                 func.count().label("total"),
             )
             .where(Email.user_id == user_id)

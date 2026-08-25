@@ -31,7 +31,7 @@ export default function RootLayout({
       lang="en"
       className={`${syne.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-black text-[#e0e0e0] font-mono overflow-x-hidden selection:bg-[#FF3366] selection:text-white">
+      <body className="min-h-full flex flex-col bg-black text-[#e0e0e0] font-mono overflow-x-hidden selection:bg-[#10B981] selection:text-white">
         <Suspense fallback={null}>
           <MicrosoftCallbackHandler />
         </Suspense>

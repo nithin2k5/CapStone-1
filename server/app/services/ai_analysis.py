@@ -1,3 +1,6 @@
+import os
+import json
+import openai
 from dataclasses import dataclass, field
 
 from app.utils.email_parser import ParsedEmail
@@ -91,5 +94,58 @@ class AIAnalysisService:
         )
 
     async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
-        """Future LLM integration point."""
-        raise NotImplementedError("LLM integration not yet implemented")
+        """Real LLM integration for intent and social engineering analysis using OpenAI."""
+        
+        email_content = f"""
+        Sender: {parsed.sender}
+        Subject: {parsed.subject}
+        Body: {parsed.body_text[:2000]} 
+        URLs present: {', '.join(parsed.urls)}
+        """
+
+        system_prompt = """
+        You are an advanced cybersecurity email analyzer. Analyze the provided email for:
+        1. Social engineering tactics (urgency, fear, greed)
+        2. Suspicious sender-to-content mismatches (e.g. sender is a random Gmail, but claims to be IT)
+        3. Credential harvesting context
+        
+        Return ONLY a JSON response in this exact format:
+        {
+            "phishing_probability": <float 0-100>,
+            "spam_probability": <float 0-100>,
+            "reasons": ["<reason 1>", "<reason 2>"]
+        }
+        """
+
+        try:
+            # Point the client to your local LLM server (e.g., Ollama, LM Studio, vLLM)
+            # By default, this assumes Ollama running on localhost
+            client = openai.AsyncOpenAI(
+                base_url=os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1"),
+                api_key="local-llm" # API key is required by the python SDK but ignored by local servers
+            )
+            
+            response = await client.chat.completions.create(
+                model=os.getenv("LOCAL_LLM_MODEL", "llama3"), # Use your local model name (e.g., llama3, mistral)
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": email_content}
+                ],
+                response_format={ "type": "json_object" }
+            )
+            
+            result = json.loads(response.choices[0].message.content)
+            
+            score = max(result.get("phishing_probability", 0.0), result.get("spam_probability", 0.0) * 0.7)
+            
+            return AIAnalysisResult(
+                phishing_probability=result.get("phishing_probability", 0.0),
+                spam_probability=result.get("spam_probability", 0.0),
+                score=min(score, 100.0),
+                reasons=result.get("reasons", ["No specific reasons provided by AI."])
+            )
+            
+        except Exception as e:
+            print(f"LLM analysis failed: {e}. Falling back to heuristic analysis.")
+            return self.analyze(parsed)
+

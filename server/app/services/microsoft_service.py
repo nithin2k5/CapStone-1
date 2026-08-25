@@ -49,12 +49,8 @@ class MicrosoftService:
     ) -> dict[str, Any]:
         """Exchange authorization code for tokens via Microsoft's token endpoint."""
         if not self.is_configured():
-            logger.warning("Microsoft OAuth not configured, returning mock tokens")
-            return {
-                "access_token": "mock_microsoft_access_token",
-                "refresh_token": "mock_microsoft_refresh_token",
-                "expires_in": 3600,
-            }
+            logger.warning("Microsoft OAuth not configured.")
+            raise ValueError("Microsoft OAuth is not configured. Please set MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET.")
 
         url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
         data = {
@@ -78,8 +74,6 @@ class MicrosoftService:
 
     async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Fetch user profile from Microsoft Graph API."""
-        if access_token == "mock_microsoft_access_token":
-            return {"email": "mock.microsoft@user.com", "name": "Mock Microsoft User"}
 
         url = "https://graph.microsoft.com/v1.0/me"
         async with httpx.AsyncClient() as client:
@@ -108,9 +102,8 @@ class MicrosoftService:
         max_results: int = 20,
         db: Any = None,
     ) -> list[Any]:
-        if not access_token or access_token == "mock_microsoft_access_token" or not self.is_configured():
-            logger.warning("Failed to fetch Microsoft messages: Token or configuration missing.")
-            return []
+        if not access_token or not self.is_configured():
+            raise ValueError("Unable to fetch emails: Token or configuration missing.")
 
         folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
         # Only select basic fields to avoid large payloads, standard permissions suffice for most
@@ -182,10 +175,6 @@ class MicrosoftService:
         add_labels: list[str],
         remove_labels: list[str]
     ) -> bool:
-        if access_token == "mock_microsoft_access_token":
-            logger.info("Mock modifying Microsoft labels for message %s", message_id)
-            return True
-
         if "SPAM" in add_labels:
             url = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/move"
             headers = {"Authorization": f"Bearer {access_token}"}

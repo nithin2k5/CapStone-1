@@ -9,9 +9,7 @@ import { GithubIcon } from "@/components/ui/SocialIcons";
 const navLinks = [
   { name: "Features", href: "/#features" },
   { name: "Architecture", href: "/#architecture" },
-  { name: "Dashboard", href: "/dashboard" },
   { name: "Research", href: "/#research" },
-  { name: "Docs", href: "/docs" },
 ];
 
 export default function Navbar() {
