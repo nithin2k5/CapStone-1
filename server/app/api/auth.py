@@ -25,6 +25,7 @@ from app.schemas.auth import (
     UserLogin,
     UserRegister,
     UserResponse,
+    UserUpdateRequest,
 )
 
 logger = get_logger("auth")
@@ -106,6 +107,22 @@ async def refresh_token(
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)) -> User:
+    return current_user
+
+@router.put("/me", response_model=UserResponse)
+async def update_me(
+    payload: UserUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    if payload.name is not None:
+        current_user.name = payload.name
+    if payload.password is not None:
+        current_user.hashed_password = hash_password(payload.password)
+    
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 

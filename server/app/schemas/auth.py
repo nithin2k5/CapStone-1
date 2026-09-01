@@ -43,3 +43,8 @@ class UserResponse(BaseModel):
     email: EmailStr
     role: UserRole
     created_at: datetime
+
+class UserUpdateRequest(BaseModel):
+    name: str | None = Field(None, min_length=2, max_length=255)
+    password: str | None = Field(None, min_length=8, max_length=128)
+

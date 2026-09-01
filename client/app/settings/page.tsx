@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { getAuthSession, clearAuthSession, type AuthSession } from "@/lib/auth";
-import { getSettings, updateSettings, type UserSettings } from "@/lib/api";
+import { getSettings, updateSettings, updateProfile, type UserSettings } from "@/lib/api";
 
 const tabs = [
   { id: "account", label: "Account", icon: Lock },
@@ -23,11 +23,43 @@ export default function SettingsPage() {
   const [session, setSession] = useState<AuthSession | null>(null);
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [saving, setSaving] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState(false);
 
   useEffect(() => {
-    setSession(getAuthSession());
+    const authSession = getAuthSession();
+    setSession(authSession);
+    if (authSession?.name) {
+      setProfileName(authSession.name);
+    }
     getSettings().then(setUserSettings).catch(console.error);
   }, []);
+
+  const handleUpdateProfile = async () => {
+    setProfileSaving(true);
+    setProfileSuccess(false);
+    try {
+      const updates: any = {};
+      if (profileName && profileName !== session?.name) {
+        updates.name = profileName;
+      }
+      if (newPassword) {
+        updates.password = newPassword;
+      }
+      if (Object.keys(updates).length > 0) {
+        await updateProfile(updates);
+        setNewPassword("");
+        setProfileSuccess(true);
+        setTimeout(() => setProfileSuccess(false), 3000);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setProfileSaving(false);
+    }
+  };
 
   const currentTab = tabs.find(t => t.id === activeTab) || tabs[0];
   const ActiveIcon = currentTab.icon;
@@ -148,25 +180,38 @@ export default function SettingsPage() {
                       <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1 block">Display Name</label>
                       <input 
                         type="text" 
-                        value={session?.name || "Admin User"}
-                        onChange={() => {}}
+                        value={profileName}
+                        onChange={(e) => setProfileName(e.target.value)}
                         className="w-full max-w-md h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50"
                       />
                     </div>
                     
                     <div>
-                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1 block">Email Address</label>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1 block">Email Address (Cannot be changed)</label>
                       <input 
                         type="email" 
                         value={session?.email || "admin@company.com"}
-                        className="w-full max-w-md h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50"
+                        className="w-full max-w-md h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50 cursor-not-allowed opacity-70"
                         readOnly
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1 block">Set New Password</label>
+                      <input 
+                        type="password" 
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Leave blank to keep current password"
+                        className="w-full max-w-md h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-white/5 flex gap-4">
-                    <Button>Update Profile</Button>
+                  <div className="pt-6 border-t border-white/5 flex gap-4 items-center">
+                    <Button onClick={handleUpdateProfile} disabled={profileSaving}>
+                      {profileSaving ? "Updating..." : "Update Profile"}
+                    </Button>
                     <Button 
                       variant="secondary" 
                       onClick={() => {
@@ -177,6 +222,7 @@ export default function SettingsPage() {
                     >
                       Sign Out
                     </Button>
+                    {profileSuccess && <span className="text-sm text-green-400 ml-4">Profile updated successfully</span>}
                   </div>
                 </div>
               </GlassCard>

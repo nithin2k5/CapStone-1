@@ -195,3 +195,16 @@ export async function downloadReport(): Promise<void> {
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+export interface UserUpdateRequest {
+  name?: string;
+  password?: string;
+}
+
+export async function updateProfile(data: UserUpdateRequest): Promise<any> {
+  return fetchWithAuth("/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
