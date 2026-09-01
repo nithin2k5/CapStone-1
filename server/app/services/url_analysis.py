@@ -19,6 +19,7 @@ class URLAnalysisResult:
     score: float = 0.0
     flagged_urls: list[str] = field(default_factory=list)
     findings: list[str] = field(default_factory=list)
+    has_suspicious_domain: bool = False
 
 
 class URLAnalysisService:
@@ -31,6 +32,7 @@ class URLAnalysisService:
         findings: list[str] = []
         flagged: list[str] = []
         score = 0.0
+        has_suspicious_domain = False
 
         if not urls:
             return URLAnalysisResult(score=0.0, findings=["No URLs detected"])
@@ -41,6 +43,8 @@ class URLAnalysisService:
                 flagged.append(url)
                 findings.extend(url_findings)
                 score += url_score
+                if url_score >= 25:  # Consider high-scoring URLs as suspicious domains
+                    has_suspicious_domain = True
 
         # Cap based on number of URLs
         score = min(score, self.MAX_SCORE)
@@ -49,7 +53,12 @@ class URLAnalysisService:
             score = min(score + 10, self.MAX_SCORE)
             findings.append("Excessive number of URLs in email")
 
-        return URLAnalysisResult(score=score, flagged_urls=flagged, findings=findings)
+        return URLAnalysisResult(
+            score=score, 
+            flagged_urls=flagged, 
+            findings=findings,
+            has_suspicious_domain=has_suspicious_domain
+        )
 
     def _analyze_single_url(self, url: str) -> tuple[float, list[str]]:
         findings: list[str] = []

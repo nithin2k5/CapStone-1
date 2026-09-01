@@ -12,6 +12,9 @@ class AIAnalysisResult:
     spam_probability: float = 0.0
     score: float = 0.0
     reasons: list[str] = field(default_factory=list)
+    is_urgent: bool = False
+    requests_financials: bool = False
+    requests_credentials: bool = False
 
 
 class AIAnalysisService:
@@ -60,10 +63,26 @@ class AIAnalysisService:
             reasons.append(f"Detected {spam_hits} spam indicator(s) in content")
             
         # Urgency/Punctuation heuristics
+        is_urgent = False
         if "!" in parsed.subject and parsed.subject.count("!") > 2:
             reasons.append("Excessive urgency punctuation in subject")
             phishing_prob = min(phishing_prob + 10, 100)
+            is_urgent = True
             
+        urgent_kws = ["urgent", "act now", "immediate action", "final notice"]
+        if any(kw in combined for kw in urgent_kws):
+            is_urgent = True
+            
+        requests_financials = False
+        financial_kws = ["wire transfer", "invoice attached", "update payment", "paypal"]
+        if any(kw in combined for kw in financial_kws):
+            requests_financials = True
+            
+        requests_credentials = False
+        credential_kws = ["verify your account", "password reset", "login attempt", "confirm your identity"]
+        if any(kw in combined for kw in credential_kws):
+            requests_credentials = True
+
         if parsed.subject.isupper():
             reasons.append("Subject is entirely uppercase")
             spam_prob = min(spam_prob + 15, 100)
@@ -91,6 +110,9 @@ class AIAnalysisService:
             spam_probability=spam_prob,
             score=min(score, 100.0),
             reasons=reasons or ["No AI indicators detected"],
+            is_urgent=is_urgent,
+            requests_financials=requests_financials,
+            requests_credentials=requests_credentials,
         )
 
     async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
@@ -113,7 +135,10 @@ class AIAnalysisService:
         {
             "phishing_probability": <float 0-100>,
             "spam_probability": <float 0-100>,
-            "reasons": ["<reason 1>", "<reason 2>"]
+            "reasons": ["<reason 1>", "<reason 2>"],
+            "is_urgent": <bool>,
+            "requests_financials": <bool>,
+            "requests_credentials": <bool>
         }
         """
 
@@ -161,7 +186,10 @@ class AIAnalysisService:
                 phishing_probability=result.get("phishing_probability", 0.0),
                 spam_probability=result.get("spam_probability", 0.0),
                 score=min(score, 100.0),
-                reasons=result.get("reasons", ["No specific reasons provided by AI."])
+                reasons=result.get("reasons", ["No specific reasons provided by AI."]),
+                is_urgent=result.get("is_urgent", False),
+                requests_financials=result.get("requests_financials", False),
+                requests_credentials=result.get("requests_credentials", False)
             )
             
         except Exception as e:

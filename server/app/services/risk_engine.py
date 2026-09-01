@@ -43,18 +43,40 @@ class RiskEngine:
         attachment: AttachmentAnalysisResult,
         ai: AIAnalysisResult,
     ) -> RiskEngineResult:
-        final_score = (
+        # Base additive score
+        base_score = (
             header.score * self.WEIGHTS["header"]
             + url.score * self.WEIGHTS["url"]
             + attachment.score * self.WEIGHTS["attachment"]
             + ai.score * self.WEIGHTS["ai"]
         )
+        
+        multiplier = 1.0
+        explanation_parts = []
+        
+        # Compounding Risk Combinations
+        if ai.is_urgent and url.has_suspicious_domain:
+            multiplier *= 1.5
+            explanation_parts.append("Compounding Risk: Urgency language combined with suspicious link")
+            
+        if header.reply_to_mismatch and (ai.requests_financials or ai.requests_credentials):
+            multiplier *= 2.0
+            explanation_parts.append("Critical Risk: Reply-To mismatch combined with financial/credential request")
+            
+        if header.failed_dmarc and attachment.score > 50:
+            multiplier *= 1.8
+            explanation_parts.append("High Risk: Failed DMARC combined with suspicious attachment")
+            
+        if ai.requests_credentials and url.has_suspicious_domain:
+            multiplier *= 1.5
+            explanation_parts.append("High Risk: Credential request combined with suspicious link")
+
+        final_score = base_score * multiplier
         final_score = round(min(final_score, 100.0), 2)
 
         risk_level_str = score_to_risk_level(final_score)
         risk_level = RiskLevel(risk_level_str)
 
-        explanation_parts = []
         if header.findings:
             explanation_parts.append(f"Header: {len(header.findings)} issue(s)")
         if url.findings:
