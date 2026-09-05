@@ -35,13 +35,13 @@ export default function DashboardPage() {
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/[0.02] border border-white/5 p-6 rounded-2xl"
+        className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/[0.02] border border-border p-6 rounded-2xl"
       >
         <div>
-          <h2 className="text-lg font-heading font-medium text-white mb-1">
+          <h2 className="text-lg font-heading font-medium text-foreground mb-1">
             Good evening, Admin
           </h2>
-          <p className="text-sm text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Your email environment is secure. Last scan: 2 minutes ago
           </p>
         </div>
@@ -61,7 +61,7 @@ export default function DashboardPage() {
                 console.error(e);
               }
             }}
-            className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-medium rounded-xl border border-white/10 transition-colors"
+            className="px-4 py-2 bg-foreground/5 hover:bg-foreground/10 text-foreground text-sm font-medium rounded-xl border border-border transition-colors"
           >
             Generate Report
           </button>

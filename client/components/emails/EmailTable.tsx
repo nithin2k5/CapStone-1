@@ -56,19 +56,19 @@ export function EmailTable() {
 
   return (
     <GlassCard className="flex flex-col relative z-10 w-full">
-      <div className="p-6 border-b border-white/5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="p-6 border-b border-border flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h3 className="text-base font-heading font-bold text-white tracking-wide">Email Traffic</h3>
-          <p className="text-xs text-gray-500 mt-1">All scanned inbound emails.</p>
+          <h3 className="text-base font-heading font-bold text-foreground tracking-wide">Email Traffic</h3>
+          <p className="text-xs text-muted-foreground mt-1">All scanned inbound emails.</p>
         </div>
         
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
             <input 
               type="text" 
               placeholder="Search emails..." 
-              className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-white w-64"
+              className="pl-9 pr-4 py-2 bg-foreground/5 border border-border rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-foreground w-64"
             />
           </div>
           <button 
@@ -108,7 +108,7 @@ export function EmailTable() {
             <ShieldCheck className="w-4 h-4" />
             {loading ? "Syncing..." : "Sync Now"}
           </button>
-          <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
+          <button className="px-4 py-2 bg-foreground/5 hover:bg-foreground/10 border border-border rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
             <Filter className="w-4 h-4" />
             Filters
           </button>
@@ -117,7 +117,7 @@ export function EmailTable() {
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left whitespace-nowrap">
-          <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
+          <thead className="text-xs text-muted-foreground uppercase bg-black/20 border-b border-border">
             <tr>
               <th className="px-6 py-4 font-medium tracking-wider">Sender</th>
               <th className="px-6 py-4 font-medium tracking-wider w-1/3">Subject</th>
@@ -130,7 +130,7 @@ export function EmailTable() {
           <tbody className="divide-y divide-white/5">
             {emailsState.length === 0 && !loading && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                   No emails found in the database.
                 </td>
               </tr>
@@ -138,13 +138,13 @@ export function EmailTable() {
             {emailsState.map((email) => (
               <tr key={email.id} className="hover:bg-white/[0.02] transition-colors group cursor-pointer">
                 <td className="px-6 py-4">
-                  <div className="font-medium text-white">{email.sender}</div>
+                  <div className="font-medium text-foreground">{email.sender}</div>
                 </td>
                 <td className="px-6 py-4">
                   <div className="text-gray-300 truncate max-w-xs md:max-w-md">{email.subject}</div>
-                  <div className="text-xs text-gray-500 mt-0.5 truncate">{email.analysis}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5 truncate">{email.analysis}</div>
                 </td>
-                <td className="px-6 py-4 text-gray-500 text-xs">
+                <td className="px-6 py-4 text-muted-foreground text-xs">
                   {email.time}
                 </td>
                 <td className="px-6 py-4">
@@ -167,7 +167,7 @@ export function EmailTable() {
                     ) : (
                       <ShieldAlert className="w-4 h-4 text-red-400" />
                     )}
-                    <span className="text-xs font-semibold tracking-wider text-gray-400">
+                    <span className="text-xs font-semibold tracking-wider text-muted-foreground">
                       {email.status}
                     </span>
                   </div>
@@ -175,7 +175,7 @@ export function EmailTable() {
                 <td className="px-6 py-4 text-right">
                   <Link 
                     href={`/emails/${email.id}`}
-                    className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-white bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                    className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-foreground bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)]"
                   >
                     Analysis
                   </Link>
@@ -186,7 +186,7 @@ export function EmailTable() {
         </table>
       </div>
       
-      <div className="p-4 border-t border-white/5 flex items-center justify-between text-xs text-gray-500">
+      <div className="p-4 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
         <div>
           Showing {emailsState.length === 0 ? 0 : (page - 1) * pageSize + 1}-
           {Math.min(page * pageSize, total)} of {total} emails
@@ -195,14 +195,14 @@ export function EmailTable() {
           <button 
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1 || loading}
-            className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-border hover:bg-foreground/5 disabled:opacity-50 transition-colors"
           >
             Previous
           </button>
           <button 
             onClick={() => setPage(p => p + 1)}
             disabled={page * pageSize >= total || loading}
-            className="px-3 py-1.5 rounded-lg border border-white/10 hover:bg-white/5 disabled:opacity-50 transition-colors"
+            className="px-3 py-1.5 rounded-lg border border-border hover:bg-foreground/5 disabled:opacity-50 transition-colors"
           >
             Next
           </button>

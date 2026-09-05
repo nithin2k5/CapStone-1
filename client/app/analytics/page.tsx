@@ -19,37 +19,37 @@ export default function AnalyticsPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-white mb-2">Security Analytics</h1>
-          <p className="text-sm text-gray-400">Deep dive into threat distribution and system performance.</p>
+          <h1 className="text-2xl font-heading font-bold text-foreground mb-2">Security Analytics</h1>
+          <p className="text-sm text-muted-foreground">Deep dive into threat distribution and system performance.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <GlassCard className="p-6">
-          <div className="text-sm font-medium text-gray-400 mb-2">Threat Detection Rate</div>
+          <div className="text-sm font-medium text-muted-foreground mb-2">Threat Detection Rate</div>
           <div className="text-3xl font-heading font-bold text-emerald-400">99.8%</div>
-          <div className="text-xs text-gray-500 mt-2">Based on known signatures</div>
+          <div className="text-xs text-muted-foreground mt-2">Based on known signatures</div>
         </GlassCard>
         <GlassCard className="p-6">
-          <div className="text-sm font-medium text-gray-400 mb-2">False Positive Rate</div>
+          <div className="text-sm font-medium text-muted-foreground mb-2">False Positive Rate</div>
           <div className="text-3xl font-heading font-bold text-indigo-400">0.02%</div>
-          <div className="text-xs text-gray-500 mt-2">Manually released items</div>
+          <div className="text-xs text-muted-foreground mt-2">Manually released items</div>
         </GlassCard>
         <GlassCard className="p-6">
-          <div className="text-sm font-medium text-gray-400 mb-2">Average Scan Time</div>
+          <div className="text-sm font-medium text-muted-foreground mb-2">Average Scan Time</div>
           <div className="text-3xl font-heading font-bold text-blue-400">42ms</div>
-          <div className="text-xs text-gray-500 mt-2">Per email message</div>
+          <div className="text-xs text-muted-foreground mt-2">Per email message</div>
         </GlassCard>
         <GlassCard className="p-6">
-          <div className="text-sm font-medium text-gray-400 mb-2">Active Policies</div>
+          <div className="text-sm font-medium text-muted-foreground mb-2">Active Policies</div>
           <div className="text-3xl font-heading font-bold text-purple-400">128</div>
-          <div className="text-xs text-gray-500 mt-2">Custom routing rules</div>
+          <div className="text-xs text-muted-foreground mt-2">Custom routing rules</div>
         </GlassCard>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <GlassCard className="p-6 h-[400px] flex flex-col">
-          <h3 className="text-sm font-semibold text-white tracking-wide uppercase mb-6">Threat Distribution (7D)</h3>
+          <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mb-6">Threat Distribution (7D)</h3>
           <div className="flex-1 relative min-h-0">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={detectionData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
@@ -69,7 +69,7 @@ export default function AnalyticsPage() {
         </GlassCard>
 
         <GlassCard className="p-6 h-[400px] flex flex-col">
-          <h3 className="text-sm font-semibold text-white tracking-wide uppercase mb-6">Top Targeted Users</h3>
+          <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mb-6">Top Targeted Users</h3>
           <div className="flex-1 overflow-y-auto pr-2">
             <div className="space-y-4">
               {[
@@ -79,13 +79,13 @@ export default function AnalyticsPage() {
                 { email: "hr@company.com", count: 19, role: "HR" },
                 { email: "sales-lead@company.com", count: 12, role: "Sales" },
               ].map((user, i) => (
-                <div key={user.email} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5">
+                <div key={user.email} className="flex items-center justify-between p-4 rounded-xl bg-foreground/5 border border-border">
                   <div>
-                    <div className="font-medium text-white text-sm">{user.email}</div>
-                    <div className="text-xs text-gray-500 mt-1">{user.role}</div>
+                    <div className="font-medium text-foreground text-sm">{user.email}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{user.role}</div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="h-2 w-24 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-2 w-24 bg-foreground/10 rounded-full overflow-hidden">
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${(user.count / 42) * 100}%` }}

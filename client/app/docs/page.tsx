@@ -36,7 +36,7 @@ export default function DocsPage() {
       <div className="relative z-10 container mx-auto px-6 py-24 max-w-5xl">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to home
@@ -44,11 +44,11 @@ export default function DocsPage() {
 
         <div className="flex items-center gap-4 mb-12">
           <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center">
-            <Shield className="w-7 h-7 text-gray-400" />
+            <Shield className="w-7 h-7 text-muted-foreground" />
           </div>
           <div>
-            <h1 className="font-heading text-4xl font-bold text-white">Documentation</h1>
-            <p className="text-gray-400 mt-1">Guides, API reference, and integration docs</p>
+            <h1 className="font-heading text-4xl font-bold text-foreground">Documentation</h1>
+            <p className="text-muted-foreground mt-1">Guides, API reference, and integration docs</p>
           </div>
         </div>
 
@@ -58,18 +58,18 @@ export default function DocsPage() {
             return (
               <div
                 key={section.title}
-                className="glass-card rounded-2xl p-6 border border-white/[0.06] hover:border-white/10 transition-colors"
+                className="glass-card rounded-2xl p-6 border border-white/[0.06] hover:border-border transition-colors"
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <Icon className="w-5 h-5 text-gray-500" />
-                  <h2 className="font-heading text-xl font-bold text-white">{section.title}</h2>
+                  <Icon className="w-5 h-5 text-muted-foreground" />
+                  <h2 className="font-heading text-xl font-bold text-foreground">{section.title}</h2>
                 </div>
                 <ul className="space-y-2">
                   {section.items.map((item) => (
                     <li key={item}>
                       <Link
                         href="#"
-                        className="text-gray-500 hover:text-white transition-colors text-sm block py-1.5"
+                        className="text-muted-foreground hover:text-foreground transition-colors text-sm block py-1.5"
                       >
                         {item}
                       </Link>
@@ -82,7 +82,7 @@ export default function DocsPage() {
         </div>
 
         <div className="mt-12 glass-card rounded-2xl p-8 border border-white/[0.05]">
-          <h2 className="font-heading text-2xl font-bold text-white mb-4">Quick Start</h2>
+          <h2 className="font-heading text-2xl font-bold text-foreground mb-4">Quick Start</h2>
           <pre className="bg-black/50 rounded-xl p-6 overflow-x-auto text-sm text-gray-300 font-mono border border-white/[0.05]">
 {`# Install the CLI
 npm install -g @seg/cli

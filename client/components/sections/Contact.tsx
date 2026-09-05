@@ -17,11 +17,11 @@ export default function Contact() {
               viewport={{ once: true }}
               transition={{ duration: 0.6 }}
             >
-              <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6 text-white">
+              <h2 className="font-heading text-4xl md:text-5xl font-bold mb-6 text-foreground">
                 Ready to secure your <br />
                 <span className="text-gradient">infrastructure?</span>
               </h2>
-              <p className="text-gray-400 text-lg mb-8 leading-relaxed">
+              <p className="text-muted-foreground text-lg mb-8 leading-relaxed">
                 Get in touch with our cybersecurity specialists for an enterprise evaluation, neural inspection demo, or custom architecture deployment.
               </p>
               
@@ -32,7 +32,7 @@ export default function Contact() {
                   </div>
                   <div>
                     <div className="text-xs font-mono uppercase text-purple-300/70 tracking-wider">Email Us</div>
-                    <div className="font-bold text-lg text-white">security@gateway.local</div>
+                    <div className="font-bold text-lg text-foreground">security@gateway.local</div>
                   </div>
                 </div>
               </div>
@@ -58,7 +58,7 @@ export default function Contact() {
                       <input 
                         type="text" 
                         placeholder="John Doe"
-                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all"
+                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all"
                       />
                     </div>
                   </div>
@@ -70,7 +70,7 @@ export default function Contact() {
                       <input 
                         type="email" 
                         placeholder="john@company.com"
-                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all"
+                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all"
                       />
                     </div>
                   </div>
@@ -82,7 +82,7 @@ export default function Contact() {
                       <textarea 
                         rows={4}
                         placeholder="Describe your security infrastructure goals..."
-                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-white placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all resize-none"
+                        className="w-full bg-black/80 border border-indigo-500/30 rounded-xl py-3.5 pl-12 pr-4 text-foreground placeholder:text-zinc-600 focus:outline-none focus:border-purple-500 focus:shadow-[0_0_20px_rgba(139,92,246,0.25)] transition-all resize-none"
                       />
                     </div>
                   </div>

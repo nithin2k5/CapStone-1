@@ -20,8 +20,8 @@ export default function SettingsPage() {
           className="glass-card rounded-2xl p-6 border border-white/[0.05]"
         >
           <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-5 h-5 text-gray-500" />
-            <h3 className="font-medium text-white">Organization Profile</h3>
+            <Shield className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-medium text-foreground">Organization Profile</h3>
           </div>
           <form className="space-y-4">
             <AuthInput label="Organization Name" defaultValue="Acme Corporation" />
@@ -41,8 +41,8 @@ export default function SettingsPage() {
           className="glass-card rounded-2xl p-6 border border-white/[0.05]"
         >
           <div className="flex items-center gap-3 mb-6">
-            <Bell className="w-5 h-5 text-gray-500" />
-            <h3 className="font-medium text-white">Notifications</h3>
+            <Bell className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-medium text-foreground">Notifications</h3>
           </div>
           <div className="space-y-4">
             {[
@@ -59,7 +59,7 @@ export default function SettingsPage() {
                 <input
                   type="checkbox"
                   defaultChecked={item.enabled}
-                  className="w-4 h-4 rounded border-white/20 bg-black text-white"
+                  className="w-4 h-4 rounded border-border bg-black text-foreground"
                 />
               </label>
             ))}
@@ -73,8 +73,8 @@ export default function SettingsPage() {
           className="glass-card rounded-2xl p-6 border border-white/[0.05]"
         >
           <div className="flex items-center gap-3 mb-6">
-            <Key className="w-5 h-5 text-gray-500" />
-            <h3 className="font-medium text-white">API Keys</h3>
+            <Key className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-medium text-foreground">API Keys</h3>
           </div>
           <div className="space-y-4">
             <AuthInput
@@ -100,8 +100,8 @@ export default function SettingsPage() {
           className="glass-card rounded-2xl p-6 border border-white/[0.05]"
         >
           <div className="flex items-center gap-3 mb-6">
-            <Globe className="w-5 h-5 text-gray-500" />
-            <h3 className="font-medium text-white">Detection Sensitivity</h3>
+            <Globe className="w-5 h-5 text-muted-foreground" />
+            <h3 className="font-medium text-foreground">Detection Sensitivity</h3>
           </div>
           <div className="space-y-6">
             {[
@@ -113,14 +113,14 @@ export default function SettingsPage() {
               <div key={item.label}>
                 <div className="flex justify-between text-sm mb-2">
                   <span className="text-gray-300">{item.label}</span>
-                  <span className="text-gray-400 font-medium">{item.value}%</span>
+                  <span className="text-muted-foreground font-medium">{item.value}%</span>
                 </div>
                 <input
                   type="range"
                   min="0"
                   max="100"
                   defaultValue={item.value}
-                  className="w-full h-2 bg-white/10 rounded-full appearance-none cursor-pointer accent-white"
+                  className="w-full h-2 bg-foreground/10 rounded-full appearance-none cursor-pointer accent-white"
                 />
               </div>
             ))}

@@ -1,13 +1,15 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: #050505;
-  --color-foreground: #e0e0e0;
-  --color-secondary: #121212;
-  --color-card: #0a0a0a;
-  --color-border: #333333;
+@custom-variant dark (&:where(.dark, .dark *));
 
-  --color-muted-foreground: #888888;
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-secondary: var(--secondary);
+  --color-card: var(--card);
+  --color-border: var(--border);
+
+  --color-muted-foreground: var(--muted-foreground);
 
   --color-accent: #10B981;
   --color-accent-blue: #00F0FF;
@@ -22,8 +24,21 @@
 
 @layer base {
   :root {
+    --background: #ffffff;
+    --foreground: #050505;
+    --secondary: #f3f4f6;
+    --card: #f9fafb;
+    --border: #e5e7eb;
+    --muted-foreground: #6b7280;
+  }
+  
+  .dark {
     --background: #050505;
     --foreground: #e0e0e0;
+    --secondary: #121212;
+    --card: #0a0a0a;
+    --border: #333333;
+    --muted-foreground: #888888;
   }
 }
 
@@ -32,16 +47,16 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#00F0FF];
   }
   .text-gradient-blue {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#00F0FF] to-[#ffffff];
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#00F0FF] to-foreground;
   }
   .text-gradient-subtle {
-    @apply text-[#e0e0e0];
+    @apply text-foreground;
   }
   .glass {
-    @apply bg-[#0a0a0a] border border-[#333333] shadow-[4px_4px_0px_0px_rgba(51,51,51,1)];
+    @apply bg-card border border-border shadow-[4px_4px_0px_0px_var(--color-border)];
   }
   .glass-card {
-    @apply bg-[#0a0a0a] border-2 border-[#333333] shadow-[8px_8px_0px_0px_rgba(16,185,129,0.5)] transition-transform duration-300;
+    @apply bg-card border-2 border-border shadow-[8px_8px_0px_0px_rgba(16,185,129,0.5)] transition-transform duration-300;
   }
   .glass-card:hover {
     @apply translate-x-[-4px] translate-y-[-4px] shadow-[12px_12px_0px_0px_rgba(0,240,255,0.8)] border-[#00F0FF];
@@ -56,11 +71,11 @@
   }
   .neon-glow-hover:hover {
     background-color: #10B981;
-    color: #000;
+    color: var(--background);
     box-shadow: none;
   }
   .btn-primary {
-    @apply bg-[#10B981] text-[#050505] font-bold border-2 border-[#10B981] shadow-[4px_4px_0px_0px_rgba(224,224,224,1)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(224,224,224,1)] transition-all duration-150;
+    @apply bg-[#10B981] text-[#050505] font-bold border-2 border-[#10B981] shadow-[4px_4px_0px_0px_var(--color-foreground)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_var(--color-foreground)] transition-all duration-150;
   }
   .btn-secondary {
     @apply bg-transparent text-[#3B82F6] font-bold border-2 border-[#3B82F6] shadow-[4px_4px_0px_0px_rgba(59,130,246,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(59,130,246,0.3)] hover:bg-[#3B82F6] hover:text-[#050505] transition-all duration-150;
@@ -110,12 +125,12 @@ body {
   width: 12px;
 }
 ::-webkit-scrollbar-track {
-  background: #050505;
-  border-left: 1px solid #333;
+  background: var(--background);
+  border-left: 1px solid var(--border);
 }
 ::-webkit-scrollbar-thumb {
-  background: #333333;
-  border: 1px solid #050505;
+  background: var(--border);
+  border: 1px solid var(--background);
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #10B981;

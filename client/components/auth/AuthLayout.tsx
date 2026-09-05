@@ -24,9 +24,9 @@ export default function AuthLayout({
       >
         <Link href="/" className="flex items-center justify-center gap-3 mb-8 group">
           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-white/[0.04] border border-white/[0.08] group-hover:border-white/15 transition-colors">
-            <Shield className="w-6 h-6 text-gray-400" />
+            <Shield className="w-6 h-6 text-muted-foreground" />
           </div>
-          <span className="font-heading font-bold text-xl tracking-tight text-white">
+          <span className="font-heading font-bold text-xl tracking-tight text-foreground">
             Secure Email Gateway
           </span>
         </Link>

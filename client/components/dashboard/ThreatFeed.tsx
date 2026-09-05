@@ -11,7 +11,7 @@ const levelStyles: Record<string, string> = {
   high: "bg-amber-500/15 text-amber-300 border-amber-500/30",
   medium: "bg-blue-500/15 text-blue-400 border-blue-500/30",
   low: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  safe: "bg-white/[0.03] text-gray-500 border-white/[0.06]",
+  safe: "bg-white/[0.03] text-muted-foreground border-white/[0.06]",
 };
 
 type ThreatFeedProps = {
@@ -61,7 +61,7 @@ export default function ThreatFeedTable({ limit, showHeader = true }: ThreatFeed
         <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-red-400 animate-pulse" />
-            <h3 className="font-medium text-white">Live Threat Feed</h3>
+            <h3 className="font-medium text-foreground">Live Threat Feed</h3>
           </div>
           <button
             onClick={handleRunScan}
@@ -81,15 +81,15 @@ export default function ThreatFeedTable({ limit, showHeader = true }: ThreatFeed
       )}
 
       {loading && threats.length === 0 ? (
-        <div className="py-12 flex items-center justify-center text-gray-500 text-sm gap-2">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+        <div className="py-12 flex items-center justify-center text-muted-foreground text-sm gap-2">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           Monitoring security events...
         </div>
       ) : threats.length === 0 ? (
-        <div className="py-16 flex flex-col items-center justify-center text-center text-gray-500 px-4">
+        <div className="py-16 flex flex-col items-center justify-center text-center text-muted-foreground px-4">
           <Shield className="w-10 h-10 mb-2 text-emerald-500/60 stroke-[1.5]" />
           <p className="text-gray-300 font-medium">No active threats detected</p>
-          <p className="text-xs text-gray-500 max-w-sm mt-1">
+          <p className="text-xs text-muted-foreground max-w-sm mt-1">
             Your scanned inbox is clean. Click &quot;Run Phishing Scan&quot; above to inspect pending emails for malware, phishing URLs, and forged headers.
           </p>
         </div>
@@ -116,14 +116,14 @@ export default function ThreatFeedTable({ limit, showHeader = true }: ThreatFeed
                   transition={{ delay: i * 0.05 }}
                   className="border-b border-white/[0.04] last:border-0 hover:bg-white/[0.02] transition-colors"
                 >
-                  <td className="px-6 py-4 font-mono text-gray-500 text-xs truncate max-w-[80px]">
+                  <td className="px-6 py-4 font-mono text-muted-foreground text-xs truncate max-w-[80px]">
                     {threat.email_id.slice(0, 8)}...
                   </td>
-                  <td className="px-6 py-4 text-gray-500 text-xs">
+                  <td className="px-6 py-4 text-muted-foreground text-xs">
                     {threat.received_at ? new Date(threat.received_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Recently"}
                   </td>
                   <td className="px-6 py-4 text-gray-300 truncate max-w-[160px]">{threat.sender}</td>
-                  <td className="px-6 py-4 text-gray-400 hidden md:table-cell max-w-[200px] truncate">
+                  <td className="px-6 py-4 text-muted-foreground hidden md:table-cell max-w-[200px] truncate">
                     {threat.subject || "(No Subject)"}
                   </td>
                   <td className="px-6 py-4 font-bold text-red-400">
@@ -177,8 +177,8 @@ export function ThreatActivityChart() {
     <div className="glass-card rounded-2xl p-6 border border-white/[0.06] h-full flex flex-col">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 text-gray-500" />
-          <h3 className="font-medium text-white">Scan & Activity Trend (24h)</h3>
+          <ShieldAlert className="w-5 h-5 text-muted-foreground" />
+          <h3 className="font-medium text-foreground">Scan & Activity Trend (24h)</h3>
         </div>
         <span className="text-xs text-emerald-400 font-medium">Live Server Feed</span>
       </div>
@@ -229,7 +229,7 @@ export function RiskScoreGauge({ score = 0 }: { score?: number }) {
 
   return (
     <div className="glass-card rounded-2xl p-6 border border-white/[0.06] flex flex-col justify-between">
-      <h3 className="font-medium text-white mb-6">Aggregate Risk Index</h3>
+      <h3 className="font-medium text-foreground mb-6">Aggregate Risk Index</h3>
       <div className="flex items-center justify-center flex-1 my-2">
         <div className="relative w-36 h-36 flex items-center justify-center">
           <svg className="w-full h-full -rotate-90">
@@ -244,7 +244,7 @@ export function RiskScoreGauge({ score = 0 }: { score?: number }) {
               transition={{ duration: 1.5, ease: "easeOut" }}
             />
           </svg>
-          <div className="absolute text-4xl font-bold text-white">{realScore}</div>
+          <div className="absolute text-4xl font-bold text-foreground">{realScore}</div>
         </div>
       </div>
       <div className="text-center mt-4">
@@ -280,9 +280,9 @@ export function AttackCountriesChart() {
 
   return (
     <div className="glass-card rounded-2xl p-6 border border-white/[0.06]">
-      <h3 className="font-medium text-white mb-6">Top Threat & Sender Origins</h3>
+      <h3 className="font-medium text-foreground mb-6">Top Threat & Sender Origins</h3>
       {domains.length === 0 ? (
-        <div className="py-6 text-center text-xs text-gray-500">
+        <div className="py-6 text-center text-xs text-muted-foreground">
           No external attack domains recorded yet in real-time logs.
         </div>
       ) : (
@@ -291,7 +291,7 @@ export function AttackCountriesChart() {
             <div key={item.origin}>
               <div className="flex justify-between text-sm mb-1.5">
                 <span className="text-gray-300 font-mono text-xs">{item.origin}</span>
-                <span className="text-gray-500 text-xs font-semibold">{item.percent}%</span>
+                <span className="text-muted-foreground text-xs font-semibold">{item.percent}%</span>
               </div>
               <div className="h-2 w-full bg-white/[0.06] rounded-full overflow-hidden">
                 <motion.div

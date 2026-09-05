@@ -87,9 +87,9 @@ export function MicrosoftCallbackHandler() {
   if (processing) {
     return (
       <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm">
-        <div className="bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
+        <div className="bg-foreground/5 border border-border p-6 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
           <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-white font-medium text-sm">Completing Microsoft Sign-in...</p>
+          <p className="text-foreground font-medium text-sm">Completing Microsoft Sign-in...</p>
         </div>
       </div>
     );

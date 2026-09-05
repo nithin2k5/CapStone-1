@@ -15,7 +15,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     pathname === "/forgot-password";
 
   if (isPublicPage) {
-    return <main className="min-h-screen bg-black flex flex-col">{children}</main>;
+    return <main className="min-h-screen bg-background flex flex-col">{children}</main>;
   }
 
   return (

@@ -51,10 +51,10 @@ export function RecentEmails() {
 
   return (
     <GlassCard className="col-span-1 lg:col-span-3 flex flex-col relative z-10">
-      <div className="p-6 border-b border-white/5 flex items-center justify-between">
+      <div className="p-6 border-b border-border flex items-center justify-between">
         <div>
-          <h3 className="text-base font-heading font-bold text-white tracking-wide">Recent Emails</h3>
-          <p className="text-xs text-gray-500 mt-1">Latest inbound traffic analyzed by the gateway.</p>
+          <h3 className="text-base font-heading font-bold text-foreground tracking-wide">Recent Emails</h3>
+          <p className="text-xs text-muted-foreground mt-1">Latest inbound traffic analyzed by the gateway.</p>
         </div>
         <Link href="/emails" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
           View All Traffic &rarr;
@@ -63,7 +63,7 @@ export function RecentEmails() {
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
+          <thead className="text-xs text-muted-foreground uppercase bg-black/20 border-b border-border">
             <tr>
               <th className="px-6 py-4 font-medium tracking-wider">Sender</th>
               <th className="px-6 py-4 font-medium tracking-wider">Subject</th>
@@ -76,7 +76,7 @@ export function RecentEmails() {
           <tbody className="divide-y divide-white/5">
             {emails.length === 0 && !loading && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
+                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
                   No emails found.
                 </td>
               </tr>
@@ -90,13 +90,13 @@ export function RecentEmails() {
                 className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
               >
                 <td className="px-6 py-4">
-                  <div className="font-medium text-white">{email.sender}</div>
-                  <div className="text-xs text-gray-500">{email.email}</div>
+                  <div className="font-medium text-foreground">{email.sender}</div>
+                  <div className="text-xs text-muted-foreground">{email.email}</div>
                 </td>
                 <td className="px-6 py-4 text-gray-300">
                   {email.subject}
                 </td>
-                <td className="px-6 py-4 text-gray-500 text-xs">
+                <td className="px-6 py-4 text-muted-foreground text-xs">
                   {email.time}
                 </td>
                 <td className="px-6 py-4">
@@ -117,13 +117,13 @@ export function RecentEmails() {
                     ) : (
                       <ShieldAlert className="w-4 h-4 text-red-400" />
                     )}
-                    <span className="text-xs font-semibold tracking-wider text-gray-400">
+                    <span className="text-xs font-semibold tracking-wider text-muted-foreground">
                       {email.status}
                     </span>
                   </div>
                 </td>
                 <td className="px-6 py-4 text-right">
-                  <button className="p-2 rounded-lg text-gray-500 hover:text-white hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-all">
+                  <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 opacity-0 group-hover:opacity-100 transition-all">
                     <MoreVertical className="w-4 h-4" />
                   </button>
                 </td>

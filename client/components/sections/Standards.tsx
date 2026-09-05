@@ -21,16 +21,16 @@ export default function Standards() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
-            Compliant with <span className="text-gray-400">Global Standards</span>
+            Compliant with <span className="text-muted-foreground">Global Standards</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-500 text-lg"
+            className="text-muted-foreground text-lg"
           >
             Built from the ground up to meet and exceed industry security requirements.
           </motion.p>
@@ -45,11 +45,11 @@ export default function Standards() {
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: index * 0.1 }}
               whileHover={{ y: -5 }}
-              className="glass-card p-6 rounded-2xl flex flex-col items-center text-center group border-white/[0.06] hover:border-white/10 transition-all duration-300"
+              className="glass-card p-6 rounded-2xl flex flex-col items-center text-center group border-white/[0.06] hover:border-border transition-all duration-300"
             >
-              <std.icon className="w-8 h-8 text-gray-500 group-hover:text-white transition-colors mb-4" />
-              <h3 className="font-bold text-white mb-2">{std.name}</h3>
-              <p className="text-xs text-gray-600 group-hover:text-gray-400 transition-colors">{std.desc}</p>
+              <std.icon className="w-8 h-8 text-muted-foreground group-hover:text-foreground transition-colors mb-4" />
+              <h3 className="font-bold text-foreground mb-2">{std.name}</h3>
+              <p className="text-xs text-gray-600 group-hover:text-muted-foreground transition-colors">{std.desc}</p>
             </motion.div>
           ))}
         </div>

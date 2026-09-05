@@ -21,16 +21,16 @@ export default function Team() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
-            Meet the <span className="text-gray-400">Team</span>
+            Meet the <span className="text-muted-foreground">Team</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-500 text-lg"
+            className="text-muted-foreground text-lg"
           >
             The security experts and engineers behind the gateway.
           </motion.p>
@@ -45,23 +45,23 @@ export default function Team() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
               whileHover={{ y: -5 }}
-              className="glass-card p-6 rounded-2xl border border-white/[0.06] flex flex-col items-center text-center group hover:border-white/10 transition-all duration-300"
+              className="glass-card p-6 rounded-2xl border border-white/[0.06] flex flex-col items-center text-center group hover:border-border transition-all duration-300"
             >
               <div className="w-20 h-20 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mb-4">
-                <User className="w-10 h-10 text-gray-600 group-hover:text-gray-400 transition-colors" />
+                <User className="w-10 h-10 text-gray-600 group-hover:text-muted-foreground transition-colors" />
               </div>
 
-              <h3 className="font-bold text-white mb-1">{member.name}</h3>
-              <p className="text-xs font-medium text-gray-500 mb-4 uppercase tracking-wider">{member.role}</p>
+              <h3 className="font-bold text-foreground mb-1">{member.name}</h3>
+              <p className="text-xs font-medium text-muted-foreground mb-4 uppercase tracking-wider">{member.role}</p>
 
               <div className="flex items-center gap-3 mt-auto pt-4 border-t border-white/[0.06] w-full justify-center">
-                <button className="text-gray-600 hover:text-white transition-colors">
+                <button className="text-gray-600 hover:text-foreground transition-colors">
                   <GithubIcon className="h-4 w-4" />
                 </button>
-                <button className="text-gray-600 hover:text-white transition-colors">
+                <button className="text-gray-600 hover:text-foreground transition-colors">
                   <LinkedinIcon className="h-4 w-4" />
                 </button>
-                <button className="text-gray-600 hover:text-white transition-colors">
+                <button className="text-gray-600 hover:text-foreground transition-colors">
                   <Mail className="w-4 h-4" />
                 </button>
               </div>

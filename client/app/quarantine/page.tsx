@@ -61,27 +61,27 @@ export default function QuarantinePage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-white mb-2 flex items-center gap-2">
+          <h1 className="text-2xl font-heading font-bold text-foreground mb-2 flex items-center gap-2">
             <Box className="w-6 h-6 text-indigo-400" />
             Quarantine Vault
           </h1>
-          <p className="text-sm text-gray-400">Manage suspended emails awaiting manual review.</p>
+          <p className="text-sm text-muted-foreground">Manage suspended emails awaiting manual review.</p>
         </div>
       </div>
 
       <GlassCard className="flex flex-col relative z-10 w-full">
-        <div className="p-4 border-b border-white/5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/[0.01]">
+        <div className="p-4 border-b border-border flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white/[0.01]">
           
           <div className="flex items-center gap-3">
             <div className="relative">
-              <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
               <input 
                 type="text" 
                 placeholder="Search quarantine..." 
-                className="pl-9 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-white w-full lg:w-64"
+                className="pl-9 pr-4 py-2 bg-foreground/5 border border-border rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-foreground w-full lg:w-64"
               />
             </div>
-            <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
+            <button className="px-4 py-2 bg-foreground/5 hover:bg-foreground/10 border border-border rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
               <Filter className="w-4 h-4" />
               Filters
             </button>
@@ -109,12 +109,12 @@ export default function QuarantinePage() {
 
         <div className="overflow-x-auto min-h-[400px]">
           <table className="w-full text-sm text-left whitespace-nowrap">
-            <thead className="text-xs text-gray-500 uppercase bg-black/20 border-b border-white/5">
+            <thead className="text-xs text-muted-foreground uppercase bg-black/20 border-b border-border">
               <tr>
                 <th className="px-6 py-4 w-12">
                   <input 
                     type="checkbox" 
-                    className="rounded border-white/20 bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
+                    className="rounded border-border bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
                     checked={selected.length === emails.length && emails.length > 0}
                     onChange={selectAll}
                   />
@@ -129,7 +129,7 @@ export default function QuarantinePage() {
             <tbody className="divide-y divide-white/5">
               {emails.length === 0 && !loading && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
                     No emails in quarantine.
                   </td>
                 </tr>
@@ -145,13 +145,13 @@ export default function QuarantinePage() {
                   <td className="px-6 py-4">
                     <input 
                       type="checkbox" 
-                      className="rounded border-white/20 bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
+                      className="rounded border-border bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
                       checked={selected.includes(email.id)}
                       onChange={() => toggleSelect(email.id)}
                     />
                   </td>
                   <td className="px-6 py-4">
-                    <div className="font-medium text-white">{email.sender}</div>
+                    <div className="font-medium text-foreground">{email.sender}</div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="text-gray-300 font-medium truncate max-w-xs md:max-w-md">{email.subject}</div>
@@ -160,7 +160,7 @@ export default function QuarantinePage() {
                       {email.reason}
                     </div>
                   </td>
-                  <td className="px-6 py-4 text-gray-500 text-xs">
+                  <td className="px-6 py-4 text-muted-foreground text-xs">
                     {email.time}
                   </td>
                   <td className="px-6 py-4">
@@ -176,7 +176,7 @@ export default function QuarantinePage() {
                   <td className="px-6 py-4 text-right">
                     <Link 
                       href={`/emails/${email.id}`}
-                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-white bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] opacity-0 group-hover:opacity-100"
+                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-foreground bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] opacity-0 group-hover:opacity-100"
                     >
                       Analysis
                     </Link>

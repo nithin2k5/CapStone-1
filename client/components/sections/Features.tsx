@@ -51,7 +51,7 @@ export default function Features() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
             Comprehensive <span className="text-gradient">Threat Protection</span>
           </motion.h2>
@@ -60,7 +60,7 @@ export default function Features() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-400 text-lg"
+            className="text-muted-foreground text-lg"
           >
             Our multi-layered detection engine analyzes every aspect of incoming emails to ensure zero-day threats are neutralized before reaching the inbox.
           </motion.p>
@@ -84,11 +84,11 @@ export default function Features() {
                 <feature.icon className="w-7 h-7 text-purple-400 group-hover:text-blue-300 transition-colors duration-300" />
               </div>
 
-              <h3 className="text-xl font-bold mb-3 text-white group-hover:text-purple-300 transition-colors duration-300">
+              <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-purple-300 transition-colors duration-300">
                 {feature.title}
               </h3>
 
-              <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">{feature.description}</p>
+              <p className="text-muted-foreground leading-relaxed group-hover:text-gray-300 transition-colors">{feature.description}</p>
             </motion.div>
           ))}
         </div>

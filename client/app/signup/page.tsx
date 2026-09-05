@@ -51,19 +51,19 @@ export default function SignupPage() {
         <div className="w-full flex flex-col md:flex-row max-w-[1400px] mx-auto relative z-10">
           
           {/* Left column (Branding) */}
-          <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-white/5 bg-black/40 backdrop-blur-md">
+          <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-border bg-black/40 backdrop-blur-md">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-8 neon-glow-blue">
                 <ShieldCheck className="w-8 h-8 text-indigo-400" />
               </div>
               
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white leading-tight tracking-wide mb-6">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-foreground leading-tight tracking-wide mb-6">
                 SECURE<br />
                 EMAIL<br />
                 GATEWAY
               </h1>
               
-              <p className="text-lg text-gray-400 max-w-md">
+              <p className="text-lg text-muted-foreground max-w-md">
                 Join thousands of organizations securing their email infrastructure with AI-powered protection.
               </p>
             </motion.div>
@@ -73,7 +73,7 @@ export default function SignupPage() {
           <div className="flex-1 p-8 md:p-16 lg:p-16 flex flex-col justify-center overflow-y-auto">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="max-w-md w-full mx-auto my-8">
               
-              <h2 className="text-2xl font-heading font-semibold text-white mb-8 text-center md:text-left">
+              <h2 className="text-2xl font-heading font-semibold text-foreground mb-8 text-center md:text-left">
                 Create account
               </h2>
 
@@ -87,68 +87,68 @@ export default function SignupPage() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">First Name</label>
+                    <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">First Name</label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                       <input 
                         name="firstName"
                         type="text" 
                         required
                         placeholder="John" 
-                        className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                        className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                       />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Last Name</label>
+                    <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Last Name</label>
                     <input 
                       name="lastName"
                       type="text" 
                       required
                       placeholder="Doe" 
-                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl px-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Work Email</label>
+                  <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Work Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input 
                       name="email"
                       type="email" 
                       required
                       placeholder="john@company.com" 
-                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Organization</label>
+                  <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Organization</label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input 
                       name="organization"
                       type="text" 
                       required
                       placeholder="Acme Corp" 
-                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Password</label>
+                  <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Password</label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                     <input 
                       name="password"
                       type="password" 
                       required
                       placeholder="••••••••••••" 
-                      className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
@@ -156,16 +156,16 @@ export default function SignupPage() {
                 <label className="flex items-start gap-3 cursor-pointer pt-2">
                   <input
                     type="checkbox"
-                    className="w-4 h-4 mt-0.5 rounded border-white/20 bg-black text-white focus:ring-white/20"
+                    className="w-4 h-4 mt-0.5 rounded border-border bg-black text-foreground focus:ring-white/20"
                     required
                   />
-                  <span className="text-sm text-gray-400 leading-relaxed">
+                  <span className="text-sm text-muted-foreground leading-relaxed">
                     I agree to the{" "}
-                    <Link href="/privacy" className="text-gray-400 hover:text-white">
+                    <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
                       Terms of Service
                     </Link>{" "}
                     and{" "}
-                    <Link href="/privacy" className="text-gray-400 hover:text-white">
+                    <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
                       Privacy Policy
                     </Link>
                   </span>
@@ -180,7 +180,7 @@ export default function SignupPage() {
               </form>
 
               <div className="mt-8 flex items-center justify-center">
-                <p className="text-sm text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
                   <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
                     Sign in

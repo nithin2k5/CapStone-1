@@ -15,6 +15,7 @@ const jetbrainsMono = JetBrains_Mono({
 import { AppLayout } from "@/components/layout/AppLayout";
 import { MicrosoftCallbackHandler } from "@/components/auth/MicrosoftCallbackHandler";
 import { Suspense } from "react";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   title: "Secure Email Gateway | Phishing Prevention",
@@ -29,13 +30,16 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      className={`${syne.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-black text-[#e0e0e0] font-mono overflow-x-hidden selection:bg-[#10B981] selection:text-white">
-        <Suspense fallback={null}>
-          <MicrosoftCallbackHandler />
-        </Suspense>
-        <AppLayout>{children}</AppLayout>
+      <body className="min-h-full flex flex-col bg-background text-foreground font-mono overflow-x-hidden selection:bg-accent selection:text-foreground transition-colors duration-300">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <Suspense fallback={null}>
+            <MicrosoftCallbackHandler />
+          </Suspense>
+          <AppLayout>{children}</AppLayout>
+        </ThemeProvider>
       </body>
     </html>
   );

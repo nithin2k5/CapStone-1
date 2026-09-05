@@ -1,4 +1,4 @@
-export type AuthProvider = "email" | "google";
+export type AuthProvider = "email" | "google" | "microsoft";
 
 export type AuthSession = {
   provider: AuthProvider;

@@ -24,13 +24,13 @@ export function ThreatOverview({ data }: { data?: any[] }) {
       
       <div className="flex justify-between items-center mb-6 relative z-10">
         <div>
-          <h3 className="text-sm font-medium text-gray-400 tracking-wide uppercase mb-1">
+          <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase mb-1">
             Threat Activity
           </h3>
-          <p className="text-xs text-gray-500">Volume of scanned and blocked emails over time.</p>
+          <p className="text-xs text-muted-foreground">Volume of scanned and blocked emails over time.</p>
         </div>
 
-        <div className="flex items-center gap-1 bg-white/5 p-1 rounded-lg border border-white/10">
+        <div className="flex items-center gap-1 bg-foreground/5 p-1 rounded-lg border border-border">
           {(["24H", "7D", "30D"] as const).map((r) => (
             <button
               key={r}
@@ -39,7 +39,7 @@ export function ThreatOverview({ data }: { data?: any[] }) {
                 "px-3 py-1 text-xs font-semibold rounded-md transition-all",
                 range === r 
                   ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" 
-                  : "text-gray-500 hover:text-gray-300 hover:bg-white/5 border border-transparent"
+                  : "text-muted-foreground hover:text-gray-300 hover:bg-foreground/5 border border-transparent"
               )}
             >
               {r}

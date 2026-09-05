@@ -31,7 +31,7 @@ export default function Architecture() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
             System <span className="text-gradient-blue">Architecture</span>
           </motion.h2>
@@ -40,7 +40,7 @@ export default function Architecture() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-400 text-lg"
+            className="text-muted-foreground text-lg"
           >
             A highly scalable, microservices-based pipeline designed to process and analyze emails in milliseconds with quantum precision.
           </motion.p>
@@ -71,7 +71,7 @@ export default function Architecture() {
                     {step.modules?.map((mod, i) => (
                       <div
                         key={i}
-                        className="bg-purple-500/5 border border-purple-500/25 rounded-xl p-4 text-center text-sm font-medium text-purple-200 hover:bg-purple-500/20 hover:text-white hover:border-purple-400 hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all"
+                        className="bg-purple-500/5 border border-purple-500/25 rounded-xl p-4 text-center text-sm font-medium text-purple-200 hover:bg-purple-500/20 hover:text-foreground hover:border-purple-400 hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] transition-all"
                       >
                         {mod.name}
                       </div>
@@ -86,7 +86,7 @@ export default function Architecture() {
                     className="glass-card px-8 py-5 rounded-2xl border border-indigo-500/30 flex items-center gap-4 min-w-[280px] justify-center hover:border-purple-400 hover:shadow-[0_0_25px_rgba(139,92,246,0.25)] transition-all duration-300"
                   >
                     {step.icon && <step.icon className="w-6 h-6 text-purple-400 drop-shadow-[0_0_8px_rgba(139,92,246,0.6)]" />}
-                    <span className="font-bold text-lg text-white">{step.name}</span>
+                    <span className="font-bold text-lg text-foreground">{step.name}</span>
                   </motion.div>
                 )}
 

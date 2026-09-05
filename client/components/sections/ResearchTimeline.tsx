@@ -45,7 +45,7 @@ export default function ResearchTimeline() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
             Research <span className="text-gradient">Objectives</span>
           </motion.h2>
@@ -54,7 +54,7 @@ export default function ResearchTimeline() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.1 }}
-            className="text-gray-400 text-lg"
+            className="text-muted-foreground text-lg"
           >
             Our roadmap to building the ultimate quantum-resistant phishing prevention gateway.
           </motion.p>
@@ -98,8 +98,8 @@ export default function ResearchTimeline() {
                   <div className={`text-xs font-mono tracking-wider mb-2 uppercase font-bold ${phase.status === "completed" ? "text-purple-400" : phase.status === "in-progress" ? "text-blue-400 animate-pulse" : "text-zinc-500"}`}>
                     {phase.phase} // {phase.status}
                   </div>
-                  <h3 className="text-xl font-bold text-white mb-3">{phase.title}</h3>
-                  <p className="text-gray-400 leading-relaxed">
+                  <h3 className="text-xl font-bold text-foreground mb-3">{phase.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed">
                     {phase.description}
                   </p>
                 </motion.div>

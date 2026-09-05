@@ -43,13 +43,13 @@ export function Toast({ id, title, message, type = "info", onClose }: ToastProps
       <div className="flex items-start w-full gap-3">
         <div className="flex-shrink-0 mt-0.5">{icons[type]}</div>
         <div className="flex-1 pt-0.5 min-w-0">
-          <p className="text-sm font-semibold text-white">{title}</p>
-          {message && <p className="mt-1 text-sm text-gray-400">{message}</p>}
+          <p className="text-sm font-semibold text-foreground">{title}</p>
+          {message && <p className="mt-1 text-sm text-muted-foreground">{message}</p>}
         </div>
         <div className="flex-shrink-0 flex">
           <button
             onClick={() => onClose(id)}
-            className="rounded-lg p-1 text-gray-400 hover:text-white hover:bg-white/10 transition-colors"
+            className="rounded-lg p-1 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors"
           >
             <X className="w-4 h-4" />
           </button>

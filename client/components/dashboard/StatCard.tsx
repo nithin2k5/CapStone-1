@@ -26,19 +26,19 @@ export default function StatCard({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="glass-card rounded-2xl p-6 border border-white/[0.06] hover:border-white/10 transition-colors group"
+      className="glass-card rounded-2xl p-6 border border-white/[0.06] hover:border-border transition-colors group"
     >
       <div className="flex items-start justify-between mb-4">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/[0.08] bg-white/[0.03] text-gray-400">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center border border-white/[0.08] bg-white/[0.03] text-muted-foreground">
           <Icon className="w-6 h-6" />
         </div>
         {change && (
-          <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/[0.04] text-gray-500 border border-white/[0.06]">
+          <span className="text-xs font-medium px-2 py-1 rounded-full bg-white/[0.04] text-muted-foreground border border-white/[0.06]">
             {change}
           </span>
         )}
       </div>
-      <div className="font-heading text-3xl font-bold text-white mb-1 group-hover:text-gray-300 transition-colors">
+      <div className="font-heading text-3xl font-bold text-foreground mb-1 group-hover:text-gray-300 transition-colors">
         {value}
       </div>
       <div className="text-sm text-gray-600">{label}</div>

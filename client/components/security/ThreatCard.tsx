@@ -20,7 +20,7 @@ export function ThreatCard({ severity, type, source, time, actionTaken }: Threat
       hover 
       className={cn(
         "p-5 relative overflow-hidden group border",
-        isCritical ? "border-red-500/30" : isHigh ? "border-amber-500/30" : "border-white/10"
+        isCritical ? "border-red-500/30" : isHigh ? "border-amber-500/30" : "border-border"
       )}
     >
       <div 
@@ -42,18 +42,18 @@ export function ThreatCard({ severity, type, source, time, actionTaken }: Threat
             {severity}
           </Badge>
           
-          <div className="text-xs font-semibold tracking-wider text-gray-400">
+          <div className="text-xs font-semibold tracking-wider text-muted-foreground">
             {actionTaken}
           </div>
         </div>
         
-        <h3 className="text-lg font-heading font-semibold text-white mb-2">{type}</h3>
+        <h3 className="text-lg font-heading font-semibold text-foreground mb-2">{type}</h3>
         
         <div className="space-y-1.5 mb-4">
           <div className="text-sm text-gray-300 truncate" title={source}>
             {source}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
             Detected {time}
           </div>

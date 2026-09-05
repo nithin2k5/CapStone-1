@@ -75,7 +75,6 @@ export default function GoogleSignInButton({
       setError("Google sign-in was cancelled or failed.");
     },
     flow: "auth-code",
-    prompt: "consent",
     scope:
       "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
   });
@@ -110,9 +109,9 @@ export default function GoogleSignInButton({
           )}
           {label}
         </AuthButton>
-        <p className="mt-3 text-xs text-center text-gray-500">
+        <p className="mt-3 text-xs text-center text-muted-foreground">
           Demo mode — add{" "}
-          <code className="text-gray-400">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> for live Google OAuth
+          <code className="text-muted-foreground">NEXT_PUBLIC_GOOGLE_CLIENT_ID</code> for live Google OAuth
         </p>
       </div>
     );
@@ -139,7 +138,7 @@ export default function GoogleSignInButton({
         {label}
       </AuthButton>
       {loading && (
-        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-gray-400">
+        <div className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <Loader2 className="w-4 h-4 animate-spin" />
           Authenticating with Google SSO...
         </div>

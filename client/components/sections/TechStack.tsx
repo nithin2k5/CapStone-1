@@ -18,7 +18,7 @@ export default function TechStack() {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-white"
+            className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
             Powered by <span className="text-gradient-blue">Modern Tech</span>
           </motion.h2>
@@ -37,7 +37,7 @@ export default function TechStack() {
             {[...technologies, ...technologies].map((tech, index) => (
               <div 
                 key={index}
-                className="glass px-8 py-4 rounded-2xl border border-indigo-500/25 text-indigo-200 font-semibold hover:text-white hover:border-purple-400 hover:bg-purple-500/15 hover:shadow-[0_0_25px_rgba(139,92,246,0.35)] transition-all duration-300 cursor-default shadow-[0_0_15px_rgba(0,0,0,0.8)]"
+                className="glass px-8 py-4 rounded-2xl border border-indigo-500/25 text-indigo-200 font-semibold hover:text-foreground hover:border-purple-400 hover:bg-purple-500/15 hover:shadow-[0_0_25px_rgba(139,92,246,0.35)] transition-all duration-300 cursor-default shadow-[0_0_15px_rgba(0,0,0,0.8)]"
               >
                 {tech}
               </div>

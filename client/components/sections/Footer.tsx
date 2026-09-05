@@ -14,23 +14,23 @@ export default function Footer() {
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08]">
-                <Shield className="w-4 h-4 text-gray-400" />
+                <Shield className="w-4 h-4 text-muted-foreground" />
               </div>
-              <span className="font-heading font-bold text-lg tracking-tight text-white">
+              <span className="font-heading font-bold text-lg tracking-tight text-foreground">
                 Secure Email Gateway
               </span>
             </Link>
-            <p className="text-gray-400 text-sm max-w-sm mb-6 leading-relaxed">
+            <p className="text-muted-foreground text-sm max-w-sm mb-6 leading-relaxed">
               Next-generation phishing prevention powered by artificial intelligence and real-time threat intelligence.
             </p>
             <div className="flex gap-4">
-              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+              <Link href="#" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
                 <GithubIcon />
               </Link>
-              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+              <Link href="#" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
                 <TwitterIcon />
               </Link>
-              <Link href="#" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+              <Link href="#" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
                 <LinkedinIcon />
               </Link>
             </div>
@@ -38,14 +38,14 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-bold mb-4">Quick Links</h4>
+            <h4 className="text-foreground font-bold mb-4">Quick Links</h4>
             <ul className="space-y-3">
               {[
                 { label: "Architecture", href: "/#architecture" },
                 { label: "Research", href: "/#research" },
               ].map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href} className="text-gray-500 hover:text-white transition-colors text-sm">
+                  <Link href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                     {link.label}
                   </Link>
                 </li>
@@ -55,7 +55,7 @@ export default function Footer() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-white font-bold mb-4">Legal</h4>
+            <h4 className="text-foreground font-bold mb-4">Legal</h4>
             <ul className="space-y-3">
               {[
                 { label: "Privacy Policy", href: "/privacy" },
@@ -64,7 +64,7 @@ export default function Footer() {
                 { label: "Contact", href: "/#contact" },
               ].map((link) => (
                 <li key={link.label}>
-                  <Link href={link.href} className="text-gray-500 hover:text-white transition-colors text-sm">
+                  <Link href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
                     {link.label}
                   </Link>
                 </li>
@@ -74,11 +74,11 @@ export default function Footer() {
 
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-gray-500 text-sm">
+        <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-muted-foreground text-sm">
             © {new Date().getFullYear()} Secure Email Gateway. All rights reserved.
           </p>
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="w-2 h-2 rounded-full bg-white/40 animate-pulse" />
             All systems operational
           </div>

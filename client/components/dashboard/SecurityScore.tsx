@@ -35,7 +35,7 @@ export function SecurityScore({ score }: SecurityScoreProps) {
     <GlassCard className="p-8 flex flex-col items-center justify-center relative overflow-hidden">
       <div className={cn("absolute inset-0 opacity-10 blur-3xl", bgGlow)} />
 
-      <h3 className="text-sm font-medium text-gray-400 tracking-wide uppercase mb-6 relative z-10">
+      <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase mb-6 relative z-10">
         Protection Score
       </h3>
 
@@ -49,7 +49,7 @@ export function SecurityScore({ score }: SecurityScoreProps) {
             stroke="currentColor"
             strokeWidth="8"
             fill="transparent"
-            className="text-white/5"
+            className="text-foreground/5"
           />
           {/* Animated progress circle */}
           <motion.circle
@@ -73,7 +73,7 @@ export function SecurityScore({ score }: SecurityScoreProps) {
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-5xl font-heading font-bold text-white mb-1"
+            className="text-5xl font-heading font-bold text-foreground mb-1"
           >
             {score.toFixed(1)}
           </motion.div>
@@ -84,7 +84,7 @@ export function SecurityScore({ score }: SecurityScoreProps) {
         </div>
       </div>
 
-      <p className="text-sm text-gray-500 text-center relative z-10">
+      <p className="text-sm text-muted-foreground text-center relative z-10">
         Based on real-time threat intelligence and policy configurations.
       </p>
     </GlassCard>

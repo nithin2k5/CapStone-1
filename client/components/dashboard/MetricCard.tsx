@@ -48,12 +48,12 @@ export function MetricCard({
           <div className={cn("p-2.5 rounded-xl border", colorStyles[color])}>
             <Icon className="w-5 h-5" />
           </div>
-          <h3 className="text-sm font-medium text-gray-400 tracking-wide uppercase">{title}</h3>
+          <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase">{title}</h3>
         </div>
       </div>
 
       <div className="relative z-10">
-        <div className="text-3xl font-heading font-bold text-white mb-2">{value}</div>
+        <div className="text-3xl font-heading font-bold text-foreground mb-2">{value}</div>
         <div className="flex items-center gap-2">
           <span
             className={cn(
@@ -67,7 +67,7 @@ export function MetricCard({
           >
             {trendUp ? "↑" : "↓"} {trend}
           </span>
-          <span className="text-xs text-gray-500">{description}</span>
+          <span className="text-xs text-muted-foreground">{description}</span>
         </div>
       </div>
     </GlassCard>

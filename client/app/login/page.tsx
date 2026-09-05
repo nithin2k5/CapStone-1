@@ -70,19 +70,19 @@ export default function LoginPage() {
       <div className="w-full flex flex-col md:flex-row max-w-[1400px] mx-auto relative z-10">
         
         {/* Left column (Branding) */}
-        <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-white/5 bg-black/40 backdrop-blur-md">
+        <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-border bg-black/40 backdrop-blur-md">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
             <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-8 neon-glow-blue">
               <ShieldCheck className="w-8 h-8 text-indigo-400" />
             </div>
             
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-white leading-tight tracking-wide mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-foreground leading-tight tracking-wide mb-6">
               SECURE<br />
               EMAIL<br />
               GATEWAY
             </h1>
             
-            <p className="text-lg text-gray-400 max-w-md">
+            <p className="text-lg text-muted-foreground max-w-md">
               AI-powered email security for modern organizations. Detect threats, mitigate risks, and secure your communications.
             </p>
           </motion.div>
@@ -92,7 +92,7 @@ export default function LoginPage() {
         <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="max-w-md w-full mx-auto">
             
-            <h2 className="text-2xl font-heading font-semibold text-white mb-8 text-center md:text-left">
+            <h2 className="text-2xl font-heading font-semibold text-foreground mb-8 text-center md:text-left">
               Welcome back
             </h2>
 
@@ -110,31 +110,31 @@ export default function LoginPage() {
                 </div>
               )}
               <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Email</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input 
                     type="email" 
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="admin@your-company.com" 
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                    className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-xs font-medium text-gray-400 ml-1 uppercase tracking-wider">Password</label>
+                <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <input 
                     type="password" 
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••••••" 
-                    className="w-full h-12 bg-white/5 border border-white/10 rounded-xl pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                    className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
                   />
                 </div>
               </div>
@@ -147,7 +147,7 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-8 flex items-center justify-between">
-              <button type="button" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <button type="button" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                 Forgot password?
               </button>
               

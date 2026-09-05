@@ -82,7 +82,7 @@ export function SessionExtendModal() {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
       <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
-        <h3 className="text-xl font-semibold text-white mb-2">Session Expiring Soon</h3>
+        <h3 className="text-xl font-semibold text-foreground mb-2">Session Expiring Soon</h3>
         <p className="text-slate-300 mb-6">
           Your security session will expire in less than {EXPIRATION_WARNING_MINUTES} minutes due to inactivity. Do you want to extend your session?
         </p>

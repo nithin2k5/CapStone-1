@@ -18,7 +18,7 @@ export default function ForgotPasswordPage() {
     <AuthLayout>
       <Link
         href="/login"
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-6 transition-colors"
+        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
       >
         <ArrowLeft className="w-4 h-4" />
         Back to sign in
@@ -27,10 +27,10 @@ export default function ForgotPasswordPage() {
       {submitted ? (
         <div className="text-center py-4">
           <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-gray-400" />
+            <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
           </div>
-          <h1 className="font-heading text-2xl font-bold text-white mb-2">Check your email</h1>
-          <p className="text-gray-400 mb-6">
+          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Check your email</h1>
+          <p className="text-muted-foreground mb-6">
             We&apos;ve sent password reset instructions to your email address.
           </p>
           <Link href="/login">
@@ -40,8 +40,8 @@ export default function ForgotPasswordPage() {
       ) : (
         <>
           <div className="mb-8">
-            <h1 className="font-heading text-3xl font-bold text-white mb-2">Reset password</h1>
-            <p className="text-gray-400">
+            <h1 className="font-heading text-3xl font-bold text-foreground mb-2">Reset password</h1>
+            <p className="text-muted-foreground">
               Enter your email and we&apos;ll send you reset instructions.
             </p>
           </div>

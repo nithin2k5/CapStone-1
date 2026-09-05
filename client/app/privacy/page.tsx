@@ -15,18 +15,18 @@ export default function PrivacyPage() {
       <div className="relative z-10 container mx-auto px-6 py-24 max-w-3xl">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to home
         </Link>
 
-        <h1 className="font-heading text-4xl font-bold text-white mb-8">Privacy Policy</h1>
+        <h1 className="font-heading text-4xl font-bold text-foreground mb-8">Privacy Policy</h1>
 
         <div className="glass-card rounded-2xl p-8 border border-white/[0.05] prose prose-invert max-w-none">
-          <div className="space-y-6 text-gray-400 leading-relaxed">
+          <div className="space-y-6 text-muted-foreground leading-relaxed">
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">1. Information We Collect</h2>
+              <h2 className="text-xl font-bold text-foreground mb-3">1. Information We Collect</h2>
               <p>
                 Secure Email Gateway processes email metadata including sender addresses, recipient
                 addresses, subject lines, and attachment hashes for threat detection purposes. We do
@@ -35,7 +35,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">2. How We Use Data</h2>
+              <h2 className="text-xl font-bold text-foreground mb-3">2. How We Use Data</h2>
               <p>
                 Collected data is used exclusively for phishing detection, malware scanning, and
                 security analytics. Aggregated threat intelligence may be shared with our security
@@ -44,7 +44,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">3. Data Retention</h2>
+              <h2 className="text-xl font-bold text-foreground mb-3">3. Data Retention</h2>
               <p>
                 Threat logs are retained for 90 days by default. Quarantined emails are retained
                 for 30 days before automatic deletion. Retention periods are configurable in your
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">4. Security</h2>
+              <h2 className="text-xl font-bold text-foreground mb-3">4. Security</h2>
               <p>
                 All data is encrypted in transit using TLS 1.3 and at rest using AES-256 encryption.
                 Our infrastructure complies with ISO 27001 and SOC 2 Type II standards.
@@ -61,10 +61,10 @@ export default function PrivacyPage() {
             </section>
 
             <section>
-              <h2 className="text-xl font-bold text-white mb-3">5. Contact</h2>
+              <h2 className="text-xl font-bold text-foreground mb-3">5. Contact</h2>
               <p>
                 For privacy-related inquiries, contact our Data Protection Officer at{" "}
-                <span className="text-gray-400">privacy@gateway.local</span>.
+                <span className="text-muted-foreground">privacy@gateway.local</span>.
               </p>
             </section>
           </div>

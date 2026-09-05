@@ -97,13 +97,13 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                   <Mail className="w-5 h-5 text-indigo-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-heading font-semibold text-white">Live Inbox Scan</h2>
-                  <p className="text-xs text-gray-400">Evaluating threats in memory</p>
+                  <h2 className="text-lg font-heading font-semibold text-foreground">Live Inbox Scan</h2>
+                  <p className="text-xs text-muted-foreground">Evaluating threats in memory</p>
                 </div>
               </div>
               <button 
                 onClick={onClose}
-                className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors"
+                className="p-2 hover:bg-foreground/10 rounded-xl text-muted-foreground hover:text-foreground transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -116,8 +116,8 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                     <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full" />
                     <Loader2 className="w-16 h-16 text-indigo-400 animate-spin relative z-10" />
                   </div>
-                  <h3 className="text-xl font-medium text-white mb-2">Analyzing Inbox</h3>
-                  <p className="text-sm text-gray-400 max-w-sm animate-pulse">
+                  <h3 className="text-xl font-medium text-foreground mb-2">Analyzing Inbox</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm animate-pulse">
                     {scanStep}
                   </p>
                 </div>
@@ -134,8 +134,8 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400">Safe Deliveries</p>
-                        <p className="text-2xl font-bold text-white">{safeCount}</p>
+                        <p className="text-sm text-muted-foreground">Safe Deliveries</p>
+                        <p className="text-2xl font-bold text-foreground">{safeCount}</p>
                       </div>
                     </div>
                     <div className="w-px h-12 bg-white/[0.06]" />
@@ -144,15 +144,15 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                         <ShieldAlert className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400">Threats Blocked</p>
-                        <p className="text-2xl font-bold text-white">{blockedCount}</p>
+                        <p className="text-sm text-muted-foreground">Threats Blocked</p>
+                        <p className="text-2xl font-bold text-foreground">{blockedCount}</p>
                       </div>
                     </div>
                   </div>
 
                   <div className="space-y-3">
                     {results.length === 0 ? (
-                      <p className="text-center text-gray-500 py-8">No emails found to scan.</p>
+                      <p className="text-center text-muted-foreground py-8">No emails found to scan.</p>
                     ) : (
                       results.map((email, i) => (
                         <motion.div 
@@ -173,17 +173,17 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-white truncate max-w-[200px]">
+                              <span className="font-medium text-foreground truncate max-w-[200px]">
                                 {email.sender.includes('<') ? email.sender.split('<')[0] : email.sender}
                               </span>
-                              <span className="text-xs text-gray-500">{new Date(email.received_at).toLocaleTimeString()}</span>
+                              <span className="text-xs text-muted-foreground">{email.received_at ? new Date(email.received_at).toLocaleTimeString() : ""}</span>
                             </div>
-                            <p className="text-sm text-gray-400 truncate">{email.subject}</p>
+                            <p className="text-sm text-muted-foreground truncate">{email.subject}</p>
                           </div>
 
                           <div className="flex items-center gap-4">
                             <div className="text-right">
-                              <p className="text-xs text-gray-500 mb-1">Risk Score</p>
+                              <p className="text-xs text-muted-foreground mb-1">Risk Score</p>
                               <p className={cn(
                                 "text-sm font-bold",
                                 email.risk_score >= 80 ? "text-red-400" :
@@ -209,7 +209,7 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
               <div className="p-6 border-t border-white/[0.06] bg-white/[0.02] flex justify-end">
                 <button 
                   onClick={onClose}
-                  className="px-6 py-2 bg-indigo-500 text-white font-medium rounded-xl hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-500/20"
+                  className="px-6 py-2 bg-indigo-500 text-foreground font-medium rounded-xl hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-500/20"
                 >
                   Done
                 </button>

@@ -19,17 +19,17 @@ export default function BlockedDomainsTable() {
   return (
     <div className="glass-card rounded-2xl border border-white/[0.06] overflow-hidden">
       <div className="px-6 py-4 border-b border-white/[0.06] flex items-center gap-3">
-        <Globe className="w-5 h-5 text-gray-500" />
-        <h3 className="font-medium text-white">Blocked & Monitored Domains</h3>
+        <Globe className="w-5 h-5 text-muted-foreground" />
+        <h3 className="font-medium text-foreground">Blocked & Monitored Domains</h3>
       </div>
 
       {loading ? (
-        <div className="py-12 flex items-center justify-center gap-2 text-sm text-gray-500">
-          <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
+        <div className="py-12 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           Loading domain activity...
         </div>
       ) : domains.length === 0 ? (
-        <div className="py-16 flex flex-col items-center justify-center text-center text-gray-500 px-4">
+        <div className="py-16 flex flex-col items-center justify-center text-center text-muted-foreground px-4">
           <ShieldCheck className="w-10 h-10 mb-2 text-gray-600 stroke-[1.5]" />
           <p className="text-gray-300 font-medium">No malicious domain hits recorded</p>
           <p className="text-xs max-w-sm text-gray-600 mt-1">
@@ -58,9 +58,9 @@ export default function BlockedDomainsTable() {
                 >
                   <td className="px-6 py-4 font-mono text-gray-300">{d.domain}</td>
                   <td className="px-6 py-4 text-amber-400/80 text-xs">Suspicious Activity</td>
-                  <td className="px-6 py-4 text-white font-medium">{d.count.toLocaleString()}</td>
+                  <td className="px-6 py-4 text-foreground font-medium">{d.count.toLocaleString()}</td>
                   <td className="px-6 py-4">
-                    <button className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-red-400 transition-colors">
+                    <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-red-400 transition-colors">
                       <Ban className="w-3.5 h-3.5" />
                       Block Policy
                     </button>
@@ -88,14 +88,14 @@ export function BlockedDomainsList() {
 
   return (
     <div className="glass-card rounded-2xl p-6 border border-white/[0.06]">
-      <h3 className="font-medium text-white mb-4">Top Observed Domains</h3>
+      <h3 className="font-medium text-foreground mb-4">Top Observed Domains</h3>
       {loading ? (
-        <div className="py-6 flex justify-center text-gray-500 text-xs gap-2">
+        <div className="py-6 flex justify-center text-muted-foreground text-xs gap-2">
           <Loader2 className="w-4 h-4 animate-spin" />
           Loading...
         </div>
       ) : domains.length === 0 ? (
-        <div className="py-6 text-center text-xs text-gray-500">
+        <div className="py-6 text-center text-xs text-muted-foreground">
           No domains tracked yet.
         </div>
       ) : (
@@ -110,10 +110,10 @@ export function BlockedDomainsList() {
             >
               <div>
                 <div className="font-mono text-sm text-gray-300">{d.domain}</div>
-                <div className="text-xs text-gray-500">Monitored origin</div>
+                <div className="text-xs text-muted-foreground">Monitored origin</div>
               </div>
               <div className="text-right">
-                <div className="text-sm font-medium text-white">{d.count}</div>
+                <div className="text-sm font-medium text-foreground">{d.count}</div>
                 <div className="text-xs text-gray-600">hits</div>
               </div>
             </motion.div>

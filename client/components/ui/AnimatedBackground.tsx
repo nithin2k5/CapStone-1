@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 export default function AnimatedBackground() {
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden bg-[#050505] pointer-events-none scanlines">
+    <div className="fixed inset-0 z-[-1] overflow-hidden bg-background pointer-events-none scanlines transition-colors duration-300">
       {/* Brutalist Moving Grid */}
       <motion.div
         animate={{ y: [0, 40] }}
@@ -13,7 +13,7 @@ export default function AnimatedBackground() {
       />
       
       {/* Harsh vignette overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,#050505_95%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,var(--background)_95%)] transition-colors duration-300" />
       
       {/* Glitching Alert Block */}
       <motion.div
