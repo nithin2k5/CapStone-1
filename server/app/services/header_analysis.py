@@ -9,6 +9,28 @@ class HeaderAnalysisResult:
     findings: list[str] = field(default_factory=list)
     reply_to_mismatch: bool = False
     failed_dmarc: bool = False
+    auth_unavailable: bool = False
+
+
+def auth_verdict(value: str | None) -> str:
+    """
+    Classify an authentication result into pass / fail / none / unknown.
+
+    "none" (the domain publishes no policy) and "unknown" (we never obtained the
+    result) are different states, and neither is a failure. Collapsing them into
+    one another either fabricates a pass or invents a failure.
+    """
+    if value is None or not value.strip():
+        return "unknown"
+
+    token = value.strip().lower()
+    if "pass" in token:
+        return "pass"
+    if any(marker in token for marker in ("fail", "temperror", "permerror", "error")):
+        return "fail"
+    if "none" in token:
+        return "none"
+    return "unknown"
 
 
 class HeaderAnalysisService:
@@ -16,24 +38,45 @@ class HeaderAnalysisService:
 
     MAX_SCORE = 100.0
 
+    # Full weight when a mechanism explicitly fails or publishes no policy; half
+    # weight when the result was never available, which is a gap in our own
+    # visibility rather than evidence against the sender.
+    AUTH_WEIGHTS = {"spf": 25.0, "dkim": 25.0, "dmarc": 20.0}
+    UNKNOWN_FACTOR = 0.5
+
+    def _score_auth(
+        self, mechanism: str, value: str | None, findings: list[str]
+    ) -> tuple[float, str]:
+        verdict = auth_verdict(value)
+        weight = self.AUTH_WEIGHTS[mechanism]
+        label = mechanism.upper()
+
+        if verdict == "pass":
+            return 0.0, verdict
+        if verdict == "fail":
+            findings.append(f"{label} validation failed")
+            return weight, verdict
+        if verdict == "none":
+            findings.append(f"{label} not published by sender domain")
+            return weight, verdict
+
+        findings.append(f"{label} result unavailable — sender not verified")
+        return weight * self.UNKNOWN_FACTOR, verdict
+
     def analyze(self, parsed: ParsedEmail) -> HeaderAnalysisResult:
         findings: list[str] = []
         score = 0.0
-        failed_dmarc = False
         reply_to_mismatch = False
 
-        if not parsed.spf or "fail" in (parsed.spf or "").lower():
-            score += 25
-            findings.append("SPF validation failed or missing")
+        spf_score, spf_verdict = self._score_auth("spf", parsed.spf, findings)
+        dkim_score, dkim_verdict = self._score_auth("dkim", parsed.dkim, findings)
+        dmarc_score, dmarc_verdict = self._score_auth("dmarc", parsed.dmarc, findings)
+        score += spf_score + dkim_score + dmarc_score
 
-        if not parsed.dkim or "fail" in (parsed.dkim or "").lower():
-            score += 25
-            findings.append("DKIM validation failed or missing")
-
-        if not parsed.dmarc or "fail" in (parsed.dmarc or "").lower():
-            score += 20
-            findings.append("DMARC validation failed or missing")
-            failed_dmarc = True
+        # Only an explicit failure or absent policy counts as a DMARC failure for the
+        # compounding rules; an unavailable result must not trigger them.
+        failed_dmarc = dmarc_verdict in ("fail", "none")
+        auth_unavailable = "unknown" in (spf_verdict, dkim_verdict, dmarc_verdict)
 
         sender_domain = extract_domain(parsed.sender)
         reply_domain = extract_domain(parsed.reply_to) if parsed.reply_to else ""
@@ -67,4 +110,5 @@ class HeaderAnalysisService:
             findings=findings,
             reply_to_mismatch=reply_to_mismatch,
             failed_dmarc=failed_dmarc,
+            auth_unavailable=auth_unavailable,
         )

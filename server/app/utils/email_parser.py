@@ -138,9 +138,9 @@ def parse_email_content(
             received_chain.append(value)
 
     auth_results = headers_lower.get("authentication-results", "")
-    spf = _extract_auth(auth_results, "spf")
-    dkim = _extract_auth(auth_results, "dkim")
-    dmarc = _extract_auth(auth_results, "dmarc")
+    spf = extract_auth(auth_results, "spf")
+    dkim = extract_auth(auth_results, "dkim")
+    dmarc = extract_auth(auth_results, "dmarc")
 
     date_str = headers_lower.get("date", "")
     parsed_date = None
@@ -176,7 +176,7 @@ def parse_email_content(
     )
 
 
-def _extract_auth(auth_results: str, mechanism: str) -> str | None:
+def extract_auth(auth_results: str, mechanism: str) -> str | None:
     pattern = rf"{mechanism}=\w+"
     match = re.search(pattern, auth_results, re.IGNORECASE)
     return match.group(0) if match else None

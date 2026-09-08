@@ -109,7 +109,7 @@ class MicrosoftService:
         folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
         # `body` is required, not just `bodyPreview`: the preview is truncated to a few
         # hundred characters, so analysing it means analysing an excerpt of the message.
-        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,body,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId"
+        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,body,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId,internetMessageHeaders,replyTo"
         
         async with httpx.AsyncClient() as client:
             res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
@@ -125,7 +125,7 @@ class MicrosoftService:
 
     def _parse_microsoft_message(self, item: dict, mailbox: str) -> Any:
         from app.services.gmail_service import GmailMessage
-        from app.utils.email_parser import ParsedEmail, extract_urls, html_to_text
+        from app.utils.email_parser import extract_urls, html_to_text, parse_email_content
         from datetime import datetime, timezone
 
         msg_id = item.get("id", "")
@@ -160,22 +160,42 @@ class MicrosoftService:
 
         message_id = item.get("internetMessageId", f"<{msg_id}@microsoft.com>")
 
-        parsed = ParsedEmail(
-            sender=from_email,
-            recipient=recipient,
-            subject=subject,
-            date=date,
-            message_id=message_id,
-            reply_to="",
-            spf="spf=pass",
-            dkim="dkim=pass",
-            dmarc="dmarc=pass",
-            body_text=body_text or "(Empty Body)",
-            body_html=body_html,
-            urls=extract_urls(f"{body_text} {body_html}"),
-            attachments=[],
-            raw_headers={},
-        )
+        # Real MIME headers, when Graph returns them. Previously spf/dkim/dmarc were
+        # hardcoded to "pass", so the header module scored every Outlook message 0 on
+        # a 30%-weighted check it had never performed.
+        headers: dict[str, str] = {}
+        for header in item.get("internetMessageHeaders") or []:
+            name = header.get("name")
+            if name:
+                headers[name] = header.get("value", "")
+
+        if not headers:
+            logger.warning(
+                "No internetMessageHeaders returned for message %s; sender "
+                "authentication cannot be verified for this message",
+                msg_id,
+            )
+
+        reply_to = ""
+        for entry in item.get("replyTo") or []:
+            address = (entry.get("emailAddress") or {}).get("address")
+            if address:
+                reply_to = address
+                break
+
+        # parse_email_content derives authentication results, Return-Path and the
+        # Received chain from the headers; the structured Graph fields are more
+        # reliable for identity, so they win where both exist.
+        parsed = parse_email_content(headers, body_text, body_html)
+        parsed.sender = from_email
+        parsed.recipient = recipient
+        parsed.subject = subject
+        parsed.date = date
+        parsed.message_id = message_id
+        parsed.reply_to = reply_to or parsed.reply_to
+        parsed.body_text = parsed.body_text or "(Empty Body)"
+        parsed.urls = extract_urls(f"{parsed.body_text} {body_html}")
+
         return GmailMessage(message_id=msg_id, parsed=parsed, mailbox=mailbox)
 
     async def modify_message_labels(

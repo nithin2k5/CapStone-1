@@ -14,6 +14,7 @@ from app.database.models import User
 from app.utils.email_parser import (
     ParsedAttachment,
     ParsedEmail,
+    extract_auth,
     extract_urls,
     html_to_text,
 )
@@ -298,7 +299,7 @@ class GmailService:
         subject = headers.get("Subject", "(No Subject)")
         message_id = headers.get("Message-Id", f"<{msg_id}@mail.gmail.com>")
         reply_to = headers.get("Reply-To", "")
-        auth_results = headers.get("Authentication-Results", "spf=none; dkim=none")
+        auth_results = headers.get("Authentication-Results", "")
         date_str = headers.get("Date")
 
         date = datetime.now(timezone.utc)
@@ -352,21 +353,13 @@ class GmailService:
             else:
                 body_text = decoded
 
-        spf = (
-            "spf=pass"
-            if "spf=pass" in auth_results.lower()
-            else ("spf=fail" if "spf=" in auth_results.lower() else None)
-        )
-        dkim = (
-            "dkim=pass"
-            if "dkim=pass" in auth_results.lower()
-            else ("dkim=fail" if "dkim=" in auth_results.lower() else None)
-        )
-        dmarc = (
-            "dmarc=pass"
-            if "dmarc=pass" in auth_results.lower()
-            else ("dmarc=" in auth_results.lower() and "dmarc=fail" or None)
-        )
+        # Report the verdict the provider actually gave. The previous mapping folded
+        # every non-pass result into "fail", so a domain publishing no SPF record was
+        # indistinguishable from one that failed authentication, and an absent
+        # Authentication-Results header was reported as a failure it never was.
+        spf = extract_auth(auth_results, "spf")
+        dkim = extract_auth(auth_results, "dkim")
+        dmarc = extract_auth(auth_results, "dmarc")
 
         # HTML-only messages carry no text/plain part. Deriving the text here is what
         # lets the content analysers see the body at all; leaving it blank silently

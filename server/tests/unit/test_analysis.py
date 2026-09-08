@@ -274,6 +274,117 @@ class TestAIFailureIsVisible:
         assert risk.findings["ai"]["source"] == "heuristic-fallback"
 
 
+class TestAuthenticationVerdicts:
+    """pass, fail, none and unknown are four different states, not two."""
+
+    def setup_method(self):
+        self.service = HeaderAnalysisService()
+
+    def _email(self, **kwargs):
+        return ParsedEmail(
+            sender="a@b.com", message_id="<abcdef123456@b.com>", **kwargs
+        )
+
+    @pytest.mark.parametrize(
+        "value,expected",
+        [
+            ("spf=pass", "pass"),
+            ("spf=fail", "fail"),
+            ("spf=softfail", "fail"),
+            ("spf=permerror", "fail"),
+            ("spf=none", "none"),
+            (None, "unknown"),
+            ("", "unknown"),
+            ("   ", "unknown"),
+        ],
+    )
+    def test_verdict_classification(self, value, expected):
+        from app.services.header_analysis import auth_verdict
+
+        assert auth_verdict(value) == expected
+
+    def test_all_pass_scores_zero(self):
+        result = self.service.analyze(
+            self._email(spf="spf=pass", dkim="dkim=pass", dmarc="dmarc=pass")
+        )
+        assert result.score == 0
+        assert result.auth_unavailable is False
+        assert result.failed_dmarc is False
+
+    def test_all_fail_scores_full_weight(self):
+        result = self.service.analyze(
+            self._email(spf="spf=fail", dkim="dkim=fail", dmarc="dmarc=fail")
+        )
+        assert result.score == 70
+        assert result.failed_dmarc is True
+
+    def test_no_published_policy_scores_full_weight(self):
+        result = self.service.analyze(
+            self._email(spf="spf=none", dkim="dkim=none", dmarc="dmarc=none")
+        )
+        assert result.score == 70
+        assert result.failed_dmarc is True
+
+    def test_unavailable_results_score_half_and_do_not_fail_dmarc(self):
+        result = self.service.analyze(self._email())
+        assert result.score == 35
+        assert result.auth_unavailable is True
+        assert result.failed_dmarc is False
+        assert any("unavailable" in f for f in result.findings)
+
+
+class TestMicrosoftMessageParsing:
+    def setup_method(self):
+        from app.services.microsoft_service import MicrosoftService
+
+        self.service = MicrosoftService()
+
+    def test_real_headers_are_used(self):
+        message = self.service._parse_microsoft_message(
+            {
+                "id": "m1",
+                "subject": "Hi",
+                "body": {"contentType": "html", "content": "<p>hello</p>"},
+                "from": {"emailAddress": {"address": "x@evil.com"}},
+                "replyTo": [{"emailAddress": {"address": "attacker@other.com"}}],
+                "internetMessageHeaders": [
+                    {
+                        "name": "Authentication-Results",
+                        "value": "spf=fail smtp.mailfrom=evil.com; dkim=fail; dmarc=fail",
+                    },
+                    {"name": "Return-Path", "value": "bounce@elsewhere.net"},
+                ],
+            },
+            "inbox",
+        )
+        parsed = message.parsed
+        assert (parsed.spf, parsed.dkim, parsed.dmarc) == (
+            "spf=fail",
+            "dkim=fail",
+            "dmarc=fail",
+        )
+        assert parsed.reply_to == "attacker@other.com"
+        assert parsed.return_path == "bounce@elsewhere.net"
+        assert parsed.sender == "x@evil.com"
+        assert "hello" in parsed.body_text
+        assert HeaderAnalysisService().analyze(parsed).score >= 70
+
+    def test_absent_headers_do_not_fabricate_a_pass(self):
+        message = self.service._parse_microsoft_message(
+            {
+                "id": "m2",
+                "subject": "S",
+                "bodyPreview": "preview",
+                "from": {"emailAddress": {"address": "y@z.com"}},
+            },
+            "inbox",
+        )
+        assert message.parsed.spf is None
+        assert message.parsed.dkim is None
+        result = HeaderAnalysisService().analyze(message.parsed)
+        assert result.auth_unavailable is True
+
+
 class TestRiskEngine:
     def test_calculate_risk(self):
         from app.services.ai_analysis import AIAnalysisService
