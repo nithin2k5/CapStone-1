@@ -51,10 +51,18 @@ class ScanService:
         )
 
     async def scan_email(
-        self, db: AsyncSession, email: Email
+        self, db: AsyncSession, email: Email, parsed: ParsedEmail | None = None
     ) -> ScanResult:
+        """
+        Score an email and apply the resulting quarantine decision.
+
+        `parsed` lets a caller that already has the provider's parse pass it in.
+        Attachments are not persisted on the Email row, so reconstructing from the
+        database alone yields an empty attachment list — the fetch path supplies its
+        own parse to keep attachment analysis alive.
+        """
         repo = EmailRepository(db)
-        parsed = self._email_to_parsed(email)
+        parsed = parsed or self._email_to_parsed(email)
 
         logger.info("Scanning email %s subject=%r", email.id, email.subject)
 

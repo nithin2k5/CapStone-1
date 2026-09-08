@@ -1,7 +1,7 @@
 import asyncio
 from sqlalchemy import select
 from app.database.database import AsyncSessionLocal
-from app.database.models import User
+from app.database.models import EmailStatus, User
 from app.services.gmail_service import GmailService
 from app.services.scan_service import ScanService
 from app.repositories.email_repository import EmailRepository
@@ -37,60 +37,30 @@ async def fetch_emails_job():
                     )
                     scanned_emails = 0
                     for msg in messages:
-                        # 1. Save email to database first
                         email_record = await repo.create_from_gmail(user.id, msg)
-                        
+
                         # Only scan if it's pending (to avoid rescanning)
-                        if email_record.status != "pending":
+                        if email_record.status != EmailStatus.PENDING:
                             continue
 
-                        parsed = msg.parsed
-                        
-                        header_result = scan_service.header_service.analyze(parsed)
-                        url_result = scan_service.url_service.analyze(parsed.urls)
-                        attachment_result = scan_service.attachment_service.analyze(parsed.attachments)
-                        ai_result = scan_service.ai_service.analyze(parsed)
+                        # One pipeline for both the scheduled sweep and the on-demand
+                        # API scan: same analysers, same risk engine, same quarantine
+                        # thresholds. The provider parse is passed through because
+                        # attachments are not persisted on the Email row.
+                        scan = await scan_service.scan_email(db, email_record, msg.parsed)
 
-                        risk = scan_service.risk_engine.calculate(
-                            header_result, url_result, attachment_result, ai_result
+                        logger.info(
+                            "Email %s scored %.2f (%s) -> %s",
+                            msg.message_id,
+                            scan.final_score,
+                            scan.risk_level.value,
+                            email_record.status.value,
                         )
-
-                        # 2. Save scan result
-                        from app.database.models import ScanResult, EmailStatus, RiskLevel
-                        scan_record = ScanResult(
-                            email_id=email_record.id,
-                            header_score=header_result.score,
-                            url_score=url_result.score,
-                            attachment_score=attachment_result.score,
-                            ai_score=ai_result.score,
-                            final_score=risk.final_score,
-                            risk_level=risk.risk_level,
-                            findings={"headers": header_result.findings, "urls": url_result.findings, "attachments": attachment_result.findings, "ai": ai_result.reasons}
-                        )
-                        await repo.save_scan_result(scan_record)
-
-                        # 3. Update email status
-                        email_record.risk_score = risk.final_score
-
-                        if risk.risk_level.value in ["high", "critical"]:
-                            logger.info(f"Email {msg.message_id} is unsafe ({risk.risk_level.value}). Moving to SPAM.")
-                            email_record.status = EmailStatus.QUARANTINED
-                            await gmail_service.modify_message_labels(
-                                user.google_access_token,
-                                msg.message_id,
-                                add_labels=["SPAM"],
-                                remove_labels=["INBOX"]
-                            )
-                        else:
-                            logger.info(f"Email {msg.message_id} is safe ({risk.risk_level.value}). Leaving in INBOX.")
-                            email_record.status = EmailStatus.SAFE
-                        
-                        db.add(email_record)
                         scanned_emails += 1
-                    
+
                     if scanned_emails > 0:
                         await db.commit()
-                    
+
                     logger.info(f"Fetched and scanned {scanned_emails} emails for user {user.email}")
                 except Exception as e:
                     logger.error(f"Failed to fetch/scan for user {user.id}: {e}")
