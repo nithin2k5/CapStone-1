@@ -139,6 +139,7 @@ class ScanResult(Base):
     url_score: Mapped[float] = mapped_column(Float, default=0.0)
     attachment_score: Mapped[float] = mapped_column(Float, default=0.0)
     ai_score: Mapped[float] = mapped_column(Float, default=0.0)
+    perceptual_score: Mapped[float] = mapped_column(Float, default=0.0)
     final_score: Mapped[float] = mapped_column(Float, default=0.0)
     risk_level: Mapped[RiskLevel] = mapped_column(
         Enum(RiskLevel, name="risk_level"), default=RiskLevel.SAFE

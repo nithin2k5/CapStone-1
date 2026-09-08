@@ -8,6 +8,7 @@ from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
 from app.services.header_analysis import HeaderAnalysisService
+from app.services.perceptual_analysis import PerceptualAnalysisService
 from app.services.quarantine_service import QuarantineService
 from app.services.risk_engine import RiskEngine
 from app.services.url_analysis import URLAnalysisService
@@ -25,6 +26,7 @@ class ScanService:
         url_service: URLAnalysisService | None = None,
         attachment_service: AttachmentAnalysisService | None = None,
         ai_service: AIAnalysisService | None = None,
+        perceptual_service: PerceptualAnalysisService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
     ):
@@ -32,6 +34,7 @@ class ScanService:
         self.url_service = url_service or URLAnalysisService()
         self.attachment_service = attachment_service or AttachmentAnalysisService()
         self.ai_service = ai_service or AIAnalysisService()
+        self.perceptual_service = perceptual_service or PerceptualAnalysisService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
 
@@ -70,9 +73,14 @@ class ScanService:
         url_result = self.url_service.analyze(parsed.urls)
         attachment_result = self.attachment_service.analyze(parsed.attachments)
         ai_result = await self.ai_service.analyze_with_llm(parsed)
+        perceptual_result = self.perceptual_service.analyze(parsed.rendered)
 
         risk = self.risk_engine.calculate(
-            header_result, url_result, attachment_result, ai_result
+            header_result,
+            url_result,
+            attachment_result,
+            ai_result,
+            perceptual_result,
         )
 
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)
@@ -83,6 +91,7 @@ class ScanService:
             scan.url_score = risk.url_score
             scan.attachment_score = risk.attachment_score
             scan.ai_score = risk.ai_score
+            scan.perceptual_score = risk.perceptual_score
             scan.final_score = risk.final_score
             scan.risk_level = risk.risk_level
             scan.explanation = risk.explanation
@@ -94,6 +103,7 @@ class ScanService:
                 url_score=risk.url_score,
                 attachment_score=risk.attachment_score,
                 ai_score=risk.ai_score,
+                perceptual_score=risk.perceptual_score,
                 final_score=risk.final_score,
                 risk_level=risk.risk_level,
                 explanation=risk.explanation,

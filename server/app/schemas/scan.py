@@ -22,6 +22,7 @@ class ScanResultResponse(BaseModel):
     url_score: float
     attachment_score: float
     ai_score: float
+    perceptual_score: float = 0.0
     final_score: float
     risk_level: RiskLevelEnum
     explanation: str | None
