@@ -3,7 +3,10 @@ import json
 import openai
 from dataclasses import dataclass, field
 
+from app.core.logging import get_logger
 from app.utils.email_parser import ParsedEmail
+
+logger = get_logger("ai_analysis")
 
 
 @dataclass
@@ -115,22 +118,12 @@ class AIAnalysisService:
             requests_credentials=requests_credentials,
         )
 
-    async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
-        """Real LLM integration for intent and social engineering analysis using OpenAI."""
-        
-        email_content = f"""
-        Sender: {parsed.sender}
-        Subject: {parsed.subject}
-        Body: {parsed.body_text[:2000]} 
-        URLs present: {', '.join(parsed.urls)}
-        """
-
-        system_prompt = """
+    SYSTEM_PROMPT = """
         You are an advanced cybersecurity email analyzer. Analyze the provided email for:
         1. Social engineering tactics (urgency, fear, greed)
         2. Suspicious sender-to-content mismatches (e.g. sender is a random Gmail, but claims to be IT)
         3. Credential harvesting context
-        
+
         Return ONLY a JSON response in this exact format:
         {
             "phishing_probability": <float 0-100>,
@@ -142,56 +135,129 @@ class AIAnalysisService:
         }
         """
 
-        try:
-            gemini_api_key = os.getenv("GEMINI_API_KEY")
-            
-            if gemini_api_key:
-                from google import genai
-                from google.genai import types
-                
-                client = genai.Client(api_key=gemini_api_key)
-                
-                response = client.models.generate_content(
-                    model='gemini-2.5-flash',
-                    contents=email_content,
-                    config=types.GenerateContentConfig(
-                        system_instruction=system_prompt,
-                        response_mime_type="application/json",
-                        temperature=0.1,
-                    )
-                )
-                result = json.loads(response.text)
-            else:
-                # Fallback to local OpenAI-compatible server if GEMINI_API_KEY is not set
-                import openai
-                client = openai.AsyncOpenAI(
-                    base_url=os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1"),
-                    api_key="local-llm" 
-                )
-                
-                response = await client.chat.completions.create(
-                    model=os.getenv("LOCAL_LLM_MODEL", "llama3"), 
-                    messages=[
-                        {"role": "system", "content": system_prompt},
-                        {"role": "user", "content": email_content}
-                    ],
-                    response_format={ "type": "json_object" }
-                )
-                
-                result = json.loads(response.choices[0].message.content)
-            
-            score = max(result.get("phishing_probability", 0.0), result.get("spam_probability", 0.0) * 0.7)
-            
-            return AIAnalysisResult(
-                phishing_probability=result.get("phishing_probability", 0.0),
-                spam_probability=result.get("spam_probability", 0.0),
-                score=min(score, 100.0),
-                reasons=result.get("reasons", ["No specific reasons provided by AI."]),
-                is_urgent=result.get("is_urgent", False),
-                requests_financials=result.get("requests_financials", False),
-                requests_credentials=result.get("requests_credentials", False)
+    # Body coverage. A fixed cut is an evasion primitive: padding the message past
+    # the limit hides the payload from the analyser while leaving it fully visible
+    # to the recipient. Long bodies are chunked with overlap so a payload spanning
+    # a boundary is still seen whole in one window.
+    CHUNK_CHARS = 12000
+    CHUNK_OVERLAP = 600
+    MAX_CHUNKS = 4
+
+    def _chunk_body(self, body: str) -> tuple[list[str], bool]:
+        """
+        Split a body into overlapping windows.
+
+        Returns the windows and whether coverage is partial. Beyond MAX_CHUNKS the
+        head, tail and evenly spaced interior windows are kept so both ends of the
+        message are always analysed.
+        """
+        if len(body) <= self.CHUNK_CHARS:
+            return [body], False
+
+        stride = self.CHUNK_CHARS - self.CHUNK_OVERLAP
+        windows = [body[i : i + self.CHUNK_CHARS] for i in range(0, len(body), stride)]
+        windows = [w for w in windows if w.strip()]
+
+        if len(windows) <= self.MAX_CHUNKS:
+            return windows, False
+
+        # Keep first and last, fill the remainder from evenly spaced interior windows.
+        keep_interior = self.MAX_CHUNKS - 2
+        interior = windows[1:-1]
+        step = max(len(interior) // keep_interior, 1) if keep_interior else 1
+        selected = [windows[0]] + interior[::step][:keep_interior] + [windows[-1]]
+        return selected, True
+
+    def _build_content(
+        self, parsed: ParsedEmail, body: str, index: int, total: int
+    ) -> str:
+        part = f" (part {index + 1} of {total})" if total > 1 else ""
+        return f"""
+        Sender: {parsed.sender}
+        Subject: {parsed.subject}
+        Body{part}: {body}
+        URLs present: {', '.join(parsed.urls)}
+        """
+
+    async def _call_llm(self, content: str) -> dict:
+        gemini_api_key = os.getenv("GEMINI_API_KEY")
+
+        if gemini_api_key:
+            from google import genai
+            from google.genai import types
+
+            client = genai.Client(api_key=gemini_api_key)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=content,
+                config=types.GenerateContentConfig(
+                    system_instruction=self.SYSTEM_PROMPT,
+                    response_mime_type="application/json",
+                    temperature=0.1,
+                ),
             )
-            
+            return json.loads(response.text)
+
+        # Fallback to local OpenAI-compatible server if GEMINI_API_KEY is not set
+        client = openai.AsyncOpenAI(
+            base_url=os.getenv("LOCAL_LLM_URL", "http://localhost:11434/v1"),
+            api_key="local-llm",
+        )
+        response = await client.chat.completions.create(
+            model=os.getenv("LOCAL_LLM_MODEL", "llama3"),
+            messages=[
+                {"role": "system", "content": self.SYSTEM_PROMPT},
+                {"role": "user", "content": content},
+            ],
+            response_format={"type": "json_object"},
+        )
+        return json.loads(response.choices[0].message.content)
+
+    def _merge_results(self, results: list[dict], partial: bool) -> AIAnalysisResult:
+        """Aggregate per-chunk verdicts. A payload anywhere makes the email risky, so
+        probabilities take the maximum and the boolean intents take the union."""
+        phishing = max((float(r.get("phishing_probability", 0.0)) for r in results), default=0.0)
+        spam = max((float(r.get("spam_probability", 0.0)) for r in results), default=0.0)
+
+        reasons: list[str] = []
+        for r in results:
+            for reason in r.get("reasons") or []:
+                if reason not in reasons:
+                    reasons.append(reason)
+        if partial:
+            reasons.append(
+                "Body exceeded full-coverage budget; head, interior and tail sampled"
+            )
+
+        score = max(phishing, spam * 0.7)
+        return AIAnalysisResult(
+            phishing_probability=phishing,
+            spam_probability=spam,
+            score=min(score, 100.0),
+            reasons=reasons or ["No specific reasons provided by AI."],
+            is_urgent=any(r.get("is_urgent") for r in results),
+            requests_financials=any(r.get("requests_financials") for r in results),
+            requests_credentials=any(r.get("requests_credentials") for r in results),
+        )
+
+    async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
+        """LLM analysis of intent and social engineering, over the whole body."""
+        chunks, partial = self._chunk_body(parsed.body_text or "")
+
+        if len(chunks) > 1:
+            logger.info(
+                "Body of %d chars analysed as %d chunk(s)%s",
+                len(parsed.body_text or ""),
+                len(chunks),
+                " (sampled)" if partial else "",
+            )
+
+        try:
+            results = [
+                await self._call_llm(self._build_content(parsed, chunk, i, len(chunks)))
+                for i, chunk in enumerate(chunks)
+            ]
+            return self._merge_results(results, partial)
         except Exception as e:
             print(f"LLM analysis failed: {e}. Falling back to heuristic analysis.")
             return self.analyze(parsed)
