@@ -18,6 +18,36 @@ class ParsedAttachment:
 
 
 @dataclass
+class RenderedEmail:
+    """
+    An email as two documents: the text a recipient renders, and the text a
+    classifier ingests.
+
+    Benign mail diverges slightly — a preheader line, a tracking pixel, a footer.
+    Concealed content widens the gap deliberately, and when the divergent part
+    carries instructions rather than keywords it is an injection channel. Keeping
+    the difference makes it measurable; discarding it does not.
+    """
+
+    visible_text: str = ""
+    hidden_text: str = ""
+    machine_text: str = ""
+    hidden_segments: list[str] = field(default_factory=list)
+    concealment_channels: list[str] = field(default_factory=list)
+    invisible_codepoints: int = 0
+    visible_urls: list[str] = field(default_factory=list)
+    hidden_urls: list[str] = field(default_factory=list)
+
+    @property
+    def hidden_ratio(self) -> float:
+        """Share of the ingested text that the recipient never sees."""
+        total = len(self.visible_text) + len(self.hidden_text)
+        if total == 0:
+            return 0.0
+        return len(self.hidden_text) / total
+
+
+@dataclass
 class ParsedEmail:
     sender: str = ""
     recipient: str = ""
@@ -35,6 +65,14 @@ class ParsedEmail:
     urls: list[str] = field(default_factory=list)
     attachments: list[ParsedAttachment] = field(default_factory=list)
     raw_headers: dict[str, Any] = field(default_factory=dict)
+    rendered: RenderedEmail | None = None
+
+    @property
+    def visible_text(self) -> str:
+        """The body as the recipient sees it, falling back to the plain body."""
+        if self.rendered and self.rendered.visible_text:
+            return self.rendered.visible_text
+        return self.body_text
 
 
 URL_PATTERN = re.compile(
@@ -109,6 +147,302 @@ def html_to_text(html: str) -> str:
         return _collapse_whitespace(unescape(TAG_PATTERN.sub(" ", html)))
 
 
+# --------------------------------------------------------------------------
+# Two-channel extraction: what the recipient renders vs. what the model ingests
+# --------------------------------------------------------------------------
+
+# Codepoints that occupy no visual space. Text built from these is present in the
+# byte stream and absent from the rendered message.
+INVISIBLE_CODEPOINTS = re.compile(
+    "["
+    "­"  # soft hyphen
+    "​-‏"  # zero-width space/non-joiner/joiner, LRM, RLM
+    "‪-‮"  # bidi embedding and override
+    "⁠-⁤"  # word joiner, invisible operators
+    "⁦-⁩"  # bidi isolates
+    "﻿"  # zero-width no-break space
+    "\U000e0000-\U000e007f"  # Unicode tag characters
+    "]"
+)
+
+_STYLE_BLOCK = re.compile(r"<style[^>]*>(.*?)</style>", re.IGNORECASE | re.DOTALL)
+_CSS_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
+_ZERO_LENGTH = re.compile(r"^0(\.0+)?(px|pt|em|rem|ex|%|vh|vw|ch)?$")
+_OFFSCREEN = re.compile(r"^-\s*(\d{3,})(\.\d+)?(px|pt|em|rem|ex|%)?$")
+
+_VOID_ELEMENTS = {
+    "area", "base", "br", "col", "embed", "hr", "img", "input",
+    "link", "meta", "param", "source", "track", "wbr",
+}
+
+_NAMED_COLORS = {
+    "white": "#ffffff",
+    "black": "#000000",
+    "transparent": "transparent",
+}
+
+# An alt or title attribute long enough to be prose rather than a label.
+_ATTRIBUTE_TEXT_THRESHOLD = 40
+
+
+def _parse_style(style: str) -> dict[str, str]:
+    declarations: dict[str, str] = {}
+    for declaration in style.split(";"):
+        prop, sep, value = declaration.partition(":")
+        if sep:
+            declarations[prop.strip().lower()] = value.strip().lower()
+    return declarations
+
+
+def _normalise_color(value: str) -> str:
+    value = value.strip().lower()
+    if value in _NAMED_COLORS:
+        return _NAMED_COLORS[value]
+
+    short = re.fullmatch(r"#([0-9a-f]{3})", value)
+    if short:
+        return "#" + "".join(c * 2 for c in short.group(1))
+    if re.fullmatch(r"#[0-9a-f]{6}", value):
+        return value
+
+    rgb = re.fullmatch(
+        r"rgba?\(\s*(\d+)\s*[,\s]\s*(\d+)\s*[,\s]\s*(\d+)\s*(?:[,/]\s*([\d.]+))?\s*\)",
+        value,
+    )
+    if rgb:
+        alpha = rgb.group(4)
+        if alpha is not None and float(alpha) == 0:
+            return "transparent"
+        return "#%02x%02x%02x" % tuple(int(rgb.group(i)) for i in (1, 2, 3))
+
+    return value
+
+
+def _concealment_channels(style: dict[str, str], attrs: dict[str, str]) -> list[str]:
+    """Name the techniques that keep this element's text off the screen."""
+    channels: list[str] = []
+
+    if style.get("display") == "none":
+        channels.append("display-none")
+    if style.get("visibility") in ("hidden", "collapse"):
+        channels.append("visibility-hidden")
+    if style.get("opacity", "").rstrip("0.") == "" and style.get("opacity", "1") not in ("", "1"):
+        channels.append("opacity-zero")
+    if _ZERO_LENGTH.match(style.get("font-size", "")):
+        channels.append("zero-font-size")
+    if any(_ZERO_LENGTH.match(style.get(prop, "")) for prop in ("height", "max-height")):
+        channels.append("zero-height")
+    if any(_ZERO_LENGTH.match(style.get(prop, "")) for prop in ("width", "max-width")):
+        channels.append("zero-width")
+    if _OFFSCREEN.match(style.get("text-indent", "")):
+        channels.append("offscreen-indent")
+    if style.get("position") in ("absolute", "fixed") and any(
+        _OFFSCREEN.match(style.get(prop, "")) for prop in ("left", "top", "right", "bottom")
+    ):
+        channels.append("offscreen-position")
+    if style.get("mso-hide") == "all":
+        channels.append("mso-hide")
+
+    color = style.get("color")
+    if color:
+        foreground = _normalise_color(color)
+        background = style.get("background-color") or style.get("background")
+        if background and _normalise_color(background) == foreground:
+            channels.append("matched-color")
+        elif foreground == "transparent":
+            channels.append("transparent-color")
+        elif foreground == "#ffffff" and not background:
+            # White text with no declared background: on the default white canvas
+            # this is invisible. Named separately because a dark-themed template
+            # can produce it legitimately.
+            channels.append("white-on-default")
+
+    if "hidden" in attrs:
+        channels.append("hidden-attribute")
+    if attrs.get("aria-hidden") == "true":
+        channels.append("aria-hidden")
+
+    return channels
+
+
+def _hidden_selectors(html: str) -> tuple[set[str], set[str]]:
+    """Collect class and id names that <style> rules use to conceal content."""
+    classes: set[str] = set()
+    ids: set[str] = set()
+
+    for css in _STYLE_BLOCK.findall(html):
+        for selector, body in _CSS_RULE.findall(css):
+            if not _concealment_channels(_parse_style(body), {}):
+                continue
+            for token in re.findall(r"[.#][\w-]+", selector):
+                (classes if token[0] == "." else ids).add(token[1:].lower())
+
+    return classes, ids
+
+
+class _TwoChannelExtractor(HTMLParser):
+    """Split an HTML body into rendered text and concealed text."""
+
+    def __init__(self, hidden_classes: set[str], hidden_ids: set[str]) -> None:
+        super().__init__(convert_charrefs=True)
+        self._hidden_classes = hidden_classes
+        self._hidden_ids = hidden_ids
+        self._stack: list[tuple[str, bool]] = []
+        self._skip_depth = 0
+        self.visible: list[str] = []
+        self.hidden: list[str] = []
+        self.hidden_segments: list[str] = []
+        self.channels: list[str] = []
+        self.visible_urls: list[str] = []
+        self.hidden_urls: list[str] = []
+
+    @property
+    def _concealed(self) -> bool:
+        return any(concealed for _, concealed in self._stack)
+
+    def _note(self, channel: str) -> None:
+        if channel not in self.channels:
+            self.channels.append(channel)
+
+    def _emit(self, text: str, concealed: bool) -> None:
+        if not text.strip():
+            return
+        if concealed:
+            self.hidden.append(text)
+            self.hidden_segments.append(text.strip())
+        else:
+            self.visible.append(text)
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        attributes = {k.lower(): (v or "") for k, v in attrs}
+
+        if tag in _SKIP_ELEMENTS:
+            self._skip_depth += 1
+            return
+
+        channels = _concealment_channels(
+            _parse_style(attributes.get("style", "")), attributes
+        )
+
+        for name in attributes.get("class", "").lower().split():
+            if name in self._hidden_classes:
+                channels.append("stylesheet-class")
+        if attributes.get("id", "").lower() in self._hidden_ids:
+            channels.append("stylesheet-id")
+
+        concealed = self._concealed or bool(channels)
+        for channel in channels:
+            self._note(channel)
+
+        if tag in _BLOCK_ELEMENTS:
+            (self.hidden if concealed else self.visible).append("\n")
+
+        # Attribute text is read by a parser and generally not by a reader.
+        for attribute in ("alt", "title"):
+            value = attributes.get(attribute, "").strip()
+            if value:
+                self._emit(f" {value} ", concealed=True)
+                if len(value) >= _ATTRIBUTE_TEXT_THRESHOLD:
+                    self._note(f"{attribute}-attribute")
+
+        if tag == "a":
+            href = attributes.get("href", "").strip()
+            if href.lower().startswith(("http://", "https://")):
+                target = self.hidden_urls if concealed else self.visible_urls
+                if href not in target:
+                    target.append(href)
+
+        if tag not in _VOID_ELEMENTS:
+            self._stack.append((tag, concealed))
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _SKIP_ELEMENTS:
+            self._skip_depth = max(self._skip_depth - 1, 0)
+            return
+        if tag in _VOID_ELEMENTS:
+            return
+
+        if tag in _BLOCK_ELEMENTS:
+            (self.hidden if self._concealed else self.visible).append("\n")
+
+        for index in range(len(self._stack) - 1, -1, -1):
+            if self._stack[index][0] == tag:
+                del self._stack[index:]
+                return
+        # Unmatched closing tag: leave the stack alone rather than desyncing it.
+
+    def handle_data(self, data: str) -> None:
+        if self._skip_depth:
+            return
+        self._emit(data, self._concealed)
+
+    def handle_comment(self, data: str) -> None:
+        if data.strip():
+            self.hidden.append(f" {data} ")
+            self.hidden_segments.append(data.strip())
+            self._note("html-comment")
+
+
+def render_email(body_html: str, body_text: str = "") -> RenderedEmail:
+    """
+    Separate an email body into what a recipient renders and what a parser reads.
+
+    With no HTML part there is nothing to conceal, so both channels are the plain
+    body. Concealment is reported as named channels rather than a single flag so a
+    finding can say which technique was used.
+    """
+    if not body_html:
+        text = body_text or ""
+        return RenderedEmail(
+            visible_text=text,
+            hidden_text="",
+            machine_text=text,
+            invisible_codepoints=len(INVISIBLE_CODEPOINTS.findall(text)),
+            visible_urls=extract_urls(text),
+        )
+
+    machine_text = html_to_text(body_html)
+    hidden_classes, hidden_ids = _hidden_selectors(body_html)
+    extractor = _TwoChannelExtractor(hidden_classes, hidden_ids)
+
+    try:
+        extractor.feed(body_html)
+        extractor.close()
+    except Exception:
+        # Unparseable markup: treat the whole body as visible rather than inventing
+        # a divergence that would look like an attack.
+        return RenderedEmail(
+            visible_text=machine_text,
+            hidden_text="",
+            machine_text=machine_text,
+            invisible_codepoints=len(INVISIBLE_CODEPOINTS.findall(machine_text)),
+            visible_urls=extract_urls(machine_text),
+        )
+
+    visible_text = _collapse_whitespace("".join(extractor.visible))
+    hidden_text = _collapse_whitespace("".join(extractor.hidden))
+
+    visible_urls = extractor.visible_urls + [
+        u for u in extract_urls(visible_text) if u not in extractor.visible_urls
+    ]
+    hidden_urls = [
+        u
+        for u in extractor.hidden_urls + extract_urls(hidden_text)
+        if u not in visible_urls
+    ]
+
+    return RenderedEmail(
+        visible_text=visible_text,
+        hidden_text=hidden_text,
+        machine_text=machine_text,
+        hidden_segments=extractor.hidden_segments,
+        concealment_channels=extractor.channels,
+        invisible_codepoints=len(INVISIBLE_CODEPOINTS.findall(machine_text)),
+        visible_urls=visible_urls,
+        hidden_urls=list(dict.fromkeys(hidden_urls)),
+    )
+
+
 def extract_urls(text: str) -> list[str]:
     if not text:
         return []
@@ -150,8 +484,10 @@ def parse_email_content(
         except (ValueError, TypeError):
             parsed_date = None
 
+    rendered = render_email(body_html, body_text)
+
     if not body_text.strip() and body_html:
-        body_text = html_to_text(body_html)
+        body_text = rendered.machine_text
 
     combined_text = f"{body_text} {body_html}"
     urls = extract_urls(combined_text)
@@ -173,6 +509,7 @@ def parse_email_content(
         urls=urls,
         attachments=attachments or [],
         raw_headers=raw_headers,
+        rendered=rendered,
     )
 
 
