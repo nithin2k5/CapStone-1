@@ -174,6 +174,62 @@ class TestAIBodyCoverage:
         assert partial is False
 
 
+class TestPromptTrustBoundary:
+    def setup_method(self):
+        from app.services.ai_analysis import AIAnalysisService
+
+        self.service = AIAnalysisService()
+        self.parsed = parse_email_content(
+            {"From": "a@evil.com", "Subject": "Invoice"}, "", CONCEALED_INJECTION
+        )
+
+    def test_concealed_payload_never_reaches_the_model(self):
+        content = self.service._build_content(
+            self.parsed, self.parsed.visible_text, 0, 1
+        )
+        assert "Ignore all previous instructions" not in content
+        assert "Your invoice is attached." in content
+
+    def test_untrusted_content_is_delimited(self):
+        content = self.service._build_content(
+            self.parsed, self.parsed.visible_text, 0, 1
+        )
+        assert "BEGIN UNTRUSTED-CONTENT-" in content
+        assert "END UNTRUSTED-CONTENT-" in content
+
+    def test_concealed_volume_is_reported_without_its_content(self):
+        content = self.service._build_content(
+            self.parsed, self.parsed.visible_text, 0, 1
+        )
+        assert "were concealed from the recipient" in content
+
+    def test_boundary_identifier_rotates_per_request(self):
+        import re
+
+        def boundary(text):
+            return re.search(r"BEGIN (UNTRUSTED-CONTENT-\w+)", text).group(1)
+
+        first = boundary(self.service._build_content(self.parsed, "x", 0, 1))
+        second = boundary(self.service._build_content(self.parsed, "x", 0, 1))
+        assert first != second
+
+    def test_reported_injection_attempt_is_propagated(self):
+        import asyncio
+
+        async def flag(content):
+            return {
+                "phishing_probability": 85,
+                "spam_probability": 0,
+                "reasons": ["hidden directive"],
+                "injection_attempt": True,
+            }
+
+        self.service._call_llm = flag
+        result = asyncio.run(self.service.analyze_with_llm(self.parsed))
+        assert result.injection_attempt is True
+        assert result.reasons[0].startswith("Analyser reported")
+
+
 class TestAIFailureIsVisible:
     """A failed LLM call must not look like a successful scan that found nothing."""
 
