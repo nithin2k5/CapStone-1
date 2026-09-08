@@ -107,8 +107,9 @@ class MicrosoftService:
             raise ValueError("Unable to fetch emails: Token or configuration missing.")
 
         folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
-        # Only select basic fields to avoid large payloads, standard permissions suffice for most
-        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId"
+        # `body` is required, not just `bodyPreview`: the preview is truncated to a few
+        # hundred characters, so analysing it means analysing an excerpt of the message.
+        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,body,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId"
         
         async with httpx.AsyncClient() as client:
             res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
@@ -124,13 +125,21 @@ class MicrosoftService:
 
     def _parse_microsoft_message(self, item: dict, mailbox: str) -> Any:
         from app.services.gmail_service import GmailMessage
-        from app.utils.email_parser import ParsedEmail, extract_urls
+        from app.utils.email_parser import ParsedEmail, extract_urls, html_to_text
         from datetime import datetime, timezone
 
         msg_id = item.get("id", "")
         subject = item.get("subject", "(No Subject)")
         body_preview = item.get("bodyPreview", "")
-        
+
+        body = item.get("body") or {}
+        body_content = body.get("content", "") or ""
+        is_html = (body.get("contentType") or "").lower() == "html"
+        body_html = body_content if is_html else ""
+        body_text = html_to_text(body_content) if is_html else body_content
+        if not body_text.strip():
+            body_text = body_preview
+
         from_email = "unknown@microsoft.com"
         if "from" in item and "emailAddress" in item["from"]:
             from_email = item["from"]["emailAddress"].get("address", from_email)
@@ -161,9 +170,9 @@ class MicrosoftService:
             spf="spf=pass",
             dkim="dkim=pass",
             dmarc="dmarc=pass",
-            body_text=body_preview,
-            body_html="",
-            urls=extract_urls(body_preview),
+            body_text=body_text or "(Empty Body)",
+            body_html=body_html,
+            urls=extract_urls(f"{body_text} {body_html}"),
             attachments=[],
             raw_headers={},
         )

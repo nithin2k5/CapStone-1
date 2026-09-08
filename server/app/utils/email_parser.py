@@ -3,6 +3,8 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from email import message_from_string
 from email.utils import parsedate_to_datetime
+from html import unescape
+from html.parser import HTMLParser
 from typing import Any
 from urllib.parse import urlparse
 
@@ -39,6 +41,72 @@ URL_PATTERN = re.compile(
     r"https?://[^\s<>\"{}|\\^`\[\]]+|www\.[^\s<>\"{}|\\^`\[\]]+",
     re.IGNORECASE,
 )
+
+TAG_PATTERN = re.compile(r"<[^>]*>")
+
+# Elements whose text content is markup, not message content. All of these are
+# non-void and reliably closed, so tracking nesting depth is safe.
+_SKIP_ELEMENTS = {"script", "style", "title", "noscript"}
+
+# Elements that imply a line break, so words either side do not run together.
+_BLOCK_ELEMENTS = {
+    "p", "div", "br", "tr", "td", "li", "h1", "h2", "h3", "h4", "h5", "h6",
+    "table", "blockquote", "section", "article", "header", "footer", "hr",
+    "ul", "ol", "pre",
+}
+
+
+class _HTMLTextExtractor(HTMLParser):
+    """Collect the readable text of an HTML document, dropping markup-only elements."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self._chunks: list[str] = []
+        self._skip_depth = 0
+
+    def handle_starttag(self, tag: str, attrs: list) -> None:
+        if tag in _SKIP_ELEMENTS:
+            self._skip_depth += 1
+        elif tag in _BLOCK_ELEMENTS:
+            self._chunks.append("\n")
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in _SKIP_ELEMENTS:
+            self._skip_depth = max(self._skip_depth - 1, 0)
+        elif tag in _BLOCK_ELEMENTS:
+            self._chunks.append("\n")
+
+    def handle_data(self, data: str) -> None:
+        if not self._skip_depth:
+            self._chunks.append(data)
+
+    def get_text(self) -> str:
+        return "".join(self._chunks)
+
+
+def _collapse_whitespace(text: str) -> str:
+    lines = (re.sub(r"[^\S\n]+", " ", line).strip() for line in text.split("\n"))
+    return "\n".join(line for line in lines if line)
+
+
+def html_to_text(html: str) -> str:
+    """
+    Extract the readable text of an HTML email body.
+
+    HTML-only messages carry no text/plain part, so without this the content
+    analysers receive nothing to work with. On malformed markup this degrades to
+    a tag strip rather than returning an empty body.
+    """
+    if not html:
+        return ""
+
+    extractor = _HTMLTextExtractor()
+    try:
+        extractor.feed(html)
+        extractor.close()
+        return _collapse_whitespace(extractor.get_text())
+    except Exception:
+        return _collapse_whitespace(unescape(TAG_PATTERN.sub(" ", html)))
 
 
 def extract_urls(text: str) -> list[str]:
@@ -81,6 +149,9 @@ def parse_email_content(
             parsed_date = parsedate_to_datetime(date_str)
         except (ValueError, TypeError):
             parsed_date = None
+
+    if not body_text.strip() and body_html:
+        body_text = html_to_text(body_html)
 
     combined_text = f"{body_text} {body_html}"
     urls = extract_urls(combined_text)

@@ -11,7 +11,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.database.models import User
-from app.utils.email_parser import ParsedAttachment, ParsedEmail, extract_urls
+from app.utils.email_parser import (
+    ParsedAttachment,
+    ParsedEmail,
+    extract_urls,
+    html_to_text,
+)
 
 logger = get_logger("gmail")
 
@@ -363,6 +368,18 @@ class GmailService:
             else ("dmarc=" in auth_results.lower() and "dmarc=fail" or None)
         )
 
+        # HTML-only messages carry no text/plain part. Deriving the text here is what
+        # lets the content analysers see the body at all; leaving it blank silently
+        # bypassed them for the majority of real mail.
+        if not body_text.strip() and body_html:
+            body_text = html_to_text(body_html)
+            if body_text:
+                logger.debug(
+                    "Derived %d chars of body text from HTML for message %s",
+                    len(body_text),
+                    msg_id,
+                )
+
         parsed = ParsedEmail(
             sender=sender,
             recipient=recipient,
@@ -373,7 +390,7 @@ class GmailService:
             spf=spf,
             dkim=dkim,
             dmarc=dmarc,
-            body_text=body_text or ("(Empty Body)" if not body_html else ""),
+            body_text=body_text or "(Empty Body)",
             body_html=body_html,
             urls=extract_urls((body_text or "") + " " + (body_html or "")),
             attachments=attachments,
