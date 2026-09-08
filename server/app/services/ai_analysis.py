@@ -18,6 +18,11 @@ class AIAnalysisResult:
     is_urgent: bool = False
     requests_financials: bool = False
     requests_credentials: bool = False
+    # Which analyser produced this, and whether it is a downgrade from what was
+    # asked for. Without these a failed LLM call is indistinguishable from a
+    # successful scan that found nothing.
+    source: str = "heuristic"
+    degraded: bool = False
 
 
 class AIAnalysisService:
@@ -213,6 +218,41 @@ class AIAnalysisService:
         )
         return json.loads(response.choices[0].message.content)
 
+    REQUIRED_FIELDS = ("phishing_probability", "spam_probability")
+
+    def _validate_payload(self, raw: object) -> dict:
+        """
+        Check a model response before trusting it.
+
+        A missing probability previously defaulted to 0.0, so a malformed response
+        read as "clean" — the safest-looking possible outcome. Treat it as a failure
+        instead, and let the caller record the degradation.
+        """
+        if not isinstance(raw, dict):
+            raise ValueError(f"expected a JSON object, got {type(raw).__name__}")
+
+        validated: dict = {}
+        for key in self.REQUIRED_FIELDS:
+            if key not in raw:
+                raise ValueError(f"missing required field {key!r}")
+            try:
+                value = float(raw[key])
+            except (TypeError, ValueError):
+                raise ValueError(f"field {key!r} is not numeric: {raw[key]!r}")
+            if value != value or value < 0 or value > 100:  # NaN or out of range
+                raise ValueError(f"field {key!r} out of range: {value!r}")
+            validated[key] = value
+
+        reasons = raw.get("reasons") or []
+        if not isinstance(reasons, list):
+            raise ValueError("field 'reasons' is not a list")
+        validated["reasons"] = [str(r) for r in reasons if str(r).strip()]
+
+        for key in ("is_urgent", "requests_financials", "requests_credentials"):
+            validated[key] = bool(raw.get(key, False))
+
+        return validated
+
     def _merge_results(self, results: list[dict], partial: bool) -> AIAnalysisResult:
         """Aggregate per-chunk verdicts. A payload anywhere makes the email risky, so
         probabilities take the maximum and the boolean intents take the union."""
@@ -238,7 +278,22 @@ class AIAnalysisService:
             is_urgent=any(r.get("is_urgent") for r in results),
             requests_financials=any(r.get("requests_financials") for r in results),
             requests_credentials=any(r.get("requests_credentials") for r in results),
+            source="llm",
+            degraded=False,
         )
+
+    DEGRADED_REASON = (
+        "AI analysis unavailable: LLM call failed, keyword heuristic used instead"
+    )
+
+    def _degraded_fallback(self, parsed: ParsedEmail) -> AIAnalysisResult:
+        result = self.analyze(parsed)
+        result.source = "heuristic-fallback"
+        result.degraded = True
+        result.reasons = [self.DEGRADED_REASON] + [
+            r for r in result.reasons if r != "No AI indicators detected"
+        ]
+        return result
 
     async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
         """LLM analysis of intent and social engineering, over the whole body."""
@@ -254,11 +309,21 @@ class AIAnalysisService:
 
         try:
             results = [
-                await self._call_llm(self._build_content(parsed, chunk, i, len(chunks)))
+                self._validate_payload(
+                    await self._call_llm(
+                        self._build_content(parsed, chunk, i, len(chunks))
+                    )
+                )
                 for i, chunk in enumerate(chunks)
             ]
             return self._merge_results(results, partial)
         except Exception as e:
-            print(f"LLM analysis failed: {e}. Falling back to heuristic analysis.")
-            return self.analyze(parsed)
+            logger.error(
+                "LLM analysis failed (%s: %s); falling back to keyword heuristic. "
+                "This scan's AI score is not an LLM verdict.",
+                type(e).__name__,
+                e,
+                exc_info=True,
+            )
+            return self._degraded_fallback(parsed)
 

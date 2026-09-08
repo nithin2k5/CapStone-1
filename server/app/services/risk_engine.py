@@ -85,6 +85,8 @@ class RiskEngine:
             explanation_parts.append(f"Attachments: {len(attachment.findings)} concern(s)")
         if ai.reasons:
             explanation_parts.append(f"AI: {ai.phishing_probability:.0f}% phishing probability")
+        if ai.degraded:
+            explanation_parts.append("AI module degraded (heuristic fallback)")
 
         explanation = "; ".join(explanation_parts) or "No significant threats detected"
 
@@ -106,6 +108,8 @@ class RiskEngine:
                     "phishing_probability": ai.phishing_probability,
                     "spam_probability": ai.spam_probability,
                     "reasons": ai.reasons,
+                    "source": ai.source,
+                    "degraded": ai.degraded,
                 },
             },
         )

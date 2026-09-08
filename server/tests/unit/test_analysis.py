@@ -174,6 +174,106 @@ class TestAIBodyCoverage:
         assert partial is False
 
 
+class TestAIFailureIsVisible:
+    """A failed LLM call must not look like a successful scan that found nothing."""
+
+    def setup_method(self):
+        from app.services.ai_analysis import AIAnalysisService
+
+        self.service = AIAnalysisService()
+
+    @pytest.mark.parametrize(
+        "payload",
+        [
+            {"spam_probability": 0},
+            {"phishing_probability": "x", "spam_probability": 0},
+            {"phishing_probability": 150, "spam_probability": 0},
+            {"phishing_probability": -1, "spam_probability": 0},
+            {"phishing_probability": float("nan"), "spam_probability": 0},
+            {"phishing_probability": 1, "spam_probability": 0, "reasons": "oops"},
+            "not a dict",
+        ],
+    )
+    def test_malformed_payloads_are_rejected(self, payload):
+        with pytest.raises(ValueError):
+            self.service._validate_payload(payload)
+
+    def test_valid_payload_is_coerced(self):
+        validated = self.service._validate_payload(
+            {
+                "phishing_probability": "88",
+                "spam_probability": 2,
+                "reasons": ["a", "", "b"],
+                "requests_credentials": 1,
+            }
+        )
+        assert validated["phishing_probability"] == 88.0
+        assert validated["reasons"] == ["a", "b"]
+        assert validated["requests_credentials"] is True
+
+    def test_call_failure_is_marked_degraded(self):
+        import asyncio
+
+        async def boom(content):
+            raise RuntimeError("connection refused")
+
+        self.service._call_llm = boom
+        result = asyncio.run(
+            self.service.analyze_with_llm(
+                ParsedEmail(subject="Urgent verify your account", body_text="click here")
+            )
+        )
+        assert result.degraded is True
+        assert result.source == "heuristic-fallback"
+        assert result.reasons[0].startswith("AI analysis unavailable")
+
+    def test_malformed_response_is_a_failure_not_a_zero(self):
+        import asyncio
+
+        async def junk(content):
+            return {"reasons": ["nothing"]}
+
+        self.service._call_llm = junk
+        result = asyncio.run(
+            self.service.analyze_with_llm(ParsedEmail(subject="Urgent", body_text="x"))
+        )
+        assert result.degraded is True
+
+    def test_healthy_call_is_not_degraded(self):
+        import asyncio
+
+        async def ok(content):
+            return {
+                "phishing_probability": 70,
+                "spam_probability": 5,
+                "reasons": ["looks bad"],
+                "is_urgent": True,
+            }
+
+        self.service._call_llm = ok
+        result = asyncio.run(
+            self.service.analyze_with_llm(ParsedEmail(subject="hi", body_text="short"))
+        )
+        assert result.source == "llm"
+        assert result.degraded is False
+        assert result.score == 70
+
+    def test_degradation_reaches_the_risk_engine_output(self):
+        from app.services.ai_analysis import AIAnalysisService
+        from app.services.attachment_analysis import AttachmentAnalysisService
+
+        ai = AIAnalysisService()._degraded_fallback(ParsedEmail(subject="Urgent"))
+        risk = RiskEngine().calculate(
+            HeaderAnalysisService().analyze(ParsedEmail()),
+            URLAnalysisService().analyze([]),
+            AttachmentAnalysisService().analyze([]),
+            ai,
+        )
+        assert "degraded" in risk.explanation
+        assert risk.findings["ai"]["degraded"] is True
+        assert risk.findings["ai"]["source"] == "heuristic-fallback"
+
+
 class TestRiskEngine:
     def test_calculate_risk(self):
         from app.services.ai_analysis import AIAnalysisService
