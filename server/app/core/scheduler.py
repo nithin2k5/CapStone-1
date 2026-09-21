@@ -37,7 +37,7 @@ async def fetch_emails_job():
                     )
                     scanned_emails = 0
                     for msg in messages:
-                        email_record = await repo.create_from_gmail(user.id, msg)
+                        email_record, _ = await repo.create_from_gmail(user.id, msg)
 
                         # Only scan if it's pending (to avoid rescanning)
                         if email_record.status != EmailStatus.PENDING:
@@ -63,9 +63,14 @@ async def fetch_emails_job():
 
                     logger.info(f"Fetched and scanned {scanned_emails} emails for user {user.email}")
                 except Exception as e:
-                    logger.error(f"Failed to fetch/scan for user {user.id}: {e}")
+                    # With the traceback suppressed, a programming error in this
+                    # loop was indistinguishable from a provider timeout and the
+                    # sweep looked like it was merely having a bad run.
+                    logger.error(
+                        "Failed to fetch/scan for user %s: %s", user.id, e, exc_info=True
+                    )
     except Exception as e:
-        logger.error(f"Error in scheduled fetch_emails_job: {e}")
+        logger.error("Error in scheduled fetch_emails_job: %s", e, exc_info=True)
 
 async def run_scheduler():
     logger.info("Background scheduler started (fetching emails every 5 minutes).")
