@@ -39,18 +39,29 @@ class ScanService:
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
 
     def _email_to_parsed(self, email: Email) -> ParsedEmail:
-        if email.raw_headers:
-            return parse_email_content(
-                email.raw_headers,
-                email.body_text or "",
-                email.body_html or "",
-            )
-        return ParsedEmail(
-            sender=email.sender,
-            recipient=email.recipient,
-            subject=email.subject,
-            body_text=email.body_text or "",
-            body_html=email.body_html or "",
+        """
+        Rebuild a parse from a stored row.
+
+        A row without captured headers used to get a hand-built ParsedEmail with
+        no extracted URLs and no rendered body, which silently scored URL and
+        perceptual analysis at zero however many links or concealed instructions
+        the body held. Everything goes through the parser now; the stored columns
+        stand in for the headers that are missing.
+        """
+        headers = dict(email.raw_headers or {})
+        present = {key.lower() for key in headers}
+        for name, value in (
+            ("From", email.sender),
+            ("To", email.recipient),
+            ("Subject", email.subject),
+        ):
+            if value and name.lower() not in present:
+                headers[name] = value
+
+        return parse_email_content(
+            headers,
+            email.body_text or "",
+            email.body_html or "",
         )
 
     async def scan_email(
