@@ -67,6 +67,10 @@ class ParsedEmail:
     attachments: list[ParsedAttachment] = field(default_factory=list)
     raw_headers: dict[str, Any] = field(default_factory=dict)
     rendered: RenderedEmail | None = None
+    # The message exactly as it arrived, when the provider can supply it. DKIM
+    # hashes the original bytes, so a message reassembled from parsed parts
+    # cannot be verified — only these can. Not persisted.
+    raw_message: bytes | None = None
 
     @property
     def visible_text(self) -> str:
@@ -556,7 +560,7 @@ def extract_auth(auth_results: str, mechanism: str) -> str | None:
     return match.group(0) if match else None
 
 
-def parse_raw_email(raw_email: str) -> ParsedEmail:
+def parse_raw_email(raw_email: str, raw_message: bytes | None = None) -> ParsedEmail:
     msg = message_from_string(raw_email)
     headers = collect_headers(msg.items())
     body_text = ""
@@ -587,7 +591,9 @@ def parse_raw_email(raw_email: str) -> ParsedEmail:
         if payload:
             body_text = payload.decode("utf-8", errors="ignore")
 
-    return parse_email_content(headers, body_text, body_html, attachments)
+    parsed = parse_email_content(headers, body_text, body_html, attachments)
+    parsed.raw_message = raw_message if raw_message is not None else raw_email.encode()
+    return parsed
 
 
 def extract_domain(email_or_url: str) -> str:

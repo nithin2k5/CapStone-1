@@ -7,6 +7,7 @@ from app.database.models import Email, EmailStatus, RiskLevel, ScanResult
 from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
+from app.services.dkim_verification import DKIMVerificationService
 from app.services.header_analysis import HeaderAnalysisService
 from app.services.perceptual_analysis import PerceptualAnalysisService
 from app.services.quarantine_service import QuarantineService
@@ -27,6 +28,7 @@ class ScanService:
         attachment_service: AttachmentAnalysisService | None = None,
         ai_service: AIAnalysisService | None = None,
         perceptual_service: PerceptualAnalysisService | None = None,
+        dkim_service: DKIMVerificationService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
     ):
@@ -35,6 +37,7 @@ class ScanService:
         self.attachment_service = attachment_service or AttachmentAnalysisService()
         self.ai_service = ai_service or AIAnalysisService()
         self.perceptual_service = perceptual_service or PerceptualAnalysisService()
+        self.dkim_service = dkim_service or DKIMVerificationService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
 
@@ -80,7 +83,11 @@ class ScanService:
 
         logger.info("Scanning email %s subject=%r", email.id, email.subject)
 
-        header_result = self.header_service.analyze(parsed)
+        # Check the signature ourselves where the original bytes survived, and
+        # fall back to the receiving server's report where they did not.
+        dkim_local = await self.dkim_service.verify(parsed.raw_message)
+
+        header_result = self.header_service.analyze(parsed, dkim_local)
         url_result = self.url_service.analyze(parsed.urls)
         attachment_result = self.attachment_service.analyze(parsed.attachments)
         ai_result = await self.ai_service.analyze_with_llm(parsed)

@@ -10,6 +10,7 @@ from app.database.models import User
 from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
+from app.services.dkim_verification import DKIMVerificationService
 from app.services.gmail_service import GmailService
 from app.services.header_analysis import HeaderAnalysisService
 from app.services.perceptual_analysis import PerceptualAnalysisService
@@ -67,6 +68,7 @@ def get_scan_service() -> ScanService:
         attachment_service=AttachmentAnalysisService(),
         ai_service=AIAnalysisService(),
         perceptual_service=PerceptualAnalysisService(),
+        dkim_service=DKIMVerificationService(),
         risk_engine=risk_engine,
         quarantine_service=QuarantineService(risk_engine),
     )

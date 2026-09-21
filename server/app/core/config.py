@@ -50,6 +50,12 @@ class Settings(BaseSettings):
         alias="MICROSOFT_REDIRECT_URI",
     )
 
+    # DKIM. Verifying a signature here needs the message exactly as it arrived,
+    # which Gmail serves as a second request per message. Disable to halve the
+    # API calls per fetch and fall back to the receiving server's reported
+    # verdict, which a message from an untrusted source can assert for itself.
+    dkim_verify_enabled: bool = Field(default=True, alias="DKIM_VERIFY_ENABLED")
+
     # Redis (optional, architecture ready)
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     redis_enabled: bool = Field(default=False, alias="REDIS_ENABLED")

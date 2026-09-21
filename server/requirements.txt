@@ -35,6 +35,10 @@ celery>=5.4.0
 # HTTP client
 httpx>=0.28.0
 
+# DKIM signature verification
+dkimpy>=1.1.8
+dnspython>=2.7.0
+
 # Testing
 pytest>=8.3.0
 pytest-asyncio>=0.24.0

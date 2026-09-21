@@ -174,6 +174,58 @@ class GmailService:
             logger.error("Failed to modify labels for message %s: %s - %s", message_id, res.status_code, res.text)
             return False
 
+    # Gmail returns either the parsed structure or the original bytes, never
+    # both, so the bytes DKIM needs are a second request. Capped because a
+    # message with large attachments arrives whole in this form.
+    MAX_RAW_BYTES = 10 * 1024 * 1024
+
+    async def fetch_raw_message(
+        self, client: httpx.AsyncClient, headers: dict, message_id: str
+    ) -> bytes | None:
+        """
+        Retrieve a message exactly as it arrived, for signature verification.
+
+        Returns None rather than raising: a message whose original bytes cannot
+        be retrieved is simply one whose signature goes unchecked, and that must
+        not fail the fetch.
+        """
+        url = (
+            "https://gmail.googleapis.com/gmail/v1/users/me/messages/"
+            f"{message_id}?format=raw"
+        )
+        try:
+            res = await client.get(url, headers=headers)
+            if res.status_code != 200:
+                logger.info(
+                    "Raw message unavailable for id=%s (%s); DKIM will not be verified",
+                    message_id,
+                    res.status_code,
+                )
+                return None
+
+            encoded = res.json().get("raw")
+            if not encoded:
+                return None
+
+            padding = -len(encoded) % 4
+            raw = base64.urlsafe_b64decode(encoded + "=" * padding)
+            if len(raw) > self.MAX_RAW_BYTES:
+                logger.info(
+                    "Raw message for id=%s is %d bytes; skipping DKIM verification",
+                    message_id,
+                    len(raw),
+                )
+                return None
+            return raw
+        except Exception as e:
+            logger.info(
+                "Could not retrieve raw message for id=%s (%s: %s)",
+                message_id,
+                type(e).__name__,
+                e,
+            )
+            return None
+
     async def fetch_messages(
         self,
         user: User | UUID,
@@ -277,6 +329,10 @@ class GmailService:
                     gmail_msg = self._parse_gmail_message_json(
                         detail_res.json(), mailbox
                     )
+                    if get_settings().dkim_verify_enabled:
+                        gmail_msg.parsed.raw_message = await self.fetch_raw_message(
+                            client, headers, msg_id
+                        )
                     messages.append(gmail_msg)
                 else:
                     logger.warning(

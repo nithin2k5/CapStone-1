@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 
+from app.services.dkim_verification import DKIMVerificationResult
 from app.utils.email_parser import ParsedEmail, extract_domain
 
 
@@ -10,6 +11,9 @@ class HeaderAnalysisResult:
     reply_to_mismatch: bool = False
     failed_dmarc: bool = False
     auth_unavailable: bool = False
+    # True when the DKIM verdict came from checking the signature here rather
+    # than from the Authentication-Results header, which the sender can write.
+    dkim_verified_locally: bool = False
 
 
 def auth_verdict(value: str | None) -> str:
@@ -63,13 +67,66 @@ class HeaderAnalysisService:
         findings.append(f"{label} result unavailable — sender not verified")
         return weight * self.UNKNOWN_FACTOR, verdict
 
-    def analyze(self, parsed: ParsedEmail) -> HeaderAnalysisResult:
+    def _score_local_dkim(
+        self, local: DKIMVerificationResult, reported: str | None, findings: list[str]
+    ) -> tuple[float, str]:
+        """
+        Score a DKIM verdict we produced ourselves.
+
+        This one is not a report we are choosing to believe, so it takes the full
+        weight of an "unknown" away: a signature that verifies against the key the
+        signing domain publishes could not have been asserted by the sender.
+        """
+        weight = self.AUTH_WEIGHTS["dkim"]
+        verdict = local.verdict
+
+        if verdict == "pass":
+            findings.append(f"DKIM signature verified locally ({local.domain})")
+            contribution = 0.0
+        elif verdict == "fail":
+            findings.append(
+                f"DKIM signature failed local verification ({local.domain}) — "
+                "the message does not match what the signing domain signed"
+            )
+            contribution = weight
+        else:  # "none"
+            findings.append("DKIM not signed by sender domain (checked locally)")
+            contribution = weight
+
+        # A reported pass alongside a local failure means the message was altered
+        # after the receiving server checked it, or the header was written by
+        # someone who never performed the check.
+        if verdict == "fail" and auth_verdict(reported) == "pass":
+            findings.append(
+                "Authentication-Results reports a DKIM pass that local "
+                "verification contradicts"
+            )
+
+        return contribution, verdict
+
+    def analyze(
+        self,
+        parsed: ParsedEmail,
+        dkim_local: DKIMVerificationResult | None = None,
+    ) -> HeaderAnalysisResult:
         findings: list[str] = []
         score = 0.0
         reply_to_mismatch = False
 
         spf_score, spf_verdict = self._score_auth("spf", parsed.spf, findings)
-        dkim_score, dkim_verdict = self._score_auth("dkim", parsed.dkim, findings)
+
+        # Prefer a signature we checked over a verdict we were handed.
+        if dkim_local is not None and dkim_local.is_local:
+            dkim_score, dkim_verdict = self._score_local_dkim(
+                dkim_local, parsed.dkim, findings
+            )
+            dkim_verified_locally = True
+        else:
+            dkim_score, dkim_verdict = self._score_auth("dkim", parsed.dkim, findings)
+            dkim_verified_locally = False
+            if dkim_local is not None and dkim_local.detail:
+                findings.append(f"Local DKIM check skipped: {dkim_local.detail}")
+
         dmarc_score, dmarc_verdict = self._score_auth("dmarc", parsed.dmarc, findings)
         score += spf_score + dkim_score + dmarc_score
 
@@ -77,6 +134,12 @@ class HeaderAnalysisService:
         # compounding rules; an unavailable result must not trigger them.
         failed_dmarc = dmarc_verdict in ("fail", "none")
         auth_unavailable = "unknown" in (spf_verdict, dkim_verdict, dmarc_verdict)
+
+        # A locally failed signature is tamper evidence for the whole message, so
+        # it carries the DMARC compounding rules even when the reported DMARC
+        # result says otherwise.
+        if dkim_verified_locally and dkim_verdict == "fail":
+            failed_dmarc = True
 
         sender_domain = extract_domain(parsed.sender)
         reply_domain = extract_domain(parsed.reply_to) if parsed.reply_to else ""
@@ -111,4 +174,5 @@ class HeaderAnalysisService:
             reply_to_mismatch=reply_to_mismatch,
             failed_dmarc=failed_dmarc,
             auth_unavailable=auth_unavailable,
+            dkim_verified_locally=dkim_verified_locally,
         )

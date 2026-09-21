@@ -15,6 +15,11 @@ Production-ready REST API for phishing prevention and email security analysis.
 - Gmail email retrieval (mock data when OAuth not configured)
 - Email parsing (headers, body, URLs, attachments)
 - Header analysis (SPF, DKIM, DMARC, sender anomalies)
+  - **DKIM is verified locally** against the signing domain's published key, so
+    the verdict does not depend on trusting the message's own headers
+  - SPF and DMARC are read from the receiving server's `Authentication-Results`.
+    Neither can be performed after delivery: SPF validates the connecting IP at
+    the moment of delivery, and DMARC is a policy decision layered on top of it
 - URL analysis (shorteners, typosquatting, blacklists)
 - Attachment analysis (dangerous extensions, macros, archives)
 - AI analysis placeholder (heuristic mock, LLM-ready interface)
