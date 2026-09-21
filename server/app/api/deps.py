@@ -12,6 +12,7 @@ from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
 from app.services.gmail_service import GmailService
 from app.services.header_analysis import HeaderAnalysisService
+from app.services.perceptual_analysis import PerceptualAnalysisService
 from app.services.quarantine_service import QuarantineService
 from app.services.risk_engine import RiskEngine
 from app.services.scan_service import ScanService
@@ -65,6 +66,7 @@ def get_scan_service() -> ScanService:
         url_service=URLAnalysisService(),
         attachment_service=AttachmentAnalysisService(),
         ai_service=AIAnalysisService(),
+        perceptual_service=PerceptualAnalysisService(),
         risk_engine=risk_engine,
         quarantine_service=QuarantineService(risk_engine),
     )
