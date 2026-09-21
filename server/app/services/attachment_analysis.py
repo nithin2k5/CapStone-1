@@ -1,4 +1,3 @@
-import hashlib
 from dataclasses import dataclass, field
 
 from app.utils.email_parser import ParsedAttachment
@@ -62,9 +61,13 @@ class AttachmentAnalysisService:
                 score += 15
                 findings.append(f"Large attachment ({attachment.size} bytes): {attachment.filename}")
 
-            # Compute SHA256 placeholder (would use actual content with ClamAV)
-            content_hash = attachment.sha256 or self._mock_hash(attachment.filename)
-            hashes[attachment.filename] = content_hash
+            # Only a hash of the actual bytes is reported. This used to fall back
+            # to hashing the filename, which produced a value indistinguishable
+            # from a content hash and would return "unknown file" from any threat
+            # intel lookup — worse than reporting nothing. Providers that hand
+            # over metadata without the payload simply have no hash.
+            if attachment.sha256:
+                hashes[attachment.filename] = attachment.sha256
 
         return AttachmentAnalysisResult(
             score=min(score, self.MAX_SCORE),
@@ -75,9 +78,6 @@ class AttachmentAnalysisService:
     def _get_extension(self, filename: str) -> str:
         parts = filename.rsplit(".", 1)
         return f".{parts[-1]}" if len(parts) > 1 else ""
-
-    def _mock_hash(self, filename: str) -> str:
-        return hashlib.sha256(filename.encode()).hexdigest()
 
     # ClamAV integration
     async def scan_with_clamav(self, file_path: str) -> bool:

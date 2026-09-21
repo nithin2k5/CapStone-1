@@ -1,3 +1,4 @@
+import hashlib
 import re
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -538,6 +539,7 @@ def parse_raw_email(raw_email: str) -> ParsedEmail:
                         filename=filename,
                         content_type=content_type,
                         size=len(payload),
+                        sha256=hashlib.sha256(payload).hexdigest() if payload else None,
                     )
                 )
             elif content_type == "text/plain" and not body_text:

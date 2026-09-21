@@ -928,3 +928,48 @@ class TestChunkedAnalysisIsConcurrent:
 
         assert result.degraded is True
         assert result.source == "heuristic-fallback"
+
+
+class TestAttachmentHashesAreReal:
+    """
+    A reported hash must be a hash of the file.
+
+    This path used to fall back to hashing the filename, producing a value
+    indistinguishable from a content hash in the findings. Anyone checking one
+    against threat intel would get "unknown file" for a file that is known.
+    """
+
+    def _raw_with_attachment(self, payload: bytes, filename: str) -> str:
+        import base64
+
+        return (
+            "From: a@b.com\nSubject: Invoice\n"
+            "Content-Type: multipart/mixed; boundary=BB\n\n"
+            "--BB\nContent-Type: text/plain\n\nSee attached.\n"
+            f"--BB\nContent-Type: application/octet-stream\n"
+            f'Content-Disposition: attachment; filename="{filename}"\n'
+            "Content-Transfer-Encoding: base64\n\n"
+            f"{base64.b64encode(payload).decode()}\n--BB--\n"
+        )
+
+    def test_hash_is_taken_from_the_bytes(self):
+        import hashlib
+        from app.utils.email_parser import parse_raw_email
+
+        payload = b"malicious-bytes"
+        parsed = parse_raw_email(self._raw_with_attachment(payload, "invoice.pdf.exe"))
+        attachment = parsed.attachments[0]
+
+        assert attachment.sha256 == hashlib.sha256(payload).hexdigest()
+        assert attachment.sha256 != hashlib.sha256(b"invoice.pdf.exe").hexdigest()
+
+    def test_metadata_only_attachment_reports_no_hash(self):
+        from app.services.attachment_analysis import AttachmentAnalysisService
+        from app.utils.email_parser import ParsedAttachment
+
+        result = AttachmentAnalysisService().analyze(
+            [ParsedAttachment("x.exe", "application/octet-stream", 10)]
+        )
+
+        assert result.hashes == {}
+        assert any("Dangerous executable" in f for f in result.findings)
