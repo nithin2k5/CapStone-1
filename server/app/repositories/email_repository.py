@@ -20,9 +20,14 @@ class EmailRepository:
         )
         return result.scalar_one_or_none()
 
-    async def get_by_gmail_id(self, gmail_message_id: str) -> Email | None:
+    async def get_by_gmail_id(
+        self, gmail_message_id: str, user_id: UUID
+    ) -> Email | None:
         result = await self.db.execute(
-            select(Email).where(Email.gmail_message_id == gmail_message_id)
+            select(Email).where(
+                Email.gmail_message_id == gmail_message_id,
+                Email.user_id == user_id,
+            )
         )
         return result.scalar_one_or_none()
 
@@ -52,7 +57,7 @@ class EmailRepository:
     async def create_from_gmail(
         self, user_id: UUID, gmail_msg: GmailMessage
     ) -> tuple[Email, bool]:
-        existing = await self.get_by_gmail_id(gmail_msg.message_id)
+        existing = await self.get_by_gmail_id(gmail_msg.message_id, user_id)
         if existing:
             return existing, False
 
@@ -78,7 +83,7 @@ class EmailRepository:
             return email, True
         except IntegrityError:
             await self.db.rollback()
-            existing = await self.get_by_gmail_id(gmail_msg.message_id)
+            existing = await self.get_by_gmail_id(gmail_msg.message_id, user_id)
             if existing:
                 return existing, False
             raise

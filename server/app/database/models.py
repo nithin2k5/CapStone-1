@@ -12,6 +12,7 @@ from sqlalchemy import (
     JSON as JSONB,
     String,
     Text,
+    UniqueConstraint,
     Uuid as UUID,
     func,
 )
@@ -94,13 +95,20 @@ class UserSettings(Base):
 class Email(Base):
     __tablename__ = "emails"
 
+    # A provider message id identifies a message within one mailbox, not across
+    # all of them. Enforcing it globally meant the second user to receive a
+    # message with an id already in the table was handed the first user's row.
+    __table_args__ = (
+        UniqueConstraint("user_id", "gmail_message_id", name="uq_emails_user_message"),
+    )
+
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
     )
-    gmail_message_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    gmail_message_id: Mapped[str] = mapped_column(String(255), index=True)
     sender: Mapped[str] = mapped_column(String(512), nullable=False)
     recipient: Mapped[str] = mapped_column(String(512), nullable=False)
     subject: Mapped[str] = mapped_column(String(1024), default="")

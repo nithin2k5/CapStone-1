@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 import logging
 
-from sqlalchemy import inspect, text
+from sqlalchemy import Index, MetaData, Table, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -61,6 +61,50 @@ def _add_missing_columns(connection) -> None:
             )
 
 
+def _repair_email_uniqueness(connection) -> None:
+    """
+    Replace the global unique index on emails.gmail_message_id with a per-user one.
+
+    create_all never alters an existing table, so a database created before the
+    constraint was scoped keeps enforcing the id globally and keeps handing the
+    second user to receive a message the first user's row.
+    """
+    inspector = inspect(connection)
+    if "emails" not in set(inspector.get_table_names()):
+        return
+
+    scoped = {"user_id", "gmail_message_id"}
+    unique_sets = [
+        set(index["column_names"]) for index in inspector.get_indexes("emails") if index["unique"]
+    ] + [
+        set(constraint["column_names"])
+        for constraint in inspector.get_unique_constraints("emails")
+    ]
+    if scoped in unique_sets:
+        return
+
+    table = Table("emails", MetaData(), autoload_with=connection)
+
+    for index in list(table.indexes):
+        if index.unique and [column.name for column in index.columns] == ["gmail_message_id"]:
+            index.drop(connection)
+
+    # Postgres reports a unique constraint separately from its backing index.
+    if connection.dialect.name == "postgresql":
+        for constraint in inspector.get_unique_constraints("emails"):
+            if constraint["column_names"] == ["gmail_message_id"] and constraint.get("name"):
+                connection.exec_driver_sql(
+                    f'ALTER TABLE emails DROP CONSTRAINT "{constraint["name"]}"'
+                )
+
+    Index(
+        "uq_emails_user_message",
+        table.c.user_id,
+        table.c.gmail_message_id,
+        unique=True,
+    ).create(connection)
+
+
 async def create_database_if_not_exists(url: str) -> None:
     parsed_url = make_url(str(url))
     db_name = parsed_url.database
@@ -102,3 +146,4 @@ async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
         await conn.run_sync(_add_missing_columns)
+        await conn.run_sync(_repair_email_uniqueness)
