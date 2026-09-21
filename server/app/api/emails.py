@@ -15,6 +15,8 @@ from app.schemas.email import (
     FetchEmailsRequest,
 )
 from app.services.gmail_service import GmailService
+from app.services.microsoft_service import MicrosoftService
+from app.services.scan_service import ScanService
 
 logger = get_logger("emails")
 router = APIRouter(prefix="/emails", tags=["Emails"])
@@ -60,9 +62,6 @@ async def fetch_emails(
     db: AsyncSession = Depends(get_db),
     gmail_service: GmailService = Depends(get_gmail_service),
 ) -> EmailListResponse:
-    from app.services.scan_service import ScanService
-    from app.services.microsoft_service import MicrosoftService
-    
     scan_service = ScanService()
     microsoft_service = MicrosoftService()
 
@@ -81,8 +80,6 @@ async def fetch_emails(
                 payload.max_results,
                 db=db,
             )
-            provider_service = microsoft_service
-            access_token = current_user.microsoft_access_token
         else:
             messages = await gmail_service.fetch_messages(
                 current_user,
@@ -91,73 +88,28 @@ async def fetch_emails(
                 payload.max_results,
                 db=db,
             )
-            provider_service = gmail_service
-            access_token = current_user.google_access_token
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-    import uuid
-    from datetime import datetime, timezone
+
     results = []
-
     repo = EmailRepository(db)
-    
-    for msg in messages:
-        # Check if already exists
-        existing = await repo.get_by_gmail_id(msg.message_id)
-        if existing:
-            results.append(EmailResponse.model_validate(existing))
-            continue
 
-        # Save new email to DB
+    for msg in messages:
         email_record, is_new = await repo.create_from_gmail(current_user.id, msg)
-        
+
         if not is_new:
             results.append(EmailResponse.model_validate(email_record))
             continue
-            
-        parsed = msg.parsed
-        
-        header_result = scan_service.header_service.analyze(parsed)
-        url_result = scan_service.url_service.analyze(parsed.urls)
-        attachment_result = scan_service.attachment_service.analyze(parsed.attachments)
-        ai_result = await scan_service.ai_service.analyze_with_llm(parsed)
 
-        risk = scan_service.risk_engine.calculate(
-            header_result, url_result, attachment_result, ai_result
-        )
-
-        status = EmailStatus.SAFE
-        if risk.risk_level.value in ["high", "critical"]:
-            status = EmailStatus.BLOCKED
-            await provider_service.modify_message_labels(
-                access_token,
-                msg.message_id,
-                add_labels=["SPAM"],
-                remove_labels=["INBOX"]
-            )
-            
-        email_record.status = status
-        email_record.risk_score = risk.final_score
-        db.add(email_record)
-        
-        # Save scan result
-        from app.database.models import ScanResult
-        import json
-        scan_record = ScanResult(
-            email_id=email_record.id,
-            header_score=risk.header_score,
-            url_score=risk.url_score,
-            attachment_score=risk.attachment_score,
-            ai_score=risk.ai_score,
-            final_score=risk.final_score,
-            risk_level=risk.risk_level,
-            findings=risk.findings
-        )
-        await repo.save_scan_result(scan_record)
+        # One pipeline for fetch, on-demand scan and the scheduled sweep. Scoring
+        # inline here meant the perceptual analyser was never applied on the path
+        # that ingests every message, so concealed-instruction payloads scored as
+        # though that detector did not exist. The provider parse is passed through
+        # because attachments are not persisted on the Email row.
+        await scan_service.scan_email(db, email_record, msg.parsed)
 
         results.append(EmailResponse.model_validate(email_record))
-        
+
     await db.commit()
 
     return EmailListResponse(
