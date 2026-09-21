@@ -875,3 +875,56 @@ class TestRehydratedRowIsFullyParsed:
         )
 
         assert parsed.sender == "real@acme.net"
+
+
+class TestChunkedAnalysisIsConcurrent:
+    """Windows of one body are independent, so they are analysed in parallel."""
+
+    def setup_method(self):
+        from app.services.ai_analysis import AIAnalysisService
+
+        self.service = AIAnalysisService()
+        self.parsed = parse_email_content(
+            {"From": "a@evil.com", "Subject": "Invoice"},
+            "F" * 40_000 + " PAYLOAD",
+            "",
+        )
+
+    async def test_every_window_is_analysed_and_merged(self):
+        import asyncio
+
+        seen = []
+        in_flight = 0
+        peak = 0
+
+        async def record(content):
+            nonlocal in_flight, peak
+            in_flight += 1
+            peak = max(peak, in_flight)
+            await asyncio.sleep(0)
+            seen.append(content)
+            in_flight -= 1
+            return {
+                "phishing_probability": 10.0 * len(seen),
+                "spam_probability": 0,
+                "reasons": [f"window {len(seen)}"],
+            }
+
+        self.service._call_llm = record
+        result = await self.service.analyze_with_llm(self.parsed)
+
+        assert len(seen) > 1, "body should have been split into several windows"
+        assert peak == len(seen), "windows were analysed one after another"
+        # The riskiest window decides the verdict.
+        assert result.phishing_probability == 10.0 * len(seen)
+        assert result.degraded is False
+
+    async def test_one_failing_window_degrades_the_whole_verdict(self):
+        async def fail(content):
+            raise RuntimeError("upstream refused")
+
+        self.service._call_llm = fail
+        result = await self.service.analyze_with_llm(self.parsed)
+
+        assert result.degraded is True
+        assert result.source == "heuristic-fallback"

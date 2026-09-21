@@ -1,3 +1,4 @@
+import asyncio
 import os
 import json
 from dataclasses import dataclass, field
@@ -234,7 +235,10 @@ class AIAnalysisService:
             from google.genai import types
 
             client = genai.Client(api_key=gemini_api_key)
-            response = client.models.generate_content(
+            # client.models is synchronous and blocks the event loop for the whole
+            # round trip, stalling every other request the server is serving. The
+            # scan endpoints issue one of these per chunk per email.
+            response = await client.aio.models.generate_content(
                 model="gemini-2.5-flash",
                 contents=content,
                 config=types.GenerateContentConfig(
@@ -366,14 +370,15 @@ class AIAnalysisService:
             )
 
         try:
-            results = [
-                self._validate_payload(
-                    await self._call_llm(
-                        self._build_content(parsed, chunk, i, len(chunks))
-                    )
+            # The windows are independent, so a long body costs one round trip
+            # rather than one per chunk.
+            payloads = await asyncio.gather(
+                *(
+                    self._call_llm(self._build_content(parsed, chunk, i, len(chunks)))
+                    for i, chunk in enumerate(chunks)
                 )
-                for i, chunk in enumerate(chunks)
-            ]
+            )
+            results = [self._validate_payload(payload) for payload in payloads]
             return self._merge_results(results, partial)
         except Exception as e:
             logger.error(
