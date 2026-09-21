@@ -125,7 +125,12 @@ class MicrosoftService:
 
     def _parse_microsoft_message(self, item: dict, mailbox: str) -> Any:
         from app.services.gmail_service import GmailMessage
-        from app.utils.email_parser import extract_urls, html_to_text, parse_email_content
+        from app.utils.email_parser import (
+            collect_headers,
+            extract_urls,
+            html_to_text,
+            parse_email_content,
+        )
         from datetime import datetime, timezone
 
         msg_id = item.get("id", "")
@@ -163,11 +168,11 @@ class MicrosoftService:
         # Real MIME headers, when Graph returns them. Previously spf/dkim/dmarc were
         # hardcoded to "pass", so the header module scored every Outlook message 0 on
         # a 30%-weighted check it had never performed.
-        headers: dict[str, str] = {}
-        for header in item.get("internetMessageHeaders") or []:
-            name = header.get("name")
-            if name:
-                headers[name] = header.get("value", "")
+        headers = collect_headers(
+            (header["name"], header.get("value", ""))
+            for header in item.get("internetMessageHeaders") or []
+            if header.get("name")
+        )
 
         if not headers:
             logger.warning(

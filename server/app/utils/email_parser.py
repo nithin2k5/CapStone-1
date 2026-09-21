@@ -459,18 +459,54 @@ def extract_urls(text: str) -> list[str]:
     return list(dict.fromkeys(normalized))
 
 
+def collect_headers(pairs) -> dict[str, Any]:
+    """
+    Build a header mapping that keeps repeated headers.
+
+    A plain dict comprehension over the header pairs keeps only the last value of
+    each name, which erased the whole Received chain — one hop survived, so the
+    hop-count check could never fire however many relays a message had passed
+    through. Repeated names become a list here; single ones stay strings.
+    """
+    headers: dict[str, Any] = {}
+    for name, value in pairs:
+        if name not in headers:
+            headers[name] = value
+        elif isinstance(headers[name], list):
+            headers[name].append(value)
+        else:
+            headers[name] = [headers[name], value]
+    return headers
+
+
+def header_values(raw_headers: dict[str, Any], name: str) -> list[str]:
+    """Every value recorded under a header name, in the order received."""
+    values: list[str] = []
+    for key, value in raw_headers.items():
+        if key.lower() != name.lower():
+            continue
+        if isinstance(value, list):
+            values.extend(str(v) for v in value)
+        elif value is not None:
+            values.append(str(value))
+    return values
+
+
 def parse_email_content(
-    raw_headers: dict[str, str],
+    raw_headers: dict[str, Any],
     body_text: str = "",
     body_html: str = "",
     attachments: list[ParsedAttachment] | None = None,
 ) -> ParsedEmail:
-    headers_lower = {k.lower(): v for k, v in raw_headers.items()}
-
-    received_chain = []
+    # A repeated header collapses to its last value for the single-valued lookups
+    # below; the ones that are genuinely a sequence are read with header_values.
+    headers_lower: dict[str, str] = {}
     for key, value in raw_headers.items():
-        if key.lower() == "received":
-            received_chain.append(value)
+        if isinstance(value, list):
+            value = value[-1] if value else ""
+        headers_lower[key.lower()] = value
+
+    received_chain = header_values(raw_headers, "received")
 
     auth_results = headers_lower.get("authentication-results", "")
     spf = extract_auth(auth_results, "spf")
@@ -522,7 +558,7 @@ def extract_auth(auth_results: str, mechanism: str) -> str | None:
 
 def parse_raw_email(raw_email: str) -> ParsedEmail:
     msg = message_from_string(raw_email)
-    headers = {k: v for k, v in msg.items()}
+    headers = collect_headers(msg.items())
     body_text = ""
     body_html = ""
     attachments: list[ParsedAttachment] = []

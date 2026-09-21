@@ -14,9 +14,11 @@ from app.database.models import User
 from app.utils.email_parser import (
     ParsedAttachment,
     ParsedEmail,
+    collect_headers,
     extract_auth,
-    extract_urls,
+    header_values,
     html_to_text,
+    parse_email_content,
 )
 
 logger = get_logger("gmail")
@@ -292,15 +294,21 @@ class GmailService:
         payload = msg_data.get("payload", {})
 
         headers_list = payload.get("headers", [])
-        headers = {h.get("name", "").title(): h.get("value", "") for h in headers_list}
+        headers = collect_headers(
+            (h.get("name", "").title(), h.get("value", "")) for h in headers_list
+        )
 
-        sender = headers.get("From", "unknown@gmail.com")
-        recipient = headers.get("To", "user@company.com")
-        subject = headers.get("Subject", "(No Subject)")
-        message_id = headers.get("Message-Id", f"<{msg_id}@mail.gmail.com>")
-        reply_to = headers.get("Reply-To", "")
-        auth_results = headers.get("Authentication-Results", "")
-        date_str = headers.get("Date")
+        def header(name: str, default: str = "") -> str:
+            values = header_values(headers, name)
+            return values[-1] if values else default
+
+        sender = header("From", "unknown@gmail.com")
+        recipient = header("To", "user@company.com")
+        subject = header("Subject", "(No Subject)")
+        message_id = header("Message-Id", f"<{msg_id}@mail.gmail.com>")
+        reply_to = header("Reply-To")
+        auth_results = header("Authentication-Results")
+        date_str = header("Date") or None
 
         date = datetime.now(timezone.utc)
         try:
@@ -373,21 +381,26 @@ class GmailService:
                     msg_id,
                 )
 
-        parsed = ParsedEmail(
-            sender=sender,
-            recipient=recipient,
-            subject=subject,
-            date=date,
-            message_id=message_id,
-            reply_to=reply_to,
-            spf=spf,
-            dkim=dkim,
-            dmarc=dmarc,
-            body_text=body_text or "(Empty Body)",
-            body_html=body_html,
-            urls=extract_urls((body_text or "") + " " + (body_html or "")),
-            attachments=attachments,
-            raw_headers=headers,
-        )
+        # Build through the parser rather than by hand. A hand-built ParsedEmail
+        # carries no rendered body, so the perceptual analyser received None and
+        # reported "no rendered body available" for every message fetched from
+        # Gmail — concealed instructions went unscored on the primary ingest path.
+        # It also left the Received chain and Return-Path empty, so the checks
+        # that read them never fired.
+        parsed = parse_email_content(headers, body_text, body_html, attachments)
+
+        # Provider fields win for identity: Gmail resolves these more reliably
+        # than the raw headers do.
+        parsed.sender = sender
+        parsed.recipient = recipient
+        parsed.subject = subject
+        parsed.date = date
+        parsed.message_id = message_id
+        parsed.reply_to = reply_to or parsed.reply_to
+        parsed.spf = spf
+        parsed.dkim = dkim
+        parsed.dmarc = dmarc
+        if not parsed.body_text:
+            parsed.body_text = "(Empty Body)"
         return GmailMessage(message_id=msg_id, parsed=parsed, mailbox=mailbox)
 
