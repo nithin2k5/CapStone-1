@@ -1,6 +1,7 @@
 import re
 from dataclasses import dataclass, field
 
+from app.utils.confusables import mixed_script_words
 from app.utils.email_parser import RenderedEmail
 
 
@@ -87,18 +88,6 @@ INSTRUCTION_PATTERNS: list[tuple[str, re.Pattern]] = [
     ),
 ]
 
-_MIXED_SCRIPT = re.compile(r"[Ͱ-ϿЀ-ӿ]")
-
-
-def _mixed_script_words(text: str) -> int:
-    """Count words mixing Latin with Greek or Cyrillic — the homoglyph signature."""
-    return sum(
-        1
-        for word in re.findall(r"\S+", text)
-        if re.search(r"[a-zA-Z]", word) and _MIXED_SCRIPT.search(word)
-    )
-
-
 class PerceptualAnalysisService:
     """
     Score the divergence between what a recipient renders and what the classifier
@@ -174,7 +163,7 @@ class PerceptualAnalysisService:
                 )
                 break
 
-        mixed = _mixed_script_words(rendered.machine_text)
+        mixed = mixed_script_words(rendered.machine_text)
         if mixed:
             score += self.MIXED_SCRIPT_WEIGHT
             findings.append(f"{mixed} word(s) mixing Latin with Greek or Cyrillic script")

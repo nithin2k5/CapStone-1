@@ -1080,3 +1080,38 @@ class TestGmailParseIsComplete:
         assert "Invoice attached." in parsed.body_text
         # The concealed half is kept out of the visible body the model is shown.
         assert "Ignore all previous instructions" not in parsed.visible_text
+
+
+class TestHomographDomains:
+    """
+    An internationalised domain arrives punycode-encoded, so xn--pypal-4ve.com is
+    pure ASCII. Testing the wire form for non-ASCII matched nothing on exactly the
+    attack it was named for.
+    """
+
+    def _findings(self, url: str) -> list[str]:
+        _, findings = URLAnalysisService()._analyze_single_url(url)
+        return [f for f in findings if "script" in f or "Latin" in f]
+
+    def test_punycode_homograph_is_decoded_and_flagged(self):
+        findings = self._findings("https://xn--pypal-4ve.com/login")
+        assert findings
+        assert "pаypal.com" in findings[0]
+
+    def test_raw_confusable_character_is_flagged(self):
+        # U+0261, the script "g" — Latin block, but a lookalike.
+        assert self._findings("https://gooɡle.com/")
+
+    def test_foreign_label_under_an_ascii_tld_is_flagged(self):
+        assert self._findings("https://xn--80aswg.com/")
+
+    def test_consistent_idn_is_not_flagged(self):
+        # сайт.рф — Cyrillic label under a Cyrillic TLD is an ordinary domain.
+        assert self._findings("https://xn--80aswg.xn--p1ai/") == []
+
+    def test_accented_latin_domain_is_not_flagged(self):
+        # bücher.de is ordinary Latin-script writing, not a homograph.
+        assert self._findings("https://xn--bcher-kva.de/") == []
+
+    def test_plain_ascii_domain_is_not_flagged(self):
+        assert self._findings("https://example.com/") == []

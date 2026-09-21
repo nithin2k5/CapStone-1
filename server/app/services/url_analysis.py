@@ -1,8 +1,8 @@
 import ipaddress
-import re
 from dataclasses import dataclass, field
 from urllib.parse import urlparse
 
+from app.utils.confusables import decode_punycode, has_non_latin, is_mixed_script
 from app.utils.email_parser import extract_domain
 
 SHORTENERS = {
@@ -26,7 +26,35 @@ class URLAnalysisService:
     """Detect malicious and suspicious URLs in email content."""
 
     MAX_SCORE = 100.0
-    HOMOGRAPH_PATTERN = re.compile(r"[^\x00-\x7F]")
+
+    def _homograph_findings(self, domain: str) -> tuple[float, list[str]]:
+        """
+        Score a domain for characters chosen to read as Latin.
+
+        The previous test looked for non-ASCII in the hostname, but an
+        internationalised domain arrives punycode-encoded — xn--pypal-4ve.com is
+        pure ASCII — so it matched nothing on exactly the attack it named. The
+        domain is decoded first, then judged on script rather than on encoding.
+
+        A domain whose script is consistent throughout, TLD included, is an
+        ordinary IDN and not flagged; the signature is a label that reads as
+        Latin while being written in another script.
+        """
+        display = decode_punycode(domain)
+        labels = display.split(".")
+        name_labels = labels[:-1] if len(labels) > 1 else labels
+        tld = labels[-1] if len(labels) > 1 else ""
+        shown = f"{domain} displays as {display}" if display != domain else domain
+
+        if any(is_mixed_script(label) for label in name_labels):
+            return 30.0, [f"Domain mixes Latin with another script: {shown}"]
+
+        if any(has_non_latin(label) for label in name_labels) and tld.isascii():
+            return 25.0, [
+                f"Domain uses non-Latin characters under an ASCII top-level domain: {shown}"
+            ]
+
+        return 0.0, []
 
     def analyze(self, urls: list[str]) -> URLAnalysisResult:
         findings: list[str] = []
@@ -93,9 +121,9 @@ class URLAnalysisService:
             score += 40
             findings.append(f"Blacklisted domain: {domain}")
 
-        if self.HOMOGRAPH_PATTERN.search(domain):
-            score += 30
-            findings.append(f"Homograph/suspicious characters in domain: {domain}")
+        homograph_score, homograph_findings = self._homograph_findings(domain)
+        score += homograph_score
+        findings.extend(homograph_findings)
 
         # Typosquatting heuristic
         suspicious_patterns = ["paypa", "microsft", "amaz0n", "g00gle", "apple-id"]
