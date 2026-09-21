@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -75,18 +76,21 @@ class EmailRepository:
             body_html=parsed.body_html,
             mailbox=gmail_msg.mailbox,
         )
-        self.db.add(email)
-        from sqlalchemy.exc import IntegrityError
         try:
-            await self.db.flush()
-            await self.db.refresh(email)
-            return email, True
+            # A savepoint, not the session. Rolling the session back discarded
+            # every email flushed earlier in the same fetch, so one message losing
+            # a race dropped all the work that preceded it.
+            async with self.db.begin_nested():
+                self.db.add(email)
+                await self.db.flush()
         except IntegrityError:
-            await self.db.rollback()
             existing = await self.get_by_gmail_id(gmail_msg.message_id, user_id)
             if existing:
                 return existing, False
             raise
+
+        await self.db.refresh(email)
+        return email, True
 
     async def save_scan_result(self, scan_result: ScanResult) -> ScanResult:
         self.db.add(scan_result)
