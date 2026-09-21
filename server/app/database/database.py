@@ -1,6 +1,8 @@
 from collections.abc import AsyncGenerator
+import logging
 
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
+from sqlalchemy.engine import make_url
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import get_settings
@@ -59,8 +61,43 @@ def _add_missing_columns(connection) -> None:
             )
 
 
+async def create_database_if_not_exists(url: str) -> None:
+    parsed_url = make_url(str(url))
+    db_name = parsed_url.database
+    if not db_name or parsed_url.get_dialect().name == "sqlite":
+        return
+
+    dialect = parsed_url.get_dialect().name
+    
+    if dialect == "postgresql":
+        temp_url = parsed_url.set(database="postgres")
+    elif dialect == "mysql":
+        temp_url = parsed_url.set(database="")
+    else:
+        return
+
+    temp_engine = create_async_engine(temp_url, isolation_level="AUTOCOMMIT")
+    
+    try:
+        async with temp_engine.connect() as conn:
+            if dialect == "postgresql":
+                result = await conn.execute(
+                    text(f"SELECT 1 FROM pg_database WHERE datname = '{db_name}'")
+                )
+                if not result.scalar():
+                    await conn.execute(text(f"CREATE DATABASE {db_name}"))
+            elif dialect == "mysql":
+                await conn.execute(text(f"CREATE DATABASE IF NOT EXISTS `{db_name}`"))
+    except Exception as e:
+        logging.warning(f"Failed to create database '{db_name}': {e}")
+    finally:
+        await temp_engine.dispose()
+
+
 async def init_db() -> None:
     from app.database.models import Base
+
+    await create_database_if_not_exists(settings.database_url)
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

@@ -110,8 +110,8 @@ class Email(Base):
     )
     risk_score: Mapped[float] = mapped_column(Float, default=0.0)
     raw_headers: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
-    body_text: Mapped[str | None] = mapped_column(Text, nullable=True)
-    body_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    body_text: Mapped[str | None] = mapped_column(Text(length=16777215), nullable=True)
+    body_html: Mapped[str | None] = mapped_column(Text(length=16777215), nullable=True)
     mailbox: Mapped[str] = mapped_column(String(50), default="inbox")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

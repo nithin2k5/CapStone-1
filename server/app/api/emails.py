@@ -110,8 +110,12 @@ async def fetch_emails(
             continue
 
         # Save new email to DB
-        email_record = await repo.create_from_gmail(current_user.id, msg)
+        email_record, is_new = await repo.create_from_gmail(current_user.id, msg)
         
+        if not is_new:
+            results.append(EmailResponse.model_validate(email_record))
+            continue
+            
         parsed = msg.parsed
         
         header_result = scan_service.header_service.analyze(parsed)

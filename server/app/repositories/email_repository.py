@@ -51,10 +51,10 @@ class EmailRepository:
 
     async def create_from_gmail(
         self, user_id: UUID, gmail_msg: GmailMessage
-    ) -> Email:
+    ) -> tuple[Email, bool]:
         existing = await self.get_by_gmail_id(gmail_msg.message_id)
         if existing:
-            return existing
+            return existing, False
 
         parsed = gmail_msg.parsed
         email = Email(
@@ -71,9 +71,17 @@ class EmailRepository:
             mailbox=gmail_msg.mailbox,
         )
         self.db.add(email)
-        await self.db.flush()
-        await self.db.refresh(email)
-        return email
+        from sqlalchemy.exc import IntegrityError
+        try:
+            await self.db.flush()
+            await self.db.refresh(email)
+            return email, True
+        except IntegrityError:
+            await self.db.rollback()
+            existing = await self.get_by_gmail_id(gmail_msg.message_id)
+            if existing:
+                return existing, False
+            raise
 
     async def save_scan_result(self, scan_result: ScanResult) -> ScanResult:
         self.db.add(scan_result)
