@@ -5,8 +5,8 @@ import Stats from "@/components/sections/Stats";
 import Features from "@/components/sections/Features";
 import Architecture from "@/components/sections/Architecture";
 import DashboardPreview from "@/components/sections/DashboardPreview";
+import HowToUse from "@/components/sections/HowToUse";
 import ResearchTimeline from "@/components/sections/ResearchTimeline";
-import Setup from "@/components/sections/Setup";
 import Standards from "@/components/sections/Standards";
 import TechStack from "@/components/sections/TechStack";
 import Contact from "@/components/sections/Contact";
@@ -24,8 +24,8 @@ export default function Home() {
         <Features />
         <Architecture />
         <DashboardPreview />
+        <HowToUse />
         <ResearchTimeline />
-        <Setup />
         <Standards />
         <TechStack />
         <Contact />
