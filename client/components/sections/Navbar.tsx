@@ -11,6 +11,7 @@ const navLinks = [
   { name: "Features", href: "/#features" },
   { name: "Architecture", href: "/#architecture" },
   { name: "Research", href: "/#research" },
+  { name: "Setup", href: "/#setup" },
 ];
 
 export default function Navbar() {
