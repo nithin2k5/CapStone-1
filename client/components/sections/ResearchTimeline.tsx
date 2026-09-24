@@ -6,33 +6,33 @@ import { CheckCircle2, Circle } from "lucide-react";
 const phases = [
   {
     phase: "Phase 1",
-    title: "Email Header Analysis",
-    description: "Implementation of SPF, DKIM, and DMARC validation along with anomaly detection in routing headers.",
+    title: "Authentication baseline",
+    description: "SPF and DMARC read from the delivering server, DKIM re-verified locally against the signing domain\u2019s published key so the verdict does not rest on a header the sender could write.",
     status: "completed"
   },
   {
     phase: "Phase 2",
-    title: "URL Filtering",
-    description: "Integration of real-time domain reputation checks and homograph attack detection algorithms.",
+    title: "Link and payload heuristics",
+    description: "Typosquatting, punycode and mixed-script lookalikes, shorteners and reputation checks; dangerous extensions, macro-bearing documents and nested archives.",
     status: "completed"
   },
   {
     phase: "Phase 3",
-    title: "Attachment Scanning",
-    description: "Sandboxed execution and static analysis of attachments using YARA rules and machine learning.",
-    status: "in-progress"
+    title: "Dual-channel extraction",
+    description: "Parse each message twice \u2014 rendered and machine-visible \u2014 across seventeen concealment channels, from display:none and zero-size text to matched foreground colours and invisible codepoints.",
+    status: "completed"
   },
   {
     phase: "Phase 4",
-    title: "Deployment",
-    description: "Containerization and orchestration of the microservices architecture using Kubernetes.",
-    status: "upcoming"
+    title: "Injection scoring and confidence inversion",
+    description: "Classify concealed text against eight families of analyser-directed instruction, and invert the content verdict when a message hides instructions yet scores clean.",
+    status: "completed"
   },
   {
     phase: "Phase 5",
-    title: "Monitoring",
-    description: "Setup of SOC dashboard, alerting mechanisms, and continuous model retraining pipeline.",
-    status: "upcoming"
+    title: "Calibration and evasion testing",
+    description: "The risk weights are hand-chosen and compose until they saturate the cap; pattern matching is literal, so paraphrase evades it where the volume and script signals do not. Fitting the weights to a labelled corpus and measuring paraphrase robustness are the open problems.",
+    status: "in-progress"
   }
 ];
 
@@ -47,7 +47,7 @@ export default function ResearchTimeline() {
             viewport={{ once: true }}
             className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
-            Research <span className="text-gradient">Objectives</span>
+            Research <span className="text-gradient">Trajectory</span>
           </motion.h2>
           <motion.p 
             initial={{ opacity: 0, y: 20 }}
@@ -56,7 +56,7 @@ export default function ResearchTimeline() {
             transition={{ delay: 0.1 }}
             className="text-muted-foreground text-lg"
           >
-            Our roadmap to building the ultimate quantum-resistant phishing prevention gateway.
+            How the system arrived at the perceptual layer, and what remains unsolved in it.
           </motion.p>
         </div>
 

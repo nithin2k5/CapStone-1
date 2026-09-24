@@ -1,44 +1,44 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { MailSearch, Globe, FileWarning, BrainCircuit, BellRing, Activity } from "lucide-react";
+import { MailSearch, Globe, EyeOff, BrainCircuit, Scale, Activity } from "lucide-react";
 
 const features = [
   {
-    title: "Email Header Analysis",
-    description: "Analyze sender headers, SPF, DKIM, DMARC, Received chains, Return Path and detect anomalies.",
-    icon: MailSearch,
-    gradient: "from-purple-500 to-indigo-500",
+    title: "Perceptual Divergence Analysis",
+    description: "Extract the message twice \u2014 once as the recipient renders it, once as the classifier ingests it \u2014 and score the gap. Concealment is treated as evidence, not noise to strip.",
+    icon: EyeOff,
+    gradient: "from-emerald-500 to-teal-500",
   },
   {
-    title: "URL & Domain Filtering",
-    description: "Scan every URL, check reputation, detect homograph attacks, blacklisted domains, shortened URLs.",
-    icon: Globe,
-    gradient: "from-indigo-500 to-blue-500",
-  },
-  {
-    title: "Attachment Scanning",
-    description: "Scan PDFs, ZIPs, Office documents, executables, scripts using malware detection.",
-    icon: FileWarning,
-    gradient: "from-blue-500 to-purple-500",
-  },
-  {
-    title: "AI Threat Detection",
-    description: "Detect phishing patterns using Machine Learning and LLMs.",
+    title: "Prompt Injection Detection",
+    description: "Match concealed text against eight classes of instruction aimed at the analyser: instruction override, role hijack, impersonated system turns, verdict forcing, suppression, schema hijack, task reassignment, refusal triggers.",
     icon: BrainCircuit,
-    gradient: "from-purple-500 via-indigo-500 to-blue-500",
+    gradient: "from-teal-500 to-blue-500",
   },
   {
-    title: "User Notification",
-    description: "Generate detailed threat reports and notify users instantly.",
-    icon: BellRing,
-    gradient: "from-indigo-400 to-purple-400",
+    title: "Inverted Confidence Rule",
+    description: "Concealed instructions plus a calm content verdict multiply risk by 2.5x. Either the injection worked or it was neutralised \u2014 the intent is established either way.",
+    icon: Scale,
+    gradient: "from-blue-500 to-indigo-500",
   },
   {
-    title: "Impact Monitoring",
-    description: "Display phishing statistics and detection performance.",
+    title: "Cryptographic Header Checks",
+    description: "DKIM signatures re-verified against the signing domain\u2019s published key rather than trusting the Authentication-Results header, with SPF and DMARC read as delivered.",
+    icon: MailSearch,
+    gradient: "from-indigo-500 to-purple-500",
+  },
+  {
+    title: "URL & Attachment Heuristics",
+    description: "Homograph and mixed-script lookalikes, punycode, shorteners and domain reputation; dangerous extensions, macro-bearing documents and nested archives.",
+    icon: Globe,
+    gradient: "from-purple-500 to-fuchsia-500",
+  },
+  {
+    title: "Explained Verdicts",
+    description: "Every score arrives with the findings that produced it \u2014 which channel concealed what, which pattern matched, which combination compounded.",
     icon: Activity,
-    gradient: "from-blue-400 to-indigo-500",
+    gradient: "from-fuchsia-500 to-purple-400",
   },
 ];
 
@@ -53,7 +53,7 @@ export default function Features() {
             viewport={{ once: true }}
             className="font-heading text-3xl md:text-5xl font-bold mb-6 text-foreground"
           >
-            Comprehensive <span className="text-gradient">Threat Protection</span>
+            Detection Behind the <span className="text-gradient">Filter</span>
           </motion.h2>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -62,7 +62,7 @@ export default function Features() {
             transition={{ delay: 0.1 }}
             className="text-muted-foreground text-lg"
           >
-            Our multi-layered detection engine analyzes every aspect of incoming emails to ensure zero-day threats are neutralized before reaching the inbox.
+            Five analysers score each message independently. Four of them ask whether the mail is malicious to the reader; the fifth asks whether the reader and the classifier were shown the same mail.
           </motion.p>
         </div>
 

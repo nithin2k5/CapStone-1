@@ -3,11 +3,11 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  { label: "Emails Protected", value: "2.5M+" },
-  { label: "Threats Blocked", value: "195K" },
-  { label: "Malware Attachments", value: "18K" },
-  { label: "Malicious URLs", value: "420K" },
-  { label: "Detection Accuracy", value: "99.4%" },
+  { label: "Analysis layers scored", value: "5" },
+  { label: "Concealment channels detected", value: "17" },
+  { label: "Injection pattern classes", value: "8" },
+  { label: "Multiplier on a suppressed verdict", value: "2.5x" },
+  { label: "Perceptual weight in final score", value: "15%" },
 ];
 
 export default function Stats() {

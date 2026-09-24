@@ -1,25 +1,26 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Server, ShieldAlert, Database, Bell, LayoutDashboard, ArrowDown } from "lucide-react";
+import { Server, ShieldAlert, Database, Scan, LayoutDashboard, ArrowDown } from "lucide-react";
 
 const architectureSteps = [
-  { name: "Frontend / Mail Server", icon: Server },
-  { name: "API Gateway", icon: LayoutDashboard },
-  { name: "Detection Engine", icon: ShieldAlert },
+  { name: "Gmail / Microsoft Graph", icon: Server },
+  { name: "FastAPI Service", icon: LayoutDashboard },
+  { name: "Dual-Channel Parser", icon: Scan },
   {
-    name: "Analysis Modules",
+    name: "Analysis Layers",
     isGroup: true,
     modules: [
       { name: "Header Analyzer" },
       { name: "URL Scanner" },
       { name: "Attachment Scanner" },
-      { name: "AI Risk Engine" },
+      { name: "LLM Content Analyzer" },
+      { name: "Perceptual Analyzer" },
     ],
   },
-  { name: "Threat Database", icon: Database },
-  { name: "Notification Service", icon: Bell },
-  { name: "SOC Dashboard", icon: LayoutDashboard },
+  { name: "Risk Engine", icon: ShieldAlert },
+  { name: "Quarantine + Store", icon: Database },
+  { name: "Analyst Dashboard", icon: LayoutDashboard },
 ];
 
 export default function Architecture() {
@@ -42,7 +43,7 @@ export default function Architecture() {
             transition={{ delay: 0.1 }}
             className="text-muted-foreground text-lg"
           >
-            A highly scalable, microservices-based pipeline designed to process and analyze emails in milliseconds with quantum precision.
+            The gateway reads mail after delivery over the provider API, so it never sits in the send path. The parser splits each message into what the recipient renders and what the model ingests; every layer downstream sees both.
           </motion.p>
         </div>
 
@@ -66,7 +67,7 @@ export default function Architecture() {
                     whileInView={{ opacity: 1, scale: 1 }}
                     viewport={{ once: true }}
                     transition={{ delay: index * 0.2 }}
-                    className="w-full max-w-2xl glass-card p-6 rounded-2xl border border-purple-500/30 grid grid-cols-2 md:grid-cols-4 gap-4 shadow-[0_0_30px_rgba(139,92,246,0.15)]"
+                    className="w-full max-w-2xl glass-card p-6 rounded-2xl border border-purple-500/30 grid grid-cols-2 md:grid-cols-3 gap-4 shadow-[0_0_30px_rgba(139,92,246,0.15)]"
                   >
                     {step.modules?.map((mod, i) => (
                       <div
