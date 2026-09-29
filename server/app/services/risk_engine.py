@@ -29,19 +29,58 @@ class RiskEngineResult:
 
 class RiskEngine:
     """
-    Aggregate analysis scores into a final risk assessment.
+    Combine the analysers into one risk assessment.
 
-    The weights and multipliers below are hand-chosen, not fitted. They compose,
-    so a message hitting several combinations saturates the cap before the
-    evidence is exhausted — calibrating this layer is separate outstanding work.
+    Evidence combines, it does not average. The weighted mean this used to
+    compute had the property that an analyser finding nothing actively lowered
+    the result: a message failing SPF, DKIM and DMARC while soliciting
+    credentials scored 37 of 100 — below quarantine — because the attachment and
+    perceptual analysers correctly found nothing to report and their zeros were
+    averaged in. Silence from an analyser is the absence of evidence, and the
+    absence of evidence should leave the score where it was.
+
+    So each analyser contributes an independent probability that the message is
+    malicious, and they compose the way independent evidence does:
+
+        P(malicious) = 1 - Π (1 - eᵢ)
+
+    A zero term leaves the product untouched. Two moderate findings amount to
+    more than either alone. Nothing overflows, because a probability cannot
+    exceed one — which also retires the old multiplier chain, where four
+    compounding rules could multiply a score by 13.5 and saturate the cap before
+    the evidence was exhausted.
+
+    Each analyser's score is scaled by a reliability: how much a maxed-out
+    finding from that analyser alone should move the verdict. These are still
+    hand-chosen — fitting them needs labelled mail this project does not have —
+    but they are now interpretable one at a time, rather than a weight whose
+    effect depends on what every other analyser happened to return.
     """
 
-    WEIGHTS = {
-        "header": 0.25,
-        "url": 0.20,
-        "attachment": 0.20,
-        "ai": 0.20,
-        "perceptual": 0.15,
+    # Ceiling each analyser can reach on its own. Header authentication is the
+    # most trustworthy (it is a cryptographic or policy fact, not an inference)
+    # and content analysis the least (it is a model's opinion about intent).
+    RELIABILITY = {
+        "header": 0.90,
+        "url": 0.85,
+        "attachment": 0.90,
+        "ai": 0.80,
+        "perceptual": 0.85,
+    }
+
+    # Combinations that mean more together than apart. Each contributes one more
+    # independent term rather than multiplying what came before, so the order
+    # they fire in cannot change the result.
+    COMBINATION_STRENGTH = {
+        "urgency_and_link": 0.45,
+        "reply_to_and_solicitation": 0.75,
+        "dmarc_and_attachment": 0.70,
+        "credentials_and_link": 0.60,
+        "concealed_instructions_and_calm": 0.75,
+        "concealed_instructions": 0.60,
+        "measured_suppression": 0.75,
+        "reported_injection": 0.70,
+        "concealed_link_and_solicitation": 0.55,
     }
 
     QUARANTINE_THRESHOLD = 60.0
@@ -73,82 +112,95 @@ class RiskEngine:
         if probe.ran and probe.escalation:
             ai_content_score = max(ai.score, probe.ingested_score)
 
-        # Base additive score
-        base_score = (
-            header.score * self.WEIGHTS["header"]
-            + url.score * self.WEIGHTS["url"]
-            + attachment.score * self.WEIGHTS["attachment"]
-            + ai_content_score * self.WEIGHTS["ai"]
-            + perceptual.score * self.WEIGHTS["perceptual"]
-        )
+        # Independent evidence, one term per analyser. A score of zero
+        # contributes a factor of 1 and leaves the product untouched.
+        evidence: list[float] = [
+            header.score / 100.0 * self.RELIABILITY["header"],
+            url.score / 100.0 * self.RELIABILITY["url"],
+            attachment.score / 100.0 * self.RELIABILITY["attachment"],
+            ai_content_score / 100.0 * self.RELIABILITY["ai"],
+            perceptual.score / 100.0 * self.RELIABILITY["perceptual"],
+        ]
+        explanation_parts: list[str] = []
 
-        multiplier = 1.0
-        explanation_parts = []
-        
-        # Compounding Risk Combinations
+        def add(rule: str, message: str) -> None:
+            evidence.append(self.COMBINATION_STRENGTH[rule])
+            explanation_parts.append(message)
+
         if ai.is_urgent and url.has_suspicious_domain:
-            multiplier *= 1.5
-            explanation_parts.append("Compounding Risk: Urgency language combined with suspicious link")
-            
+            add(
+                "urgency_and_link",
+                "Compounding Risk: Urgency language combined with suspicious link",
+            )
+
         if header.reply_to_mismatch and (ai.requests_financials or ai.requests_credentials):
-            multiplier *= 2.0
-            explanation_parts.append("Critical Risk: Reply-To mismatch combined with financial/credential request")
-            
+            add(
+                "reply_to_and_solicitation",
+                "Critical Risk: Reply-To mismatch combined with financial/credential request",
+            )
+
         if header.failed_dmarc and attachment.score > 50:
-            multiplier *= 1.8
-            explanation_parts.append("High Risk: Failed DMARC combined with suspicious attachment")
-            
+            add(
+                "dmarc_and_attachment",
+                "High Risk: Failed DMARC combined with suspicious attachment",
+            )
+
         if ai.requests_credentials and url.has_suspicious_domain:
-            multiplier *= 1.5
-            explanation_parts.append("High Risk: Credential request combined with suspicious link")
+            add(
+                "credentials_and_link",
+                "High Risk: Credential request combined with suspicious link",
+            )
 
         # The injection signature: the message carries instructions the recipient
         # cannot see, and the content analyser came back calm. Either the payload
         # worked or it was neutralised, but the intent is established either way.
         if perceptual.imperative_hidden and ai.score < 40:
-            multiplier *= 2.5
-            explanation_parts.append(
+            add(
+                "concealed_instructions_and_calm",
                 "Critical Risk: concealed instructions to the analyser alongside a low "
-                "content score — the verdict may have been suppressed"
+                "content score — the verdict may have been suppressed",
             )
         elif perceptual.imperative_hidden:
-            multiplier *= 1.5
-            explanation_parts.append(
-                "High Risk: concealed text addresses the analyser rather than the reader"
+            add(
+                "concealed_instructions",
+                "High Risk: concealed text addresses the analyser rather than the reader",
             )
 
         # A measured effect, not a pattern match: the concealed text is the only
         # difference between the two passes, so the drop is what it bought.
         suppressed = probe.ran and probe.suppression >= self.SUPPRESSION_THRESHOLD
         if suppressed:
-            multiplier *= 2.0
-            explanation_parts.append(
+            add(
+                "measured_suppression",
                 "Critical Risk: concealed text moved the analyser's verdict "
-                f"{probe.suppression:.0f} points toward safe"
+                f"{probe.suppression:.0f} points toward safe",
             )
 
         injection_reported = ai.injection_attempt or probe.injection_reported
         if injection_reported:
-            multiplier *= 1.8
-            explanation_parts.append(
-                "Critical Risk: the analyser reported the message tried to instruct it"
+            add(
+                "reported_injection",
+                "Critical Risk: the analyser reported the message tried to instruct it",
             )
 
         if perceptual.link_mismatch and (
             ai.requests_credentials or ai.requests_financials
         ):
-            multiplier *= 1.5
-            explanation_parts.append(
-                "High Risk: concealed link combined with a credential or financial request"
+            add(
+                "concealed_link_and_solicitation",
+                "High Risk: concealed link combined with a credential or financial request",
             )
 
-        final_score = base_score * multiplier
+        remaining = 1.0
+        for term in evidence:
+            remaining *= 1.0 - min(max(term, 0.0), 1.0)
+        final_score = (1.0 - remaining) * 100.0
 
-        # A weighted average lets analysers that found nothing dilute one that found
-        # something conclusive: a maxed perceptual score contributes only 15 points of
-        # base, so an otherwise clean-looking message carrying concealed instructions
-        # landed in "low" no matter how clear the evidence was. Evidence accumulates
-        # rather than averaging, so these findings set a lower bound on the result.
+        # Three findings have no benign explanation whatever the rest of the
+        # pipeline returned, so they set a lower bound as well as contributing
+        # evidence. Under the strengths above the evidence alone already clears
+        # the threshold; the floor is what keeps that true if the strengths are
+        # ever retuned, and what makes the guarantee readable in one place.
         floor = 0.0
         floor_reasons: list[str] = []
         if perceptual.imperative_hidden:

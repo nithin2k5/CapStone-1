@@ -685,8 +685,85 @@ class TestRiskEngineFusion:
             self.perceptual.analyze(parsed.rendered),
         )
 
-    def test_weights_sum_to_one(self):
-        assert abs(sum(RiskEngine.WEIGHTS.values()) - 1.0) < 1e-9
+    def test_every_reliability_is_a_probability(self):
+        for name, value in RiskEngine.RELIABILITY.items():
+            assert 0.0 < value <= 1.0, name
+
+    def test_no_analyser_alone_can_reach_certainty(self):
+        """
+        A single analyser at full score must leave room for the others. Otherwise
+        one maxed-out detector pins the result at 100 and everything after it is
+        decoration.
+        """
+        for value in RiskEngine.RELIABILITY.values():
+            assert value < 1.0
+
+    def test_an_analyser_finding_nothing_does_not_lower_the_score(self):
+        """
+        The defect that motivated independent-evidence fusion. Under a weighted
+        mean, the analysers that correctly found nothing averaged their zeros into
+        the result, so a message failing SPF, DKIM and DMARC while soliciting
+        credentials scored 37 of 100 and was delivered.
+        """
+        from app.services.ai_analysis import AIAnalysisResult
+        from app.services.attachment_analysis import AttachmentAnalysisService
+        from app.services.header_analysis import HeaderAnalysisResult
+
+        header_only = self.engine.calculate(
+            HeaderAnalysisResult(score=70.0, findings=["auth failed"]),
+            self.url.analyze([]),
+            AttachmentAnalysisService().analyze([]),
+            AIAnalysisResult(source="llm"),
+        )
+
+        assert header_only.final_score == 70.0 * RiskEngine.RELIABILITY["header"]
+
+    def test_two_findings_amount_to_more_than_either_alone(self):
+        from app.services.ai_analysis import AIAnalysisResult
+        from app.services.attachment_analysis import AttachmentAnalysisService
+        from app.services.header_analysis import HeaderAnalysisResult
+
+        def score(header_score, ai_score):
+            return self.engine.calculate(
+                HeaderAnalysisResult(score=header_score),
+                self.url.analyze([]),
+                AttachmentAnalysisService().analyze([]),
+                AIAnalysisResult(score=ai_score, source="llm"),
+            ).final_score
+
+        both = score(50.0, 50.0)
+        assert both > score(50.0, 0.0)
+        assert both > score(0.0, 50.0)
+        assert both <= 100.0
+
+    def test_authentication_failure_with_credential_solicitation_is_quarantined(self):
+        """
+        SPF, DKIM and DMARC all fail: the message cannot be attributed to the
+        domain it claims to come from, and it is asking for credentials. The
+        benchmark measured this exact message at 37/100 under the weighted mean.
+        """
+        from app.services.ai_analysis import AIAnalysisResult
+        from app.services.attachment_analysis import AttachmentAnalysisService
+
+        parsed = parse_email_content(
+            {
+                "From": "security-alert@acc0unts-micros0ft.com",
+                "Subject": "Unusual activity: confirm your identity",
+                "Authentication-Results": "spf=fail; dkim=fail; dmarc=fail",
+            },
+            "Your account has been suspended. Verify your account now.",
+            "",
+        )
+        risk = self.engine.calculate(
+            self.header.analyze(parsed),
+            self.url.analyze(parsed.urls),
+            AttachmentAnalysisService().analyze([]),
+            AIAnalysisResult(
+                score=44.0, source="llm", requests_credentials=True, reasons=["x"]
+            ),
+        )
+
+        assert risk.final_score >= RiskEngine.QUARANTINE_THRESHOLD
 
     def test_perceptual_argument_is_optional(self):
         from app.services.ai_analysis import AIAnalysisResult
@@ -710,14 +787,42 @@ class TestRiskEngineFusion:
     def test_suppressed_verdict_reaches_quarantine(self):
         """Concealed instructions plus a calm content score is the injection signature.
 
-        Without the evidence floor this scored 28.75: a maxed perceptual score
-        contributes only 15 points of base, so analysers that found nothing diluted
-        the one that found something conclusive.
+        Under the weighted mean this scored 28.75, because a maxed perceptual score
+        contributed only 15 points of base and the analysers that found nothing
+        diluted the one that found something conclusive. The evidence now clears
+        the threshold on its own; the floor below is the guarantee, not the path.
         """
         result = self._score(CONCEALED_INJECTION)
         assert result.final_score >= RiskEngine.QUARANTINE_THRESHOLD
-        assert "quarantine floor" in result.explanation
+        assert "concealed" in result.explanation.lower()
         assert result.findings["perceptual"]["imperative_hidden"] is True
+
+    def test_the_floor_holds_even_if_the_strengths_are_retuned_to_nothing(self):
+        """
+        The floor is a guarantee about categorical findings, so it must not depend
+        on the evidence strengths happening to be large enough. Zero every one of
+        them and concealed instructions must still reach quarantine.
+        """
+        engine = RiskEngine()
+        engine.RELIABILITY = dict.fromkeys(RiskEngine.RELIABILITY, 0.0)
+        engine.COMBINATION_STRENGTH = dict.fromkeys(RiskEngine.COMBINATION_STRENGTH, 0.0)
+
+        from app.services.ai_analysis import AIAnalysisResult
+        from app.services.attachment_analysis import AttachmentAnalysisService
+
+        parsed = parse_email_content(
+            {"From": "a@b.com", "Subject": "Invoice"}, "", CONCEALED_INJECTION
+        )
+        result = engine.calculate(
+            self.header.analyze(parsed),
+            self.url.analyze(parsed.urls),
+            AttachmentAnalysisService().analyze([]),
+            AIAnalysisResult(score=5.0, source="llm", reasons=["calm"]),
+            self.perceptual.analyze(parsed.rendered),
+        )
+
+        assert result.final_score == RiskEngine.QUARANTINE_THRESHOLD
+        assert "quarantine floor" in result.explanation
 
     def test_reported_injection_reaches_quarantine(self):
         result = self._score(

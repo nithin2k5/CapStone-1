@@ -30,7 +30,9 @@ Production-ready REST API for phishing prevention and email security analysis.
   forces quarantine; the probe's verdict can only raise a score, never lower one.
   Costs one extra model call per message that conceals text
   (`DIFFERENTIAL_PROBE_ENABLED=false` to disable)
-- Risk engine with weighted scoring
+- Risk engine combining analysers as independent evidence (`1 - Π(1 - eᵢ)`)
+  rather than a weighted mean, so an analyser that finds nothing leaves the score
+  where it was instead of averaging it down
 - Quarantine service (DB status; Gmail move ready)
 - Dashboard statistics API
 - Swagger / OpenAPI documentation

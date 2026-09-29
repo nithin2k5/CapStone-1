@@ -263,22 +263,59 @@ TECHNIQUES: dict[str, callable] = {
 # --------------------------------------------------------------------------
 
 
+# --------------------------------------------------------------------------
+# Decoys: concealment with an ordinary reason behind it.
+#
+# The premise of the whole project is that concealment is evidence, which makes
+# legitimate concealment the false-positive risk. Real bulk mail hides a great
+# deal: the preheader line that shows in an inbox preview, a tracking pixel's
+# alt text, footnotes collapsed on mobile, Outlook conditional markup. A
+# detector that flags these is unusable whatever it scores on the attacks, so
+# they are negatives in the corpus rather than an afterthought.
+# --------------------------------------------------------------------------
+
+DECOYS: dict[str, str] = {
+    "preheader": (
+        '<span style="display:none;font-size:0;line-height:0">Your October '
+        "statement is ready to view — no action needed</span>"
+    ),
+    "tracking-pixel": (
+        '<img src="https://track.example.com/o.gif?id=1" width="1" height="1" '
+        'alt="" style="width:1px;height:1px;border:0">'
+    ),
+    "mobile-footnote": (
+        '<div style="display:none">Registered office: 40 Example Street, '
+        "London. Company number 01234567. If you no longer wish to receive "
+        "these emails you can unsubscribe at any time.</div>"
+    ),
+    "outlook-conditional": (
+        "<!--[if mso]><table role='presentation' width='600'><tr><td>"
+        "Fallback layout for Outlook</td></tr></table><![endif]-->"
+    ),
+    "hidden-plaintext-alt": (
+        '<div style="max-height:0;overflow:hidden;opacity:0">View this email in '
+        "your browser if images do not load. Acme Ltd, all rights reserved.</div>"
+    ),
+}
+
+
 @dataclass(frozen=True)
 class Case:
     id: str
     label: str  # ground truth: "phish" or "benign"
     base: str
     technique: str  # "" on the clean twin
-    payload: str  # "" on the clean twin
+    payload: str  # "" on the clean twin and on decoys
     evades_patterns: bool
     sender: str
     subject: str
     html: str
+    kind: str = "clean"  # "clean" | "attacked" | "decoy"
     headers: dict = field(default_factory=dict)
 
     @property
     def attacked(self) -> bool:
-        return bool(self.payload)
+        return self.kind == "attacked"
 
     @property
     def pair_id(self) -> str:
@@ -309,9 +346,11 @@ def build_corpus(
     techniques: list[str] | None = None,
     payloads: list[str] | None = None,
     bases: list[str] | None = None,
+    decoys: bool = True,
 ) -> list[Case]:
     """
-    Every base message once clean, then once per technique/payload combination.
+    Every base message once clean, then once per technique/payload combination,
+    plus benign mail carrying ordinary concealment.
 
     The clean twin comes first for each base so a consumer can score it before
     the attacked variants that are compared against it.
@@ -341,6 +380,24 @@ def build_corpus(
             )
         )
 
+        if decoys and base.label == "benign":
+            for decoy, markup in DECOYS.items():
+                cases.append(
+                    Case(
+                        id=f"{base.id}/decoy/{decoy}",
+                        label=base.label,
+                        base=base.id,
+                        technique=decoy,
+                        payload="",
+                        evades_patterns=False,
+                        sender=base.sender,
+                        subject=base.subject,
+                        html=_wrap(base, markup),
+                        kind="decoy",
+                        headers=_headers(base),
+                    )
+                )
+
         for technique, payload_id in product(chosen_techniques, chosen_payloads):
             payload = payload_by_id[payload_id]
             cases.append(
@@ -354,6 +411,7 @@ def build_corpus(
                     sender=base.sender,
                     subject=base.subject,
                     html=_wrap(base, TECHNIQUES[technique](payload.text)),
+                    kind="attacked",
                     headers=_headers(base),
                 )
             )

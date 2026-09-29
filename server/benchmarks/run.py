@@ -122,9 +122,26 @@ def _rate(hit: int, total: int) -> str:
     return f"{hit}/{total}" + (f" ({hit / total:.0%})" if total else "")
 
 
+def _auc(positive: list[float], negative: list[float]) -> float | None:
+    """
+    Area under the ROC curve, by rank (Mann-Whitney U).
+
+    The probability that a randomly chosen attacked message outranks a randomly
+    chosen piece of benign mail. Ties count half, which matters here: arms that
+    score whole families identically would otherwise look better than they are.
+    """
+    if not positive or not negative:
+        return None
+    wins = sum(
+        1.0 if p > n else 0.5 if p == n else 0.0 for p in positive for n in negative
+    )
+    return wins / (len(positive) * len(negative))
+
+
 def summarise(results: list[CaseResult]) -> dict:
-    clean = {r.case.base: r for r in results if not r.case.attacked}
+    clean = {r.case.base: r for r in results if r.case.kind == "clean"}
     attacked = [r for r in results if r.case.attacked]
+    decoys = [r for r in results if r.case.kind == "decoy"]
 
     summary: dict = {"arms": {}, "by_technique": {}, "by_payload": {}}
 
@@ -158,6 +175,23 @@ def summarise(results: list[CaseResult]) -> dict:
             "carriers_total": len(benign_attacked),
             "false_positives": sum(r.caught(arm) for r in benign_clean),
             "false_positive_total": len(benign_clean),
+            "decoys_flagged": sum(r.caught(arm) for r in decoys),
+            "decoys_total": len(decoys),
+            # What the project claims to add, stated as a ranking: does a message
+            # carrying a concealed payload outrank ordinary benign mail, including
+            # the benign mail that conceals things for its own reasons?
+            "auc": _auc(
+                [r.scores[arm] for r in attacked],
+                [r.scores[arm] for r in benign_clean + decoys],
+            ),
+            # The same ranking with the visible content held constant: benign mail
+            # carrying a payload against benign mail without one. Nothing a header
+            # or URL analyser can see differs between the two, so this isolates
+            # detection of the concealed half from every other signal.
+            "auc_carrier": _auc(
+                [r.scores[arm] for r in benign_attacked],
+                [r.scores[arm] for r in benign_clean + decoys],
+            ),
         }
 
     by_technique: dict[str, dict] = defaultdict(lambda: defaultdict(int))
@@ -189,10 +223,14 @@ def summarise(results: list[CaseResult]) -> dict:
 
 def render(summary: dict, results: list[CaseResult], harness: Harness) -> str:
     lines: list[str] = []
-    attacked = sum(1 for r in results if r.case.attacked)
+    sweep_attacked = [r for r in results if r.case.attacked]
+    sweep_negative = [
+        r for r in results if r.case.label == "benign" and not r.case.attacked
+    ]
+    attacked = len(sweep_attacked)
     lines.append(
         f"Backend: {harness.backend}   Cases: {len(results)} "
-        f"({len(results) - attacked} clean, {attacked} attacked)"
+        f"({attacked} attacked, {len(sweep_negative)} benign incl. decoys)"
     )
     lines.append("")
 
@@ -205,6 +243,7 @@ def render(summary: dict, results: list[CaseResult], harness: Harness) -> str:
         ("Phishing caught, with payload", "phish_attacked_caught", "phish_attacked_total"),
         ("Benign carriers caught", "carriers_caught", "carriers_total"),
         ("False positives (clean benign)", "false_positives", "false_positive_total"),
+        ("False positives (benign concealment)", "decoys_flagged", "decoys_total"),
     ]
     for label, hit_key, total_key in rows:
         cells = "".join(
@@ -221,6 +260,22 @@ def render(summary: dict, results: list[CaseResult], harness: Harness) -> str:
         else:
             flip_cells += f"{_rate(stats['flips'], stats['flip_scorable']):>16}"
     lines.append(f"{'Pairs flipped by the payload':44}{flip_cells}")
+
+    auc_cells = "".join(
+        f"{summary['arms'][arm]['auc']:>16.3f}"
+        if summary["arms"][arm]["auc"] is not None
+        else f"{'n/a':>16}"
+        for arm in ARMS
+    )
+    lines.append(f"{'AUC, payload vs benign mail':44}{auc_cells}")
+
+    carrier_cells = "".join(
+        f"{summary['arms'][arm]['auc_carrier']:>16.3f}"
+        if summary["arms"][arm]["auc_carrier"] is not None
+        else f"{'n/a':>16}"
+        for arm in ARMS
+    )
+    lines.append(f"{'AUC, concealed half alone':44}{carrier_cells}")
 
     if all(summary["arms"][arm]["flip_rate"] is None for arm in ARMS):
         lines.append("")
@@ -242,6 +297,19 @@ def render(summary: dict, results: list[CaseResult], harness: Harness) -> str:
         bucket = summary[key]
         cells = "".join(f"{_rate(bucket[arm], bucket['total']):>16}" for arm in ARMS)
         lines.append(f"{label:44}{cells}")
+    lines.append("")
+
+    lines.append("Threshold sweep (detection of attacked messages / false positives)")
+    lines.append("-" * len(header))
+    lines.append(f"{'threshold':44}" + "".join(f"{arm:>16}" for arm in ARMS))
+    for threshold in (40.0, 50.0, 60.0, 70.0, 80.0):
+        cells = ""
+        for arm in ARMS:
+            caught = sum(1 for r in sweep_attacked if r.scores[arm] >= threshold)
+            fp = sum(1 for r in sweep_negative if r.scores[arm] >= threshold)
+            cells += f"{f'{caught / max(len(sweep_attacked), 1):.0%} / {fp}':>16}"
+        marker = "  <- operating point" if threshold == RiskEngine.QUARANTINE_THRESHOLD else ""
+        lines.append(f"{threshold:<44.0f}{cells}{marker}")
     lines.append("")
 
     lines.append("By concealment technique (caught / total)")
@@ -307,6 +375,7 @@ def main() -> None:
                     "label": r.case.label,
                     "technique": r.case.technique,
                     "payload": r.case.payload,
+                    "kind": r.case.kind,
                     "evades_patterns": r.case.evades_patterns,
                     "scores": r.scores,
                     "suppression": r.suppression,

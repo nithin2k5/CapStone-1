@@ -27,6 +27,12 @@ Three arms score the same messages, so each row isolates one decision:
 | `perceptual` | Visible text to the classifier; concealed text to the pattern-based perceptual analyser. |
 | `probe` | The above, plus the differential probe measuring what the concealed half does to the verdict. |
 
+The negatives are not only clean mail. Fifteen **decoys** carry concealment with
+an ordinary reason behind it — preheader lines, tracking pixels, footnotes
+collapsed on mobile, Outlook conditional markup. A detector whose premise is that
+concealment is evidence has to be measured against the mail that conceals things
+innocently, or its false-positive rate is meaningless.
+
 The column worth reading is `probe` minus `perceptual`, on the *pattern-evading*
 payload rows. Those payloads carry no imperative, no role assignment and no named
 verdict — they read as routine administrative notes ("Reviewed under ticket
@@ -65,43 +71,66 @@ classifier. False positives are therefore counted only on clean benign mail.
 
 ## Results, and what they say
 
-Offline stand-in backend, 342 cases (6 clean twins, 336 attacked):
+Offline stand-in backend, 357 cases (336 attacked, 18 benign of which 15 conceal
+something for ordinary reasons):
 
 ```
                                           flat      perceptual           probe
-Phishing caught, no payload           0/3 (0%)        0/3 (0%)        0/3 (0%)
-Phishing caught, with payload       0/168 (0%)    84/168 (50%)   159/168 (95%)
-Benign carriers caught              0/168 (0%)    84/168 (50%)    84/168 (50%)
-False positives (clean benign)        0/3 (0%)        0/3 (0%)        0/3 (0%)
+Phishing caught, no payload           2/3 (67%)       2/3 (67%)       2/3 (67%)
+Phishing caught, with payload      63/168 (38%)   143/168 (85%)   165/168 (98%)
+Benign carriers caught               0/168 (0%)    84/168 (50%)    84/168 (50%)
+False positives (clean benign)         0/3 (0%)        0/3 (0%)        0/3 (0%)
+False positives (benign concealment)  0/15 (0%)       0/15 (0%)       0/15 (0%)
+Pairs flipped by the payload       49/112 (44%)      0/112 (0%)      0/112 (0%)
+AUC, payload vs benign mail               0.969           0.971           0.982
+AUC, concealed half alone                 0.938           0.942           0.964
 
-Wording the pattern list matches    0/192 (0%)   168/192 (88%)   180/192 (94%)
-Wording written to evade it         0/144 (0%)      0/144 (0%)    63/144 (44%)
+Wording the pattern list matches   36/192 (19%)   176/192 (92%)   180/192 (94%)
+Wording written to evade it        27/144 (19%)    51/144 (35%)    69/144 (48%)
 ```
 
-The row that matters is the last one. Against payloads phrased outside the
-pattern list, the pattern-based analyser catches **none** — by construction, since
-those payloads contain no wording it looks for. The probe catches 44% of them,
-without a single new pattern, because it measures what the text did to the
-verdict rather than how it was phrased.
+**The headline number is the flip rate.** Of the matched pairs whose clean twin
+the gateway had already caught, text the recipient never sees argued an ordinary
+gateway back out of its verdict **44% of the time**. With divergence analysis
+watching, none of them flipped. Nothing the recipient could see differed between
+the two messages in a pair.
 
-## Known finding: the risk engine under-scores unattacked phishing
+**The second number is the payload-wording split.** Against payloads written as
+routine administrative notes — no imperative, no role assignment, no named
+verdict — the pattern list catches 35%, and adding the probe takes that to 48%
+without a single new pattern. It catches them by what they did to the verdict,
+not by how they were phrased.
 
-No clean phishing message in the corpus reaches the quarantine threshold, so the
-suppression rate reports `n/a` rather than a number. The worst case is
-`credential-harvest`: SPF, DKIM and DMARC all hard-fail, the sender domain is
-`acc0unts-micros0ft.com`, and the body solicits credentials — and it scores
+**Concealment alone is not treated as guilt.** All 15 decoys — preheaders,
+tracking pixels, collapsed mobile footnotes, Outlook conditional markup — are
+concealment with an ordinary reason behind it, and no arm flags one at any
+threshold in the sweep.
+
+### Why AUC is reported but not led with
+
+The `flat` arm scores 0.938 on "AUC, concealed half alone" — a number that looks
+like detection and is not. Its benign carriers score 1.6 and its benign negatives
+score 0.0, so the ranking is almost perfect while every value sits fifty points
+below any threshold anyone would set. A constant offset satisfies a rank metric
+and quarantines nothing.
+
+That is the case for leading with the flip rate and the threshold sweep. Both are
+stated at an operating point, where a score has to cross a line that a real
+deployment would act on.
+
+## Known finding, since fixed: the risk engine under-scored unattacked phishing
+
+The first run of this benchmark caught 0/3 clean phishing messages, which left
+the flip rate undefined — no pair can flip if the unattacked twin was never
+caught. The worst case was `credential-harvest`: SPF, DKIM and DMARC all
+hard-fail, sender domain `acc0unts-micros0ft.com`, body soliciting credentials —
 **37/100**, comfortably below the 60 needed to quarantine.
 
-That is not a benchmark artefact. It is the calibration weakness the risk engine
-already documents in its own docstring — hand-chosen weights, never fitted — and
-the benchmark simply gives it a number. A triple authentication failure is a
-message the sending domain's own published policy asks the receiver to reject,
-and a weighted average dilutes it to a third of the scale.
-
-The suppression rate becomes measurable once that is fixed. It is deliberately
-left reporting `n/a` until then, rather than dividing by the full attacked set:
-that would print "0% suppression" for the undefended arm, which is the number an
-undefended gateway would like to show.
+The cause was the risk engine's weighted mean. The attachment and perceptual
+analysers correctly found nothing, and their zeros were averaged into the result:
+an analyser's silence actively lowered the score. Independent-evidence fusion
+replaced it, and the same message is now quarantined. The benchmark found this,
+not a test — which is the argument for having one.
 
 ## Limitations
 

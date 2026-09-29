@@ -129,25 +129,37 @@ class TestHarnessArms:
         results = await run(cases, harness, concurrency=8)
         return summarise(results), results
 
-    async def test_a_flat_gateway_catches_none_of_the_attacked_messages(self):
-        summary, _ = await self._summary()
-
-        assert summary["arms"]["flat"]["phish_attacked_caught"] == 0
-        assert summary["arms"]["probe"]["phish_attacked_caught"] > 0
-
-    async def test_the_flip_rate_is_undefined_while_clean_phishing_is_missed(self):
+    async def test_a_flat_gateway_is_flipped_and_a_watching_one_is_not(self):
         """
-        A pair can only flip if the twin without the payload was caught. While the
-        risk engine scores unattacked phishing below the quarantine threshold, the
-        denominator is empty, and the rate must report that rather than dividing by
-        the full attacked set — which would read as 0% suppression, the number an
-        undefended gateway would want to show.
+        The headline result. Same messages, same model, same visible content: the
+        gateway that only reads the flattened document is argued out of a verdict
+        it had already reached, and the one watching the divergence is not.
         """
         summary, _ = await self._summary()
 
-        assert summary["arms"]["flat"]["phish_clean_caught"] == 0
-        assert summary["arms"]["flat"]["flip_scorable"] == 0
-        assert summary["arms"]["flat"]["flip_rate"] is None
+        assert summary["arms"]["flat"]["flip_scorable"] > 0, "no pair could flip"
+        assert summary["arms"]["flat"]["flip_rate"] > 0.3
+        assert summary["arms"]["perceptual"]["flip_rate"] == 0.0
+        assert summary["arms"]["probe"]["flip_rate"] == 0.0
+
+    async def test_the_flip_denominator_excludes_pairs_that_were_never_caught(self):
+        """
+        A message an arm misses anyway says nothing about suppression. Counting it
+        would quietly improve the rate — and while no clean phishing was caught at
+        all, dividing by the full attacked set would print "0% suppression" for the
+        undefended arm, which is the number an undefended gateway would like.
+        """
+        summary, results = await self._summary()
+
+        clean_caught = {
+            r.case.base
+            for r in results
+            if not r.case.attacked and r.caught("flat") and r.case.label == "phish"
+        }
+        expected = sum(
+            1 for r in results if r.case.attacked and r.case.base in clean_caught
+        )
+        assert summary["arms"]["flat"]["flip_scorable"] == expected
 
     async def test_the_probe_catches_what_the_pattern_list_misses(self):
         summary, _ = await self._summary()
