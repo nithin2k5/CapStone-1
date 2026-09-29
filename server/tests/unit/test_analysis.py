@@ -1753,3 +1753,93 @@ class TestAudienceReachesTheVerdict:
 
         assert findings["audience"]["label"] == "analyser"
         assert findings["audience"]["ran"] is True
+
+
+class TestNearMissConcealment:
+    """
+    The adaptive attacker walked past every rule that tested for an exact extreme.
+    opacity had to be 0, font-size had to be 0, colours had to match exactly — so
+    opacity:0.03, font-size:1px and #fefefe on #ffffff were all read as ordinary
+    visible text, handed to the model, and the payload worked.
+
+    Detection has to cover the neighbourhood of invisible, not its limit.
+    """
+
+    def _channels(self, html: str) -> list[str]:
+        parsed = parse_email_content({"From": "a@b.com"}, "", f"<html><body>{html}</body></html>")
+        return parsed.rendered.concealment_channels
+
+    def _hidden(self, html: str) -> str:
+        parsed = parse_email_content({"From": "a@b.com"}, "", f"<html><body>{html}</body></html>")
+        return parsed.rendered.hidden_text
+
+    def test_near_white_on_white_is_concealment(self):
+        assert self._channels(
+            '<p style="color:#fefefe;background-color:#ffffff">payload</p>'
+        ) == ["near-matched-color"]
+
+    def test_near_white_on_the_default_canvas_is_concealment(self):
+        assert "near-white-on-default" in self._channels(
+            '<p style="color:#fdfdfd">payload</p>'
+        )
+
+    def test_ordinary_low_contrast_text_is_not_concealment(self):
+        # Grey small print on white is legible and extremely common in real mail.
+        assert self._channels('<p style="color:#888888;background-color:#ffffff">x</p>') == []
+
+    def test_almost_transparent_is_concealment(self):
+        assert self._channels('<div style="opacity:0.03">payload</div>') == ["near-transparent"]
+
+    def test_slightly_faded_is_not(self):
+        assert self._channels('<div style="opacity:0.85">x</div>') == []
+
+    def test_one_pixel_text_is_concealment(self):
+        assert self._channels('<span style="font-size:1px">payload</span>') == ["tiny-font-size"]
+
+    def test_readable_small_print_is_not(self):
+        assert self._channels('<span style="font-size:11px">x</span>') == []
+
+    def test_clipped_out_of_the_layout_is_concealment(self):
+        assert self._channels('<div style="clip-path:inset(100%)">payload</div>') == ["clipped"]
+
+    def test_scaled_to_nothing_is_concealment(self):
+        assert self._channels('<div style="transform:scale(0)">payload</div>') == ["zero-scale"]
+
+    def test_template_contents_never_render(self):
+        assert "template-element" in self._channels("<template>payload</template>")
+        assert "payload" in self._hidden("<template>payload</template>")
+
+    def test_collapsed_details_conceals_its_body(self):
+        html = "<details><summary>Read more</summary>payload</details>"
+
+        assert "collapsed-details" in self._channels(html)
+        assert "payload" in self._hidden(html)
+
+    def test_a_summary_is_visible_even_when_collapsed(self):
+        """
+        The one element that puts text back on screen. Without the exception, a
+        collapsed FAQ would report its own headings as concealed text.
+        """
+        parsed = parse_email_content(
+            {"From": "a@b.com"},
+            "",
+            "<html><body><details><summary>Read more</summary>payload</details></body></html>",
+        )
+
+        assert "Read more" in parsed.rendered.visible_text
+        assert "Read more" not in parsed.rendered.hidden_text
+
+    def test_an_open_details_conceals_nothing(self):
+        assert self._channels("<details open><summary>s</summary>body</details>") == []
+
+    def test_every_channel_the_adaptive_loop_evaded_is_now_detected(self):
+        """The seven that got through 154 attempts before this rule set existed."""
+        from benchmarks.adaptive import PARSER_BLIND
+
+        evaded = [
+            "near-white", "tiny-font", "clip-path", "scale-zero",
+            "low-opacity", "template-tag", "collapsed-details",
+        ]
+        for name in evaded:
+            markup = PARSER_BLIND[name].format(t="concealed payload text")
+            assert self._channels(markup), f"{name} is still invisible to the parser"

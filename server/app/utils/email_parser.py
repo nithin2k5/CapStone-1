@@ -187,6 +187,14 @@ INVISIBLE_CODEPOINTS = re.compile(
 _STYLE_BLOCK = re.compile(r"<style[^>]*>(.*?)</style>", re.IGNORECASE | re.DOTALL)
 _CSS_RULE = re.compile(r"([^{}]+)\{([^{}]*)\}")
 _ZERO_LENGTH = re.compile(r"^0(\.0+)?(px|pt|em|rem|ex|%|vh|vw|ch)?$")
+# Text too small to read but not zero. An adaptive attacker found font-size:1px
+# walking straight past a rule that only knew about 0.
+_TINY_LENGTH = re.compile(r"^(0?\.\d+|[12])(px|pt)?$")
+# clip-path:inset(100%) and the older clip:rect(0,0,0,0) both remove the element
+# from the page while leaving its text in the document.
+_CLIPPED = re.compile(r"inset\(\s*(100%|5\d%|[6-9]\d%)|rect\(\s*0[a-z]*\s*[, ]")
+# scale(0), scale3d(0,...), matrix with zero scale factors.
+_ZERO_SCALE = re.compile(r"scale[3dxyz]*\(\s*0(\.0+)?\s*[,)]")
 _OFFSCREEN = re.compile(r"^-\s*(\d{3,})(\.\d+)?(px|pt|em|rem|ex|%)?$")
 
 _VOID_ELEMENTS = {
@@ -211,6 +219,30 @@ def _parse_style(style: str) -> dict[str, str]:
         if sep:
             declarations[prop.strip().lower()] = value.strip().lower()
     return declarations
+
+
+def _color_distance(first: str, second: str) -> float | None:
+    """
+    How far apart two colours are, as plain RGB distance.
+
+    Exact equality was the only test here, so #fefefe on #ffffff — indisputably
+    invisible, and found by the adaptive loop in one move — did not register.
+    """
+    if not (first.startswith("#") and second.startswith("#")):
+        return None
+    if len(first) != 7 or len(second) != 7:
+        return None
+    try:
+        a = [int(first[i : i + 2], 16) for i in (1, 3, 5)]
+        b = [int(second[i : i + 2], 16) for i in (1, 3, 5)]
+    except ValueError:
+        return None
+    return sum((x - y) ** 2 for x, y in zip(a, b)) ** 0.5
+
+
+# Distance below which text cannot be read against its background. Well under the
+# contrast any legible palette uses, so ordinary low-contrast design is untouched.
+_INVISIBLE_COLOR_DISTANCE = 24.0
 
 
 def _normalise_color(value: str) -> str:
@@ -245,10 +277,22 @@ def _concealment_channels(style: dict[str, str], attrs: dict[str, str]) -> list[
         channels.append("display-none")
     if style.get("visibility") in ("hidden", "collapse"):
         channels.append("visibility-hidden")
-    if style.get("opacity", "").rstrip("0.") == "" and style.get("opacity", "1") not in ("", "1"):
-        channels.append("opacity-zero")
-    if _ZERO_LENGTH.match(style.get("font-size", "")):
+    opacity = style.get("opacity", "")
+    if opacity:
+        try:
+            if float(opacity) <= 0.1:
+                channels.append("opacity-zero" if float(opacity) == 0 else "near-transparent")
+        except ValueError:
+            pass
+    font_size = style.get("font-size", "")
+    if _ZERO_LENGTH.match(font_size):
         channels.append("zero-font-size")
+    elif _TINY_LENGTH.match(font_size):
+        channels.append("tiny-font-size")
+    if _CLIPPED.search(style.get("clip-path", "")) or _CLIPPED.search(style.get("clip", "")):
+        channels.append("clipped")
+    if _ZERO_SCALE.search(style.get("transform", "")):
+        channels.append("zero-scale")
     if any(_ZERO_LENGTH.match(style.get(prop, "")) for prop in ("height", "max-height")):
         channels.append("zero-height")
     if any(_ZERO_LENGTH.match(style.get(prop, "")) for prop in ("width", "max-width")):
@@ -266,10 +310,25 @@ def _concealment_channels(style: dict[str, str], attrs: dict[str, str]) -> list[
     if color:
         foreground = _normalise_color(color)
         background = style.get("background-color") or style.get("background")
+        distance = (
+            _color_distance(foreground, _normalise_color(background))
+            if background
+            else None
+        )
         if background and _normalise_color(background) == foreground:
             channels.append("matched-color")
+        elif distance is not None and distance <= _INVISIBLE_COLOR_DISTANCE:
+            channels.append("near-matched-color")
         elif foreground == "transparent":
             channels.append("transparent-color")
+        elif (
+            not background
+            and (_color_distance(foreground, "#ffffff") or 999) <= _INVISIBLE_COLOR_DISTANCE
+            and foreground != "#ffffff"
+        ):
+            # Near-white on the default canvas: invisible for the same reason
+            # white is, and a step the attacker takes to dodge an equality test.
+            channels.append("near-white-on-default")
         elif foreground == "#ffffff" and not background:
             # White text with no declared background: on the default white canvas
             # this is invisible. Named separately because a dark-themed template
@@ -306,7 +365,11 @@ class _TwoChannelExtractor(HTMLParser):
         super().__init__(convert_charrefs=True)
         self._hidden_classes = hidden_classes
         self._hidden_ids = hidden_ids
-        self._stack: list[tuple[str, bool, tuple[str, ...]]] = []
+        # (tag, state, channels). state is "conceal", "reveal", or None to
+        # inherit. "reveal" exists for <summary>, which renders even when the
+        # <details> around it is collapsed — without it, a collapsed FAQ would
+        # report its own heading as concealed text.
+        self._stack: list[tuple[str, str | None, tuple[str, ...]]] = []
         self._skip_depth = 0
         self.visible: list[str] = []
         self.hidden: list[str] = []
@@ -317,14 +380,22 @@ class _TwoChannelExtractor(HTMLParser):
 
     @property
     def _concealed(self) -> bool:
-        return any(concealed for _, concealed, _ in self._stack)
+        concealed = False
+        for _, state, _ in self._stack:
+            if state == "conceal":
+                concealed = True
+            elif state == "reveal":
+                concealed = False
+        return concealed
 
     @property
     def _active_channels(self) -> list[str]:
         """The techniques concealing the element currently being read."""
         active: list[str] = []
-        for _, concealed, channels in self._stack:
-            if concealed:
+        for _, state, channels in self._stack:
+            if state == "reveal":
+                active = []
+            elif state == "conceal":
                 for channel in channels:
                     if channel not in active:
                         active.append(channel)
@@ -365,6 +436,12 @@ class _TwoChannelExtractor(HTMLParser):
         if attributes.get("id", "").lower() in self._hidden_ids:
             channels.append("stylesheet-id")
 
+        # Elements whose contents the browser never paints, whatever their style.
+        if tag == "template":
+            channels.append("template-element")
+        if tag == "details" and "open" not in attributes:
+            channels.append("collapsed-details")
+
         concealed = self._concealed or bool(channels)
         for channel in channels:
             self._note(channel)
@@ -389,7 +466,10 @@ class _TwoChannelExtractor(HTMLParser):
                     target.append(href)
 
         if tag not in _VOID_ELEMENTS:
-            self._stack.append((tag, concealed, tuple(channels)))
+            # A summary renders with its details collapsed, so it is the one
+            # element that puts text back on the screen.
+            state = "reveal" if tag == "summary" else ("conceal" if concealed else None)
+            self._stack.append((tag, state, tuple(channels)))
 
     def handle_endtag(self, tag: str) -> None:
         if tag in _SKIP_ELEMENTS:
