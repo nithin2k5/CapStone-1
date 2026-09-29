@@ -8,12 +8,13 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { getEmailById, EmailDetail, getScanResult } from "@/lib/api";
+import { getEmailById, EmailDetail, getScanResult, ScanResult } from "@/lib/api";
+import { DivergencePanel } from "@/components/security/DivergencePanel";
 
 export default function EmailDetailPage() {
   const params = useParams();
   const [email, setEmail] = useState<EmailDetail | null>(null);
-  const [scanResult, setScanResult] = useState<any>(null);
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,6 +63,8 @@ export default function EmailDetailPage() {
   const authStatus = allPassed ? "PASSED" : "FAILED";
 
   const suspiciousUrls = scanResult?.findings?.urls || [];
+  const perceptual = scanResult?.findings?.perceptual;
+  const probe = scanResult?.findings?.probe;
 
   return (
     <div className="flex flex-col gap-6">
@@ -150,6 +153,51 @@ export default function EmailDetailPage() {
                 </Badge>
               </div>
             </div>
+
+            {scanResult && (
+              <>
+                <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mt-8 mb-2 flex items-center gap-2 border-b border-border pb-4">
+                  <ShieldAlert className="w-4 h-4 text-indigo-400" />
+                  Per-analyser findings
+                </h3>
+                {/* Each bar is what that analyser found on its own. The engine
+                    combines them as independent evidence, so they do not sum to
+                    the final score — showing them as slices of one bar would
+                    describe a model this is not. */}
+                <p className="text-xs text-muted-foreground mb-4">
+                  Combined as independent evidence, not averaged — an analyser
+                  finding nothing does not lower the score.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { label: "Header authentication", value: scanResult.header_score },
+                    { label: "URLs", value: scanResult.url_score },
+                    { label: "Attachments", value: scanResult.attachment_score },
+                    { label: "Content analysis", value: scanResult.ai_score },
+                    { label: "Perceptual divergence", value: scanResult.perceptual_score },
+                  ].map((row) => (
+                    <div key={row.label}>
+                      <div className="flex items-center justify-between text-xs mb-1.5">
+                        <span className="text-gray-300">{row.label}</span>
+                        <span className="text-muted-foreground font-mono">{row.value?.toFixed(0) ?? 0}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-foreground/5 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${row.value >= 60 ? "bg-red-500/70" : row.value >= 30 ? "bg-amber-500/70" : "bg-emerald-500/50"}`}
+                          style={{ width: `${Math.min(Math.max(row.value || 0, 0), 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {scanResult.explanation && (
+                  <p className="text-xs text-gray-300 leading-relaxed mt-5 pt-4 border-t border-border">
+                    {scanResult.explanation}
+                  </p>
+                )}
+              </>
+            )}
           </GlassCard>
 
           <GlassCard className="p-6">
@@ -204,6 +252,18 @@ export default function EmailDetailPage() {
           </GlassCard>
         </motion.div>
       </div>
+
+      {/* What the numbers above are a claim about: the message as rendered,
+          beside the text the classifier was given. */}
+      {perceptual && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <DivergencePanel perceptual={perceptual} probe={probe} />
+        </motion.div>
+      )}
     </div>
   );
 }

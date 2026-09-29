@@ -290,6 +290,11 @@ class RiskEngine:
                     "mixed_script_words": perceptual.mixed_script_words,
                     "link_mismatch": perceptual.link_mismatch,
                     "channels": perceptual.channels,
+                    "evidence": {
+                        "visible_excerpt": perceptual.visible_excerpt,
+                        "concealed_segments": perceptual.concealed_segments,
+                        "truncated": perceptual.evidence_truncated,
+                    },
                 },
             },
         )

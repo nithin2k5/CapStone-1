@@ -126,6 +126,60 @@ export async function getEmailById(id: string): Promise<EmailDetail> {
   return fetchWithAuth(`/emails/${id}`);
 }
 
+/** One run of text the recipient never saw, and the techniques that hid it. */
+export interface ConcealedSegment {
+  text: string;
+  channels: string[];
+  truncated: boolean;
+}
+
+export interface PerceptualFindings {
+  findings: string[];
+  hidden_ratio: number;
+  hidden_chars: number;
+  imperative_hidden: boolean;
+  instruction_patterns: string[];
+  invisible_codepoints: number;
+  mixed_script_words: number;
+  link_mismatch: boolean;
+  channels: string[];
+  evidence?: {
+    visible_excerpt: string;
+    concealed_segments: ConcealedSegment[];
+    truncated: boolean;
+  };
+}
+
+/** The two verdicts the differential probe compared, and the gap between them. */
+export interface ProbeFindings {
+  ran: boolean;
+  degraded: boolean;
+  visible_score: number;
+  ingested_score: number;
+  suppression: number;
+  escalation: number;
+  injection_reported: boolean;
+  skipped_reason: string;
+  findings: string[];
+}
+
+export interface ScanFindings {
+  header?: string[];
+  urls?: string[];
+  url_findings?: string[];
+  attachments?: string[];
+  ai?: {
+    phishing_probability: number;
+    spam_probability: number;
+    reasons: string[];
+    source: string;
+    degraded: boolean;
+    injection_attempt: boolean;
+  };
+  perceptual?: PerceptualFindings;
+  probe?: ProbeFindings;
+}
+
 export interface ScanResult {
   id: string;
   email_id: string;
@@ -133,10 +187,11 @@ export interface ScanResult {
   url_score: number;
   attachment_score: number;
   ai_score: number;
+  perceptual_score: number;
   final_score: number;
   risk_level: string;
   explanation: string;
-  findings: any;
+  findings: ScanFindings | null;
   scan_time: string;
 }
 

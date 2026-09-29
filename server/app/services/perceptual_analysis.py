@@ -17,6 +17,12 @@ class PerceptualAnalysisResult:
     mixed_script_words: int = 0
     link_mismatch: bool = False
     channels: list[str] = field(default_factory=list)
+    # The two documents, bounded, so a reviewer can see what the finding is about
+    # rather than take a number on trust. Attacker-controlled text: it is data to
+    # display, never markup to render and never instruction to follow.
+    visible_excerpt: str = ""
+    concealed_segments: list[dict] = field(default_factory=list)
+    evidence_truncated: bool = False
 
 
 # Instruction-shaped text, aimed at the verdict rather than the reader. Grouped by
@@ -118,8 +124,32 @@ class PerceptualAnalysisService:
     CODEPOINT_BANDS = ((20, 20.0), (5, 12.0), (1, 6.0))
     MIXED_SCRIPT_WEIGHT = 15.0
 
+    # Evidence is persisted with every scan and shipped to a browser, so it is
+    # bounded. A concealed payload long enough to exceed these is established by
+    # its first few hundred characters anyway.
+    MAX_SEGMENTS = 12
+    MAX_SEGMENT_CHARS = 400
+    MAX_VISIBLE_CHARS = 2000
+
     def _instruction_matches(self, text: str) -> list[str]:
         return [label for label, pattern in INSTRUCTION_PATTERNS if pattern.search(text)]
+
+    def _evidence(self, rendered: RenderedEmail) -> tuple[str, list[dict], bool]:
+        """The visible document and the concealed spans, clipped to a size worth storing."""
+        segments = [
+            {
+                "text": segment.text[: self.MAX_SEGMENT_CHARS],
+                "channels": list(segment.channels),
+                "truncated": len(segment.text) > self.MAX_SEGMENT_CHARS,
+            }
+            for segment in rendered.hidden_segments[: self.MAX_SEGMENTS]
+        ]
+        truncated = (
+            len(rendered.hidden_segments) > self.MAX_SEGMENTS
+            or len(rendered.visible_text) > self.MAX_VISIBLE_CHARS
+            or any(s["truncated"] for s in segments)
+        )
+        return rendered.visible_text[: self.MAX_VISIBLE_CHARS], segments, truncated
 
     def analyze(self, rendered: RenderedEmail | None) -> PerceptualAnalysisResult:
         if rendered is None:
@@ -175,6 +205,8 @@ class PerceptualAnalysisService:
                 f"{len(rendered.hidden_urls)} link(s) present only in concealed markup"
             )
 
+        visible_excerpt, segments, truncated = self._evidence(rendered)
+
         channels = rendered.concealment_channels
         if len(channels) > 1:
             extra = min(
@@ -196,4 +228,7 @@ class PerceptualAnalysisService:
             mixed_script_words=mixed,
             link_mismatch=link_mismatch,
             channels=list(channels),
+            visible_excerpt=visible_excerpt,
+            concealed_segments=segments,
+            evidence_truncated=truncated,
         )

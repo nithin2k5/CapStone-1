@@ -19,6 +19,20 @@ class ParsedAttachment:
 
 
 @dataclass
+class ConcealedSegment:
+    """One run of concealed text, with the techniques that concealed it.
+
+    The channel belongs on the segment, not only on the message: a body hiding a
+    preheader behind display:none and an instruction behind white-on-white is not
+    the same as one doing both to the same span, and an explanation that cannot
+    tell them apart cannot show its evidence.
+    """
+
+    text: str
+    channels: list[str] = field(default_factory=list)
+
+
+@dataclass
 class RenderedEmail:
     """
     An email as two documents: the text a recipient renders, and the text a
@@ -33,7 +47,7 @@ class RenderedEmail:
     visible_text: str = ""
     hidden_text: str = ""
     machine_text: str = ""
-    hidden_segments: list[str] = field(default_factory=list)
+    hidden_segments: list[ConcealedSegment] = field(default_factory=list)
     concealment_channels: list[str] = field(default_factory=list)
     invisible_codepoints: int = 0
     visible_urls: list[str] = field(default_factory=list)
@@ -292,7 +306,7 @@ class _TwoChannelExtractor(HTMLParser):
         super().__init__(convert_charrefs=True)
         self._hidden_classes = hidden_classes
         self._hidden_ids = hidden_ids
-        self._stack: list[tuple[str, bool]] = []
+        self._stack: list[tuple[str, bool, tuple[str, ...]]] = []
         self._skip_depth = 0
         self.visible: list[str] = []
         self.hidden: list[str] = []
@@ -303,18 +317,34 @@ class _TwoChannelExtractor(HTMLParser):
 
     @property
     def _concealed(self) -> bool:
-        return any(concealed for _, concealed in self._stack)
+        return any(concealed for _, concealed, _ in self._stack)
+
+    @property
+    def _active_channels(self) -> list[str]:
+        """The techniques concealing the element currently being read."""
+        active: list[str] = []
+        for _, concealed, channels in self._stack:
+            if concealed:
+                for channel in channels:
+                    if channel not in active:
+                        active.append(channel)
+        return active
 
     def _note(self, channel: str) -> None:
         if channel not in self.channels:
             self.channels.append(channel)
 
-    def _emit(self, text: str, concealed: bool) -> None:
+    def _emit(self, text: str, concealed: bool, channels: list[str] | None = None) -> None:
         if not text.strip():
             return
         if concealed:
             self.hidden.append(text)
-            self.hidden_segments.append(text.strip())
+            self.hidden_segments.append(
+                ConcealedSegment(
+                    text=text.strip(),
+                    channels=channels if channels is not None else self._active_channels,
+                )
+            )
         else:
             self.visible.append(text)
 
@@ -346,7 +376,8 @@ class _TwoChannelExtractor(HTMLParser):
         for attribute in ("alt", "title"):
             value = attributes.get(attribute, "").strip()
             if value:
-                self._emit(f" {value} ", concealed=True)
+                attribute_channels = self._active_channels or [f"{attribute}-attribute"]
+                self._emit(f" {value} ", True, attribute_channels)
                 if len(value) >= _ATTRIBUTE_TEXT_THRESHOLD:
                     self._note(f"{attribute}-attribute")
 
@@ -358,7 +389,7 @@ class _TwoChannelExtractor(HTMLParser):
                     target.append(href)
 
         if tag not in _VOID_ELEMENTS:
-            self._stack.append((tag, concealed))
+            self._stack.append((tag, concealed, tuple(channels)))
 
     def handle_endtag(self, tag: str) -> None:
         if tag in _SKIP_ELEMENTS:
@@ -384,7 +415,9 @@ class _TwoChannelExtractor(HTMLParser):
     def handle_comment(self, data: str) -> None:
         if data.strip():
             self.hidden.append(f" {data} ")
-            self.hidden_segments.append(data.strip())
+            self.hidden_segments.append(
+                ConcealedSegment(text=data.strip(), channels=["html-comment"])
+            )
             self._note("html-comment")
 
 
