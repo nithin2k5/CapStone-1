@@ -30,6 +30,10 @@ Production-ready REST API for phishing prevention and email security analysis.
   forces quarantine; the probe's verdict can only raise a score, never lower one.
   Costs one extra model call per message that conceals text
   (`DIFFERENTIAL_PROBE_ENABLED=false` to disable)
+- Audience analysis: asks the model who concealed text was written for — a
+  reader, a mail client, or the system judging the message. Covers what the probe
+  cannot, since a payload in an already-clean message moves no verdict and so has
+  no measurable effect (`AUDIENCE_ANALYSIS_ENABLED=false` to disable)
 - Risk engine combining analysers as independent evidence (`1 - Π(1 - eᵢ)`)
   rather than a weighted mean, so an analyser that finds nothing leaves the score
   where it was instead of averaging it down

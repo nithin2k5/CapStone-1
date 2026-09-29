@@ -237,7 +237,15 @@ class AIAnalysisService:
         ----- END {boundary} -----
         """
 
-    async def _call_llm(self, content: str) -> dict:
+    async def _call_llm(self, content: str, system_prompt: str | None = None) -> dict:
+        """
+        One JSON round trip to whichever backend is configured.
+
+        `system_prompt` defaults to the phishing-scoring instructions. Other
+        analysers ask the model a different question through the same transport
+        rather than reimplementing provider handling per question.
+        """
+        instructions = system_prompt or self.SYSTEM_PROMPT
         gemini_api_key = os.getenv("GEMINI_API_KEY")
 
         if gemini_api_key:
@@ -252,7 +260,7 @@ class AIAnalysisService:
                 model="gemini-2.5-flash",
                 contents=content,
                 config=types.GenerateContentConfig(
-                    system_instruction=self.SYSTEM_PROMPT,
+                    system_instruction=instructions,
                     response_mime_type="application/json",
                     temperature=0.1,
                 ),
@@ -267,12 +275,16 @@ class AIAnalysisService:
         response = await client.chat.completions.create(
             model=os.getenv("LOCAL_LLM_MODEL", "llama3"),
             messages=[
-                {"role": "system", "content": self.SYSTEM_PROMPT},
+                {"role": "system", "content": instructions},
                 {"role": "user", "content": content},
             ],
             response_format={"type": "json_object"},
         )
         return json.loads(response.choices[0].message.content)
+
+    async def ask_json(self, system_prompt: str, content: str) -> dict:
+        """Put a structured question to the model outside the scoring path."""
+        return await self._call_llm(content, system_prompt=system_prompt)
 
     REQUIRED_FIELDS = ("phishing_probability", "spam_probability")
 

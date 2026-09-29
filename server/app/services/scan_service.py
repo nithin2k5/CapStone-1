@@ -7,6 +7,7 @@ from app.database.models import Email, EmailStatus, RiskLevel, ScanResult
 from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
+from app.services.audience_analysis import AudienceAnalysisService
 from app.services.differential_probe import DifferentialProbeService
 from app.services.dkim_verification import DKIMVerificationService
 from app.services.header_analysis import HeaderAnalysisService
@@ -30,6 +31,7 @@ class ScanService:
         ai_service: AIAnalysisService | None = None,
         perceptual_service: PerceptualAnalysisService | None = None,
         probe_service: DifferentialProbeService | None = None,
+        audience_service: AudienceAnalysisService | None = None,
         dkim_service: DKIMVerificationService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
@@ -41,6 +43,7 @@ class ScanService:
         self.perceptual_service = perceptual_service or PerceptualAnalysisService()
         # Shares the AI service so both passes go through the same model and prompt.
         self.probe_service = probe_service or DifferentialProbeService(self.ai_service)
+        self.audience_service = audience_service or AudienceAnalysisService(self.ai_service)
         self.dkim_service = dkim_service or DKIMVerificationService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
@@ -100,6 +103,10 @@ class ScanService:
         # the concealed half does to the verdict. Skips itself when nothing is
         # concealed, so most messages cost no extra call.
         probe_result = await self.probe_service.probe(parsed, ai_result)
+        # Who the concealed half was written for. Independent of the probe: a
+        # payload in an already-clean message moves no verdict, so there is no
+        # effect for the probe to measure and this is the only thing that sees it.
+        audience_result = await self.audience_service.analyze(parsed.rendered)
 
         risk = self.risk_engine.calculate(
             header_result,
@@ -108,6 +115,7 @@ class ScanService:
             ai_result,
             perceptual_result,
             probe_result,
+            audience_result,
         )
 
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)

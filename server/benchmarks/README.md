@@ -147,6 +147,37 @@ not a test — which is the argument for having one.
 - Synthetic corpus, one stand-in model, six base messages. These are
   demonstrations of a mechanism, not population estimates.
 
+## Why the audience classifier is not an arm here
+
+`audience_analysis.py` asks the model who a concealed fragment was written for —
+a reader, a mail client, or the system judging the message. It covers the case
+the probe cannot: a payload in an already-clean message moves no verdict, so
+there is no effect to measure.
+
+It deliberately does **not** appear as a fourth arm in the table above. The
+stand-in model would have to answer the audience question itself, and whatever
+answer it was written to give is the answer the benchmark would then report — an
+arm built that way measures an assumption and returns it as a result. The
+stand-in's obedience is a *worst-case* assumption about the model and so is safe
+to build in; an oracle that always classifies correctly is a best-case one, and
+would manufacture the improvement.
+
+So it is measured directly instead, against a real model:
+
+```bash
+python -m benchmarks.audience_check    # ~12 calls, one per payload and decoy
+```
+
+It reports accuracy on the two sets where being right matters: the payloads
+(expected `analyser`) and the decoys — preheaders, tracking pixels, mobile
+footnotes, Outlook conditionals (expected anything else, because a false
+positive there fires on ordinary bulk mail).
+
+**Not yet run.** The configured `GEMINI_API_KEY` is rejected by the API, so this
+measurement is outstanding. Until it is taken, the audience classifier is a
+mechanism with unit tests and no efficacy evidence, and should be described that
+way.
+
 ## Extending it
 
 - A new concealment technique: add a function to `TECHNIQUES` in `corpus.py`.

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from app.database.models import RiskLevel
 from app.services.ai_analysis import AIAnalysisResult
 from app.services.attachment_analysis import AttachmentAnalysisResult
+from app.services.audience_analysis import AudienceAnalysisResult
 from app.services.differential_probe import DifferentialProbeResult
 from app.services.header_analysis import HeaderAnalysisResult
 from app.services.perceptual_analysis import PerceptualAnalysisResult
@@ -78,6 +79,7 @@ class RiskEngine:
         "credentials_and_link": 0.60,
         "concealed_instructions_and_calm": 0.75,
         "concealed_instructions": 0.60,
+        "addressed_to_analyser": 0.70,
         "measured_suppression": 0.75,
         "reported_injection": 0.70,
         "concealed_link_and_solicitation": 0.55,
@@ -99,9 +101,11 @@ class RiskEngine:
         ai: AIAnalysisResult,
         perceptual: PerceptualAnalysisResult | None = None,
         probe: DifferentialProbeResult | None = None,
+        audience: AudienceAnalysisResult | None = None,
     ) -> RiskEngineResult:
         perceptual = perceptual or PerceptualAnalysisResult()
         probe = probe or DifferentialProbeResult()
+        audience = audience or AudienceAnalysisResult()
 
         # The probe scored a body containing attacker-controlled text, so its
         # verdict may only raise the content component, never lower it. Where the
@@ -176,6 +180,18 @@ class RiskEngine:
                 f"{probe.suppression:.0f} points toward safe",
             )
 
+        # Concealed text whose function is to be read by the thing deciding what
+        # happens to the message. Evidence rather than a floor: this is a model's
+        # judgment about attacker-controlled text, and unlike the pattern match it
+        # has no wording it can point at. It carries a message on its own — 0.70
+        # clears the threshold — without claiming to be conclusive.
+        if audience.addressed_to_analyser and not perceptual.imperative_hidden:
+            add(
+                "addressed_to_analyser",
+                "High Risk: concealed text is written for the system judging the "
+                f"message, not for the reader ({audience.reason})",
+            )
+
         injection_reported = ai.injection_attempt or probe.injection_reported
         if injection_reported:
             add(
@@ -237,6 +253,8 @@ class RiskEngine:
             explanation_parts.append("AI module degraded (heuristic fallback)")
         if probe.degraded:
             explanation_parts.append("Differential probe unavailable")
+        if audience.degraded:
+            explanation_parts.append("Audience analysis unavailable")
         if perceptual.channels:
             explanation_parts.append(
                 f"Concealment: {len(perceptual.channels)} channel(s), "
@@ -279,6 +297,14 @@ class RiskEngine:
                     "injection_reported": probe.injection_reported,
                     "skipped_reason": probe.skipped_reason,
                     "findings": probe.findings,
+                },
+                "audience": {
+                    "ran": audience.ran,
+                    "degraded": audience.degraded,
+                    "label": audience.label,
+                    "confidence": audience.confidence,
+                    "reason": audience.reason,
+                    "skipped_reason": audience.skipped_reason,
                 },
                 "perceptual": {
                     "findings": perceptual.findings,

@@ -64,6 +64,14 @@ class Settings(BaseSettings):
         default=True, alias="DIFFERENTIAL_PROBE_ENABLED"
     )
 
+    # Audience analysis. Asks who concealed text was written for — a reader, a
+    # mail client, or the system judging the message. Covers the case the probe
+    # cannot: a payload in an already-clean message moves no verdict, so there is
+    # no effect to measure. One extra model call per message that conceals text.
+    audience_analysis_enabled: bool = Field(
+        default=True, alias="AUDIENCE_ANALYSIS_ENABLED"
+    )
+
     # Redis (optional, architecture ready)
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     redis_enabled: bool = Field(default=False, alias="REDIS_ENABLED")
