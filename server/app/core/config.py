@@ -56,6 +56,14 @@ class Settings(BaseSettings):
     # verdict, which a message from an untrusted source can assert for itself.
     dkim_verify_enabled: bool = Field(default=True, alias="DKIM_VERIFY_ENABLED")
 
+    # Differential probe. Scores a second rendering of the body — the one an
+    # ordinary classifier ingests — so the concealed half's effect on the verdict
+    # can be measured. Costs one extra model call per message that conceals text,
+    # and nothing for the messages that do not.
+    differential_probe_enabled: bool = Field(
+        default=True, alias="DIFFERENTIAL_PROBE_ENABLED"
+    )
+
     # Redis (optional, architecture ready)
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     redis_enabled: bool = Field(default=False, alias="REDIS_ENABLED")

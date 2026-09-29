@@ -7,6 +7,7 @@ from app.database.models import Email, EmailStatus, RiskLevel, ScanResult
 from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
+from app.services.differential_probe import DifferentialProbeService
 from app.services.dkim_verification import DKIMVerificationService
 from app.services.header_analysis import HeaderAnalysisService
 from app.services.perceptual_analysis import PerceptualAnalysisService
@@ -28,6 +29,7 @@ class ScanService:
         attachment_service: AttachmentAnalysisService | None = None,
         ai_service: AIAnalysisService | None = None,
         perceptual_service: PerceptualAnalysisService | None = None,
+        probe_service: DifferentialProbeService | None = None,
         dkim_service: DKIMVerificationService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
@@ -37,6 +39,8 @@ class ScanService:
         self.attachment_service = attachment_service or AttachmentAnalysisService()
         self.ai_service = ai_service or AIAnalysisService()
         self.perceptual_service = perceptual_service or PerceptualAnalysisService()
+        # Shares the AI service so both passes go through the same model and prompt.
+        self.probe_service = probe_service or DifferentialProbeService(self.ai_service)
         self.dkim_service = dkim_service or DKIMVerificationService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
@@ -92,6 +96,10 @@ class ScanService:
         attachment_result = self.attachment_service.analyze(parsed.attachments)
         ai_result = await self.ai_service.analyze_with_llm(parsed)
         perceptual_result = self.perceptual_service.analyze(parsed.rendered)
+        # Second pass over the body an ordinary classifier ingests, to measure what
+        # the concealed half does to the verdict. Skips itself when nothing is
+        # concealed, so most messages cost no extra call.
+        probe_result = await self.probe_service.probe(parsed, ai_result)
 
         risk = self.risk_engine.calculate(
             header_result,
@@ -99,6 +107,7 @@ class ScanService:
             attachment_result,
             ai_result,
             perceptual_result,
+            probe_result,
         )
 
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)
@@ -133,10 +142,11 @@ class ScanService:
         await db.flush()
 
         logger.info(
-            "Scan complete email=%s score=%.2f level=%s",
+            "Scan complete email=%s score=%.2f level=%s suppression=%.2f",
             email.id,
             risk.final_score,
             risk.risk_level.value,
+            risk.suppression,
         )
         return scan
 

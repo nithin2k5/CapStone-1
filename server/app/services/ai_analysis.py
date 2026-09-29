@@ -194,7 +194,12 @@ class AIAnalysisService:
         return selected, True
 
     def _build_content(
-        self, parsed: ParsedEmail, body: str, index: int, total: int
+        self,
+        parsed: ParsedEmail,
+        body: str,
+        index: int,
+        total: int,
+        disclose_concealment: bool = True,
     ) -> str:
         """
         Assemble the model input with an explicit trust boundary.
@@ -202,12 +207,17 @@ class AIAnalysisService:
         Every attacker-controlled field goes inside the marked block, and the marker
         carries a fresh identifier per request so a payload cannot close the block
         and continue outside it.
+
+        `disclose_concealment` is off for the differential probe, whose body already
+        contains the concealed text: announcing an exclusion that did not happen
+        would describe the wrong input, and warning the model about the payload it
+        is being shown is the one difference that would invalidate the comparison.
         """
         boundary = f"UNTRUSTED-CONTENT-{uuid4().hex}"
         part = f" (part {index + 1} of {total})" if total > 1 else ""
 
         concealed = ""
-        if parsed.rendered and parsed.rendered.hidden_text:
+        if disclose_concealment and parsed.rendered and parsed.rendered.hidden_text:
             # State that concealed text exists without reproducing it: including the
             # payload here would hand it the channel this boundary exists to close.
             concealed = (
@@ -353,12 +363,24 @@ class AIAnalysisService:
         ]
         return result
 
-    async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
-        """LLM analysis of intent and social engineering, over the whole body."""
-        # Analyse what the recipient renders. Concealed text is excluded here and
-        # scored by the perceptual analyser, so a hidden payload never reaches the
-        # model as input.
-        body = parsed.visible_text or ""
+    async def analyze_body(
+        self,
+        parsed: ParsedEmail,
+        body: str,
+        disclose_concealment: bool = True,
+    ) -> AIAnalysisResult:
+        """
+        Run the model over one rendering of the body.
+
+        Kept separate from analyze_with_llm so a second rendering can be scored
+        under identical conditions — same system prompt, same headers, same
+        chunking. The differential probe compares two such verdicts, and the
+        comparison only isolates the concealed text if the body is the single
+        thing that differs between them.
+
+        Raises on a failed or malformed call: what a failure means depends on which
+        pass it was, so the caller decides rather than this method.
+        """
         chunks, partial = self._chunk_body(body)
 
         if len(chunks) > 1:
@@ -369,17 +391,28 @@ class AIAnalysisService:
                 " (sampled)" if partial else "",
             )
 
-        try:
-            # The windows are independent, so a long body costs one round trip
-            # rather than one per chunk.
-            payloads = await asyncio.gather(
-                *(
-                    self._call_llm(self._build_content(parsed, chunk, i, len(chunks)))
-                    for i, chunk in enumerate(chunks)
+        # The windows are independent, so a long body costs one round trip
+        # rather than one per chunk.
+        payloads = await asyncio.gather(
+            *(
+                self._call_llm(
+                    self._build_content(
+                        parsed, chunk, i, len(chunks), disclose_concealment
+                    )
                 )
+                for i, chunk in enumerate(chunks)
             )
-            results = [self._validate_payload(payload) for payload in payloads]
-            return self._merge_results(results, partial)
+        )
+        results = [self._validate_payload(payload) for payload in payloads]
+        return self._merge_results(results, partial)
+
+    async def analyze_with_llm(self, parsed: ParsedEmail) -> AIAnalysisResult:
+        """LLM analysis of intent and social engineering, over the whole body."""
+        # Analyse what the recipient renders. Concealed text is excluded here and
+        # scored by the perceptual analyser, so a hidden payload never reaches the
+        # model as input.
+        try:
+            return await self.analyze_body(parsed, parsed.visible_text or "")
         except Exception as e:
             logger.error(
                 "LLM analysis failed (%s: %s); falling back to keyword heuristic. "

@@ -23,6 +23,13 @@ Production-ready REST API for phishing prevention and email security analysis.
 - URL analysis (shorteners, typosquatting, blacklists)
 - Attachment analysis (dangerous extensions, macros, archives)
 - AI analysis placeholder (heuristic mock, LLM-ready interface)
+- Differential probe: the body is scored twice — once as the recipient renders it,
+  once as an ordinary classifier ingests it — under an identical prompt. The
+  difference is the measured effect of the concealed text, so a payload worded
+  outside any pattern list is still caught by what it does. A drop toward "safe"
+  forces quarantine; the probe's verdict can only raise a score, never lower one.
+  Costs one extra model call per message that conceals text
+  (`DIFFERENTIAL_PROBE_ENABLED=false` to disable)
 - Risk engine with weighted scoring
 - Quarantine service (DB status; Gmail move ready)
 - Dashboard statistics API

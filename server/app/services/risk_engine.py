@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from app.database.models import RiskLevel
 from app.services.ai_analysis import AIAnalysisResult
 from app.services.attachment_analysis import AttachmentAnalysisResult
+from app.services.differential_probe import DifferentialProbeResult
 from app.services.header_analysis import HeaderAnalysisResult
 from app.services.perceptual_analysis import PerceptualAnalysisResult
 from app.services.url_analysis import URLAnalysisResult
@@ -19,6 +20,10 @@ class RiskEngineResult:
     risk_level: RiskLevel
     explanation: str
     perceptual_score: float = 0.0
+    # How far the concealed half moved the content verdict, toward safe. Reported
+    # separately from the scores because it is a measurement of an attack's
+    # effect, not an analyser's opinion.
+    suppression: float = 0.0
     findings: dict = field(default_factory=dict)
 
 
@@ -42,6 +47,11 @@ class RiskEngine:
     QUARANTINE_THRESHOLD = 60.0
     BLOCK_THRESHOLD = 80.0
 
+    # A measured drop toward "safe" caused by text the recipient cannot see. The
+    # probe already applies its own noise floor; this is the point at which the
+    # move is treated as an attack rather than reported as a number.
+    SUPPRESSION_THRESHOLD = 15.0
+
     def calculate(
         self,
         header: HeaderAnalysisResult,
@@ -49,15 +59,26 @@ class RiskEngine:
         attachment: AttachmentAnalysisResult,
         ai: AIAnalysisResult,
         perceptual: PerceptualAnalysisResult | None = None,
+        probe: DifferentialProbeResult | None = None,
     ) -> RiskEngineResult:
         perceptual = perceptual or PerceptualAnalysisResult()
+        probe = probe or DifferentialProbeResult()
+
+        # The probe scored a body containing attacker-controlled text, so its
+        # verdict may only raise the content component, never lower it. Where the
+        # concealed half is itself malicious, that content counts; where it argued
+        # the verdict down, the lower number is discarded here and the drop is
+        # scored as the attack it is, below.
+        ai_content_score = ai.score
+        if probe.ran and probe.escalation:
+            ai_content_score = max(ai.score, probe.ingested_score)
 
         # Base additive score
         base_score = (
             header.score * self.WEIGHTS["header"]
             + url.score * self.WEIGHTS["url"]
             + attachment.score * self.WEIGHTS["attachment"]
-            + ai.score * self.WEIGHTS["ai"]
+            + ai_content_score * self.WEIGHTS["ai"]
             + perceptual.score * self.WEIGHTS["perceptual"]
         )
 
@@ -96,7 +117,18 @@ class RiskEngine:
                 "High Risk: concealed text addresses the analyser rather than the reader"
             )
 
-        if ai.injection_attempt:
+        # A measured effect, not a pattern match: the concealed text is the only
+        # difference between the two passes, so the drop is what it bought.
+        suppressed = probe.ran and probe.suppression >= self.SUPPRESSION_THRESHOLD
+        if suppressed:
+            multiplier *= 2.0
+            explanation_parts.append(
+                "Critical Risk: concealed text moved the analyser's verdict "
+                f"{probe.suppression:.0f} points toward safe"
+            )
+
+        injection_reported = ai.injection_attempt or probe.injection_reported
+        if injection_reported:
             multiplier *= 1.8
             explanation_parts.append(
                 "Critical Risk: the analyser reported the message tried to instruct it"
@@ -122,9 +154,12 @@ class RiskEngine:
         if perceptual.imperative_hidden:
             floor = max(floor, self.QUARANTINE_THRESHOLD)
             floor_reasons.append("concealed text instructing the analyser")
-        if ai.injection_attempt:
+        if injection_reported:
             floor = max(floor, self.QUARANTINE_THRESHOLD)
             floor_reasons.append("an analyser-reported injection attempt")
+        if suppressed:
+            floor = max(floor, self.QUARANTINE_THRESHOLD)
+            floor_reasons.append("a measured drop in the verdict caused by hidden text")
 
         if floor > final_score:
             explanation_parts.append(
@@ -148,6 +183,8 @@ class RiskEngine:
             explanation_parts.append(f"AI: {ai.phishing_probability:.0f}% phishing probability")
         if ai.degraded:
             explanation_parts.append("AI module degraded (heuristic fallback)")
+        if probe.degraded:
+            explanation_parts.append("Differential probe unavailable")
         if perceptual.channels:
             explanation_parts.append(
                 f"Concealment: {len(perceptual.channels)} channel(s), "
@@ -162,6 +199,7 @@ class RiskEngine:
             attachment_score=round(attachment.score, 2),
             ai_score=round(ai.score, 2),
             perceptual_score=round(perceptual.score, 2),
+            suppression=probe.suppression,
             final_score=final_score,
             risk_level=risk_level,
             explanation=explanation,
@@ -178,6 +216,17 @@ class RiskEngine:
                     "source": ai.source,
                     "degraded": ai.degraded,
                     "injection_attempt": ai.injection_attempt,
+                },
+                "probe": {
+                    "ran": probe.ran,
+                    "degraded": probe.degraded,
+                    "visible_score": probe.visible_score,
+                    "ingested_score": probe.ingested_score,
+                    "suppression": probe.suppression,
+                    "escalation": probe.escalation,
+                    "injection_reported": probe.injection_reported,
+                    "skipped_reason": probe.skipped_reason,
+                    "findings": probe.findings,
                 },
                 "perceptual": {
                     "findings": perceptual.findings,
