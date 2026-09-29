@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getEmailById, EmailDetail, getScanResult, ScanResult } from "@/lib/api";
 import { DivergencePanel } from "@/components/security/DivergencePanel";
+import { SafeMessagePreview } from "@/components/security/SafeMessagePreview";
 
 export default function EmailDetailPage() {
   const params = useParams();
@@ -234,20 +235,20 @@ export default function EmailDetailPage() {
                 <div className="w-3 h-3 rounded-full bg-emerald-500/20 border border-emerald-500/50" />
               </div>
               <div className="text-xs font-mono text-muted-foreground bg-foreground/5 px-3 py-1 rounded-full">
-                Content Preview (Sanitized)
+                Content Preview (Isolated)
               </div>
             </div>
             <div className="flex-1 p-8 overflow-y-auto bg-white/[0.01]">
-              {/* Sanitized email content preview */}
-              <div className="max-w-2xl mx-auto bg-white text-black p-8 rounded shadow-lg font-sans">
-                {email.body_html ? (
-                  <div dangerouslySetInnerHTML={{ __html: email.body_html }} />
-                ) : email.body_text?.trim().startsWith('<') && email.body_text?.includes('>') ? (
-                  <div dangerouslySetInnerHTML={{ __html: email.body_text }} />
-                ) : (
-                  <pre className="whitespace-pre-wrap font-sans text-sm">{email.body_text || "No preview available for this email."}</pre>
-                )}
+              {/* The body runs in a sandboxed frame that blocks scripts and every
+                  network fetch: it is hostile input, and this screen is where it
+                  meets the person reviewing it. */}
+              <div className="max-w-2xl mx-auto bg-white text-black rounded shadow-lg font-sans overflow-hidden">
+                <SafeMessagePreview html={email.body_html} text={email.body_text} />
               </div>
+              <p className="max-w-2xl mx-auto text-xs text-muted-foreground mt-3">
+                Scripts are inert, remote images and tracking pixels are blocked,
+                and links do not navigate.
+              </p>
             </div>
           </GlassCard>
         </motion.div>

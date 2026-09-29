@@ -105,12 +105,25 @@ design — that is the point of the evidence panel.
 - Concealed text reaches the UI as text, never as markup, and instruction-shaped
   spans are labelled as payloads so a reader does not mistake them for the
   system talking (`DivergencePanel.tsx`).
-- **Known gap:** the email detail page renders the raw message body through
-  `dangerouslySetInnerHTML` under a "Content Preview (Sanitized)" label, and
-  nothing sanitises it. Any sender can therefore execute script in an analyst's
-  session. This is a real stored-XSS exposure in a tool whose whole subject is
-  hostile email, and it should be either sandboxed in an iframe with a
-  restrictive CSP or passed through a sanitiser.
+- The message body renders inside an iframe with an empty `sandbox`, the maximal
+  restriction: no scripts, no same-origin access, no forms, no navigation of the
+  parent (`SafeMessagePreview.tsx`). Script in the body is inert rather than
+  filtered, which is the stronger guarantee — a sanitiser is a list of what
+  someone thought of, and the adversary above is assumed to write around lists.
+- A Content-Security-Policy inside that frame blocks every network fetch. Remote
+  images in mail are tracking pixels: loading one while reviewing a quarantined
+  message would tell the sender it reached a human and was opened. Data-URI
+  images still render.
+- Links render but do not navigate. The URLs worth acting on are listed
+  separately, already scored.
+
+This replaced a real exposure. The page previously wrote the raw body into the
+dashboard's own document through `dangerouslySetInnerHTML`, under a label saying
+"Sanitized" while nothing sanitised it. Measured in headless Chrome, a body
+carrying `onerror` and `<svg onload>` handlers took over the host document under
+the old path and is inert under the new one; the tracking pixel is fetched
+without the CSP and blocked with it. (`innerHTML` does not execute `<script>`
+tags — the live vector was handler attributes.)
 
 ## Out of scope
 
@@ -147,7 +160,9 @@ Measured, not asserted. Every figure below comes from `server/benchmarks`.
 - **One model, synthetic corpus.** Six base messages, one offline stand-in
   classifier that obeys payloads by construction. These demonstrate a mechanism;
   they are not population estimates.
-- **The XSS gap above.**
+- **Frame isolation is the browser's guarantee, not ours.** The preview's safety
+  rests on `sandbox` and CSP being enforced. Adding `allow-scripts` or
+  `allow-same-origin` to that frame later would silently undo it.
 
 ## Assumptions
 

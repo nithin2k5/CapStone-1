@@ -87,9 +87,8 @@ client/      Next.js dashboard; components/security/DivergencePanel.tsx
 
 [`THREAT_MODEL.md`](THREAT_MODEL.md) states the adversary, the surfaces, and
 what is deliberately out of scope — no malware detonation, no in-transit
-protection, no defence against a genuinely compromised sender. It also records
-the known gaps, including one live XSS exposure in the dashboard's message
-preview.
+protection, no defence against a genuinely compromised sender — along with the
+residual risks the benchmark measured rather than the ones optimism suggests.
 
 The weights are hand-chosen rather than fitted, the benchmark corpus is
 synthetic, and its model backend is a stand-in that obeys payloads by
