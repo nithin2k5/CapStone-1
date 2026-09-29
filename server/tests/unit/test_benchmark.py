@@ -190,3 +190,82 @@ class TestHarnessArms:
             assert result.caught("probe") == (
                 result.scores["probe"] >= RiskEngine.QUARANTINE_THRESHOLD
             )
+
+
+class TestAdaptiveAttacker:
+    """
+    The adaptive loop reports how many moves it takes to get a message delivered.
+    That number is only meaningful if every attempt is a real attack and the
+    mutations really are different attacks.
+    """
+
+    def test_every_register_is_a_payload_the_model_falls_for(self):
+        """
+        The regression that made the first run of this loop meaningless: the
+        stand-in only recognised wordings borrowed from the corpus, so five of six
+        registers never suppressed anything. Attempts that were not attacks were
+        being scored as attacks the defence had survived.
+        """
+        from benchmarks.adaptive import REGISTERS
+        from benchmarks.models import StandInModel
+
+        model = StandInModel()
+        for text in REGISTERS.values():
+            model.register_payload(text)
+
+        for name, text in REGISTERS.items():
+            assert model._payload_index(text) is not None, name
+
+    def test_shredding_survives_the_parser_and_still_reads_as_the_payload(self):
+        from benchmarks.adaptive import REGISTERS, Move, _build
+        from benchmarks.models import StandInModel
+        from app.utils.email_parser import parse_email_content
+
+        html = _build("<p>hello</p>", (Move("register", "administrative"), Move("shred", "1")))
+        parsed = parse_email_content({"From": "a@b.com"}, "", html)
+
+        assert parsed.rendered.hidden_text != REGISTERS["administrative"]
+        model = StandInModel()
+        model.register_payload(REGISTERS["administrative"])
+        assert model._payload_index(parsed.rendered.hidden_text) is not None
+
+    def test_visible_padding_lowers_the_concealed_share(self):
+        from benchmarks.adaptive import Move, _build
+        from app.utils.email_parser import parse_email_content
+
+        def ratio(chain):
+            html = _build("<p>hello</p>", chain)
+            return parse_email_content({"From": "a@b.com"}, "", html).rendered.hidden_ratio
+
+        bare = ratio((Move("register", "administrative"),))
+        padded = ratio((Move("register", "administrative"), Move("visible_pad", "12")))
+
+        assert padded < bare
+
+    def test_the_ladder_tries_free_moves_before_structural_ones(self):
+        from benchmarks.adaptive import REGISTERS, _ladder
+
+        ladder = _ladder()
+        first = ladder[: len(REGISTERS)]
+
+        assert all(len(chain) == 1 for chain in first)
+        assert {chain[0].value for chain in first} == set(REGISTERS)
+
+    async def test_channels_the_parser_knows_are_never_evaded(self):
+        """
+        Concealment the parser recognises is caught whatever the wording — the
+        payload is split out of the model's input, so rewording buys nothing.
+        """
+        from benchmarks.adaptive import run_adaptive
+        from benchmarks.corpus import TECHNIQUES
+
+        attempts, _ = await run_adaptive("invoice-fraud", 600)
+
+        for attempt in attempts:
+            channel = next(
+                (m.value for m in attempt.chain if m.kind == "channel"), "display-none"
+            )
+            if channel in TECHNIQUES:
+                assert not attempt.delivered("probe"), (
+                    f"{channel} was evaded: {[m.value for m in attempt.chain]}"
+                )

@@ -21,9 +21,14 @@ from benchmarks.corpus import PAYLOADS, ZERO_WIDTH
 
 # Payload text as the model would recover it, with the shredding characters of
 # the zero-width technique removed.
-_PAYLOAD_FINGERPRINTS = [
-    re.sub(r"\s+", " ", p.text)[:48].lower() for p in PAYLOADS
-]
+FINGERPRINT_CHARS = 48
+
+
+def fingerprint(text: str) -> str:
+    return re.sub(r"\s+", " ", text)[:FINGERPRINT_CHARS].lower()
+
+
+_CORPUS_FINGERPRINTS = [fingerprint(p.text) for p in PAYLOADS]
 
 _INVISIBLE = re.compile(f"[{ZERO_WIDTH}‌‍⁠﻿­]")
 
@@ -48,11 +53,23 @@ class StandInModel(AIAnalysisService):
         super().__init__()
         self.obedience = obedience
         self.calls = 0
+        # What counts as a payload is declared, not detected. A stand-in that
+        # sniffed for payloads would be running a detector of its own, and any
+        # wording it failed to recognise would silently stop being an attack —
+        # a harness measuring defences against payloads that never worked would
+        # report the defence holding.
+        self.fingerprints: list[str] = list(_CORPUS_FINGERPRINTS)
+
+    def register_payload(self, text: str) -> None:
+        """Declare text as a payload this model falls for."""
+        mark = fingerprint(text)
+        if mark and mark not in self.fingerprints:
+            self.fingerprints.append(mark)
 
     def _payload_index(self, text: str) -> int | None:
         normalised = _normalise(text)
-        for index, fingerprint in enumerate(_PAYLOAD_FINGERPRINTS):
-            if fingerprint in normalised:
+        for index, mark in enumerate(self.fingerprints):
+            if mark in normalised:
                 return index
         return None
 
@@ -63,7 +80,7 @@ class StandInModel(AIAnalysisService):
             return False
         # Deterministic across runs: the same payload is obeyed or resisted every
         # time, so two arms of one benchmark see the same model.
-        return (index / max(len(_PAYLOAD_FINGERPRINTS) - 1, 1)) < self.obedience
+        return (index / max(len(self.fingerprints) - 1, 1)) < self.obedience
 
     def _content_score(self, parsed: ParsedEmail, body: str) -> float:
         haystack = f"{parsed.subject} {body}".lower()
