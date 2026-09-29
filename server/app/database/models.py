@@ -159,3 +159,46 @@ class ScanResult(Base):
     )
 
     email: Mapped["Email"] = relationship(back_populates="scan_result")
+
+
+class PayloadSighting(Base):
+    """
+    One concealed fragment, as seen in one message.
+
+    Gateways fingerprint URLs and attachments so a second sighting inherits the
+    first one's verdict. Concealed text is the same kind of object: an attacker
+    sending the same payload from a fresh domain changes everything a header or
+    URL analyser looks at, and none of what is written in the hidden half.
+
+    The fingerprint is taken after normalisation, so the mutations that defeat
+    pattern matching — invisible codepoints, whitespace, case, splitting across
+    spans — do not produce a new identity.
+    """
+
+    __tablename__ = "payload_sightings"
+    __table_args__ = (
+        # A rescan must not make one message look like a campaign of its own.
+        UniqueConstraint("email_id", "fingerprint", name="uq_sighting_email_payload"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    email_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), index=True
+    )
+    fingerprint: Mapped[str] = mapped_column(String(64), index=True)
+    sender: Mapped[str] = mapped_column(String(320), default="")
+    sender_domain: Mapped[str] = mapped_column(String(255), default="", index=True)
+    # A short excerpt so an analyst can see what the fingerprint stands for
+    # without reopening the message it came from.
+    sample: Mapped[str] = mapped_column(Text, default="")
+    # Whether the message this was seen in ended up quarantined. A repeat only
+    # carries a verdict if there was a verdict to carry.
+    quarantined: Mapped[bool] = mapped_column(Boolean, default=False)
+    seen_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

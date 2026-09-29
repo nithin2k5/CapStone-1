@@ -34,6 +34,12 @@ Production-ready REST API for phishing prevention and email security analysis.
   reader, a mail client, or the system judging the message. Covers what the probe
   cannot, since a payload in an already-clean message moves no verdict and so has
   no measurable effect (`AUDIENCE_ANALYSIS_ENABLED=false` to disable)
+- Campaign fingerprints: concealed fragments are identified by a normalised
+  hash, so a payload that was quarantined before is recognised when it arrives
+  from a fresh sending domain — the one thing an attacker cannot rotate, since
+  the hidden text is the attack. The fingerprint survives shredding, whitespace,
+  case and span-splitting; only fragments from quarantined messages count, since
+  ordinary bulk mail repeats footers and preheaders constantly
 - Risk engine combining analysers as independent evidence (`1 - Π(1 - eᵢ)`)
   rather than a weighted mean, so an analyser that finds nothing leaves the score
   where it was instead of averaging it down

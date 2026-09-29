@@ -10,6 +10,7 @@ from app.database.models import User
 from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.audience_analysis import AudienceAnalysisService
+from app.services.campaign_analysis import CampaignAnalysisService
 from app.services.differential_probe import DifferentialProbeService
 from app.services.attachment_analysis import AttachmentAnalysisService
 from app.services.dkim_verification import DKIMVerificationService
@@ -75,6 +76,7 @@ def get_scan_service() -> ScanService:
         # instance the first pass used.
         probe_service=DifferentialProbeService(ai_service),
         audience_service=AudienceAnalysisService(ai_service),
+        campaign_service=CampaignAnalysisService(),
         dkim_service=DKIMVerificationService(),
         risk_engine=risk_engine,
         quarantine_service=QuarantineService(risk_engine),

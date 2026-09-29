@@ -4,6 +4,7 @@ from app.database.models import RiskLevel
 from app.services.ai_analysis import AIAnalysisResult
 from app.services.attachment_analysis import AttachmentAnalysisResult
 from app.services.audience_analysis import AudienceAnalysisResult
+from app.services.campaign_analysis import CampaignAnalysisResult
 from app.services.differential_probe import DifferentialProbeResult
 from app.services.header_analysis import HeaderAnalysisResult
 from app.services.perceptual_analysis import PerceptualAnalysisResult
@@ -80,6 +81,8 @@ class RiskEngine:
         "concealed_instructions_and_calm": 0.75,
         "concealed_instructions": 0.60,
         "addressed_to_analyser": 0.70,
+        "repeat_of_quarantined_payload": 0.55,
+        "repeat_across_senders": 0.70,
         "measured_suppression": 0.75,
         "reported_injection": 0.70,
         "concealed_link_and_solicitation": 0.55,
@@ -102,10 +105,12 @@ class RiskEngine:
         perceptual: PerceptualAnalysisResult | None = None,
         probe: DifferentialProbeResult | None = None,
         audience: AudienceAnalysisResult | None = None,
+        campaign: CampaignAnalysisResult | None = None,
     ) -> RiskEngineResult:
         perceptual = perceptual or PerceptualAnalysisResult()
         probe = probe or DifferentialProbeResult()
         audience = audience or AudienceAnalysisResult()
+        campaign = campaign or CampaignAnalysisResult()
 
         # The probe scored a body containing attacker-controlled text, so its
         # verdict may only raise the content component, never lower it. Where the
@@ -191,6 +196,24 @@ class RiskEngine:
                 "High Risk: concealed text is written for the system judging the "
                 f"message, not for the reader ({audience.reason})",
             )
+
+        # This concealed text has been quarantined here before. Rotating the
+        # sending domain resets the header analyser, the URL reputation and the
+        # sender history at once and changes nothing about the hidden half, so a
+        # repeat from a new domain is a stronger signal than a repeat from the
+        # same one, not a weaker one.
+        if campaign.repeat_of_quarantined:
+            if campaign.crosses_domains:
+                add(
+                    "repeat_across_senders",
+                    "Critical Risk: this concealed text was quarantined before, from "
+                    f"{campaign.distinct_domains} other sending domain(s)",
+                )
+            else:
+                add(
+                    "repeat_of_quarantined_payload",
+                    "High Risk: this concealed text was quarantined here before",
+                )
 
         injection_reported = ai.injection_attempt or probe.injection_reported
         if injection_reported:
@@ -305,6 +328,18 @@ class RiskEngine:
                     "confidence": audience.confidence,
                     "reason": audience.reason,
                     "skipped_reason": audience.skipped_reason,
+                },
+                "campaign": {
+                    "ran": campaign.ran,
+                    "matches": campaign.matches,
+                    "distinct_domains": campaign.distinct_domains,
+                    "crosses_domains": campaign.crosses_domains,
+                    "first_seen": (
+                        campaign.first_seen.isoformat() if campaign.first_seen else None
+                    ),
+                    "fingerprints": campaign.fingerprints,
+                    "sample": campaign.sample,
+                    "skipped_reason": campaign.skipped_reason,
                 },
                 "perceptual": {
                     "findings": perceptual.findings,

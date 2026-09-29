@@ -8,6 +8,7 @@ from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
 from app.services.audience_analysis import AudienceAnalysisService
+from app.services.campaign_analysis import CampaignAnalysisService
 from app.services.differential_probe import DifferentialProbeService
 from app.services.dkim_verification import DKIMVerificationService
 from app.services.header_analysis import HeaderAnalysisService
@@ -32,6 +33,7 @@ class ScanService:
         perceptual_service: PerceptualAnalysisService | None = None,
         probe_service: DifferentialProbeService | None = None,
         audience_service: AudienceAnalysisService | None = None,
+        campaign_service: CampaignAnalysisService | None = None,
         dkim_service: DKIMVerificationService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
@@ -44,6 +46,7 @@ class ScanService:
         # Shares the AI service so both passes go through the same model and prompt.
         self.probe_service = probe_service or DifferentialProbeService(self.ai_service)
         self.audience_service = audience_service or AudienceAnalysisService(self.ai_service)
+        self.campaign_service = campaign_service or CampaignAnalysisService()
         self.dkim_service = dkim_service or DKIMVerificationService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
@@ -107,6 +110,10 @@ class ScanService:
         # payload in an already-clean message moves no verdict, so there is no
         # effect for the probe to measure and this is the only thing that sees it.
         audience_result = await self.audience_service.analyze(parsed.rendered)
+        # Has this concealed text been quarantined here before? Rotating the
+        # sending domain resets every other analyser and leaves the hidden half
+        # untouched, so the payload is the part worth recognising again.
+        campaign_result = await self.campaign_service.analyze(db, email, parsed.rendered)
 
         risk = self.risk_engine.calculate(
             header_result,
@@ -116,6 +123,7 @@ class ScanService:
             perceptual_result,
             probe_result,
             audience_result,
+            campaign_result,
         )
 
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)
@@ -145,6 +153,15 @@ class ScanService:
                 findings=risk.findings,
             )
             await repo.save_scan_result(scan)
+
+        # Recorded with the verdict attached, so a later message carrying the
+        # same fragment inherits something worth inheriting.
+        await self.campaign_service.record(
+            db,
+            email,
+            parsed.rendered,
+            quarantined=self.risk_engine.should_quarantine(risk.final_score),
+        )
 
         email.status = EmailStatus.SCANNED
         await db.flush()
