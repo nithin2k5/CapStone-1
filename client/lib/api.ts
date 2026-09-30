@@ -212,6 +212,32 @@ export interface ProbeFindings {
   findings: string[];
 }
 
+/**
+ * Who the concealed text was written for. `analyser` is the only label that is
+ * evidence: legitimate mail conceals plenty of machine-directed text, and only
+ * text aimed at the system judging the message lacks a benign reason to hide.
+ */
+export interface AudienceFindings {
+  ran: boolean;
+  degraded: boolean;
+  label: "" | "reader" | "client" | "analyser";
+  confidence: number;
+  reason: string;
+  skipped_reason: string;
+}
+
+/** Whether this concealed payload has arrived here before, and from where. */
+export interface CampaignFindings {
+  ran: boolean;
+  matches: number;
+  distinct_domains: number;
+  crosses_domains: boolean;
+  first_seen: string | null;
+  fingerprints: string[];
+  sample: string;
+  skipped_reason: string;
+}
+
 export interface ScanFindings {
   header?: string[];
   urls?: string[];
@@ -227,6 +253,8 @@ export interface ScanFindings {
   };
   perceptual?: PerceptualFindings;
   probe?: ProbeFindings;
+  audience?: AudienceFindings;
+  campaign?: CampaignFindings;
 }
 
 export interface ScanResult {

@@ -10,6 +10,8 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getEmailById, EmailDetail, getScanResult, ScanResult } from "@/lib/api";
 import { DivergencePanel } from "@/components/security/DivergencePanel";
+import { AudienceVerdict } from "@/components/security/AudienceVerdict";
+import { CampaignHistory } from "@/components/security/CampaignHistory";
 import { SafeMessagePreview } from "@/components/security/SafeMessagePreview";
 
 export default function EmailDetailPage() {
@@ -66,6 +68,8 @@ export default function EmailDetailPage() {
   const suspiciousUrls = scanResult?.findings?.urls || [];
   const perceptual = scanResult?.findings?.perceptual;
   const probe = scanResult?.findings?.probe;
+  const audience = scanResult?.findings?.audience;
+  const campaign = scanResult?.findings?.campaign;
 
   return (
     <div className="flex flex-col gap-6">
@@ -263,6 +267,20 @@ export default function EmailDetailPage() {
           transition={{ delay: 0.2 }}
         >
           <DivergencePanel perceptual={perceptual} probe={probe} />
+        </motion.div>
+      )}
+
+      {/* Two questions about the hidden half that its wording cannot settle:
+          who it addresses, and whether it has arrived here before. */}
+      {(audience?.ran || campaign?.ran) && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        >
+          <AudienceVerdict audience={audience} />
+          <CampaignHistory campaign={campaign} />
         </motion.div>
       )}
     </div>
