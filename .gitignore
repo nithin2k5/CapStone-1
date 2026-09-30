@@ -1,0 +1,7 @@
+# Editor and OS droppings, anywhere in the tree. Per-directory ignores live in
+# client/.gitignore and server/.gitignore; this file is only for what neither
+# half owns.
+.DS_Store
+.idea/
+.vscode/
+*.swp
