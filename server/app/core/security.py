@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Optional
@@ -18,6 +19,7 @@ class UserRole(str, Enum):
 class TokenType(str, Enum):
     ACCESS = "access"
     REFRESH = "refresh"
+    RESET = "reset"
 
 
 class TokenPayload(BaseModel):
@@ -25,6 +27,7 @@ class TokenPayload(BaseModel):
     role: UserRole
     type: TokenType
     exp: datetime
+    fpr: Optional[str] = None
 
 
 def hash_password(password: str) -> str:
@@ -43,6 +46,7 @@ def _create_token(
     role: UserRole,
     token_type: TokenType,
     expires_delta: timedelta,
+    fingerprint: Optional[str] = None,
 ) -> str:
     settings = get_settings()
     expire = datetime.now(timezone.utc) + expires_delta
@@ -52,6 +56,8 @@ def _create_token(
         "type": token_type.value,
         "exp": expire,
     }
+    if fingerprint is not None:
+        payload["fpr"] = fingerprint
     return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
 
 
@@ -75,6 +81,30 @@ def create_refresh_token(subject: UUID, role: UserRole) -> str:
     )
 
 
+def password_fingerprint(hashed_password: str) -> str:
+    """Digest of the stored hash, carried by a reset token as its binding.
+
+    Resetting the password replaces the hash, so the fingerprint a spent token
+    carries no longer matches and the token stops validating. That makes it
+    single use, and invalidates any earlier token still in flight, without a
+    table to keep spent tokens in.
+    """
+    return hashlib.sha256(hashed_password.encode("utf-8")).hexdigest()
+
+
+def create_password_reset_token(
+    subject: UUID, role: UserRole, hashed_password: str
+) -> str:
+    settings = get_settings()
+    return _create_token(
+        subject,
+        role,
+        TokenType.RESET,
+        timedelta(minutes=settings.password_reset_expire_minutes),
+        fingerprint=password_fingerprint(hashed_password),
+    )
+
+
 def decode_token(token: str) -> Optional[TokenPayload]:
     settings = get_settings()
     try:
@@ -88,6 +118,7 @@ def decode_token(token: str) -> Optional[TokenPayload]:
             role=UserRole(payload["role"]),
             type=TokenType(payload["type"]),
             exp=datetime.fromtimestamp(payload["exp"], tz=timezone.utc),
+            fpr=payload.get("fpr"),
         )
     except (JWTError, KeyError, ValueError):
         return None

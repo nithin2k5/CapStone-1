@@ -48,3 +48,15 @@ class UserUpdateRequest(BaseModel):
     name: str | None = Field(None, min_length=2, max_length=255)
     password: str | None = Field(None, min_length=8, max_length=128)
 
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    password: str = Field(..., min_length=8, max_length=128)
+
+
+class MessageResponse(BaseModel):
+    message: str

@@ -4,14 +4,28 @@ import Link from "next/link";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { AuthInput, AuthButton } from "@/components/auth/AuthForm";
+import { AuthInput, AuthButton, AuthError } from "@/components/auth/AuthForm";
+import { requestPasswordReset } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setIsLoading(true);
+    setError("");
+
+    try {
+      await requestPasswordReset(email);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send the reset link");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -30,8 +44,12 @@ export default function ForgotPasswordPage() {
             <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
           </div>
           <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Check your email</h1>
+          {/* The API answers the same way whether or not the address is
+              registered, so this cannot promise a message was sent. */}
           <p className="text-muted-foreground mb-6">
-            We&apos;ve sent password reset instructions to your email address.
+            If <span className="text-foreground">{email}</span> has an account, reset
+            instructions are on their way. The link expires in 30 minutes and can be
+            used once.
           </p>
           <Link href="/login">
             <AuthButton variant="secondary">Return to Sign In</AuthButton>
@@ -46,16 +64,22 @@ export default function ForgotPasswordPage() {
             </p>
           </div>
 
+          {error && <AuthError message={error} />}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <AuthInput
               label="Email Address"
               type="email"
               placeholder="admin@company.com"
               icon={<Mail className="w-5 h-5" />}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
             />
 
-            <AuthButton type="submit">Send Reset Link</AuthButton>
+            <AuthButton type="submit" disabled={isLoading}>
+              {isLoading ? "Sending..." : "Send Reset Link"}
+            </AuthButton>
           </form>
         </>
       )}

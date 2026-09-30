@@ -33,6 +33,55 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
   return res.json();
 }
 
+/** FastAPI reports validation failures as a list of objects, not a string. */
+function detailMessage(payload: unknown): string {
+  const detail = (payload as { detail?: unknown } | null)?.detail;
+  if (typeof detail === "string") return detail;
+  if (Array.isArray(detail)) {
+    const first = detail[0] as { msg?: string } | undefined;
+    if (first?.msg) return first.msg;
+  }
+  return "";
+}
+
+/**
+ * POST to an endpoint that has no session yet. `fetchWithAuth` cannot serve
+ * these: with no token stored it redirects to /login, which is where the
+ * visitor has just come from because they cannot sign in.
+ */
+async function postPublic<T>(endpoint: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE_URL}${endpoint}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(detailMessage(payload) || `Request failed (${res.status})`);
+  }
+  return payload as T;
+}
+
+export interface MessageResponse {
+  message: string;
+}
+
+/**
+ * Ask for a reset link. Resolves the same way for an address with no account —
+ * the API answers identically by design, so the UI must not imply otherwise.
+ */
+export async function requestPasswordReset(email: string): Promise<MessageResponse> {
+  return postPublic<MessageResponse>("/auth/forgot-password", { email });
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<MessageResponse> {
+  return postPublic<MessageResponse>("/auth/reset-password", { token, password });
+}
+
 export interface TopSender {
   sender: string;
   count: number;

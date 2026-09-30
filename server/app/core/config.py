@@ -72,6 +72,24 @@ class Settings(BaseSettings):
         default=True, alias="AUDIENCE_ANALYSIS_ENABLED"
     )
 
+    # Password reset. The token is a short-lived JWT bound to the password hash
+    # it was minted against, so using it invalidates it — single use without a
+    # table to keep spent tokens in.
+    password_reset_expire_minutes: int = Field(
+        default=30, alias="PASSWORD_RESET_EXPIRE_MINUTES"
+    )
+    frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
+
+    # SMTP. Delivers the reset link. With no host configured the link is written
+    # to the log instead, so a local install can complete a reset without a mail
+    # server — never do that where the log is not the operator's alone.
+    smtp_host: str = Field(default="", alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_user: str = Field(default="", alias="SMTP_USER")
+    smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
+    smtp_from: str = Field(default="no-reply@localhost", alias="SMTP_FROM")
+    smtp_starttls: bool = Field(default=True, alias="SMTP_STARTTLS")
+
     # Redis (optional, architecture ready)
     redis_url: str = Field(default="redis://localhost:6379/0", alias="REDIS_URL")
     redis_enabled: bool = Field(default=False, alias="REDIS_ENABLED")

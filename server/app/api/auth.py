@@ -7,26 +7,33 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
 from app.core.logging import get_logger
+from app.core.config import get_settings
 from app.core.security import (
     TokenType,
     UserRole,
     create_access_token,
+    create_password_reset_token,
     create_refresh_token,
     decode_token,
     hash_password,
+    password_fingerprint,
     verify_password,
 )
 from app.database.database import get_db
 from app.database.models import User
 from app.schemas.auth import (
+    ForgotPasswordRequest,
+    MessageResponse,
     OAuthTokenRequest,
     RefreshTokenRequest,
+    ResetPasswordRequest,
     TokenResponse,
     UserLogin,
     UserRegister,
     UserResponse,
     UserUpdateRequest,
 )
+from app.services.mail_service import MailService
 
 logger = get_logger("auth")
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -124,6 +131,72 @@ async def update_me(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+# The same answer whether or not the address is registered. Anything that
+# varies with it — a 404, a slower path, a different wording — turns this
+# endpoint into a test for whether someone holds an account here.
+_RESET_REQUESTED = (
+    "If that address has an account, a reset link is on its way."
+)
+
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    payload: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    mail: MailService = Depends(MailService),
+) -> MessageResponse:
+    result = await db.execute(select(User).where(User.email == payload.email))
+    user = result.scalar_one_or_none()
+
+    if user:
+        token = create_password_reset_token(user.id, user.role, user.hashed_password)
+        settings = get_settings()
+        reset_url = f"{settings.frontend_url.rstrip('/')}/reset-password?token={token}"
+        await mail.send_password_reset(user.email, reset_url)
+    else:
+        logger.info("Password reset requested for unknown address")
+
+    return MessageResponse(message=_RESET_REQUESTED)
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    payload: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
+    invalid = HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="This reset link is invalid or has expired",
+    )
+
+    token_data = decode_token(payload.token)
+    if not token_data or token_data.type != TokenType.RESET:
+        raise invalid
+
+    try:
+        user_id = UUID(token_data.sub)
+    except ValueError:
+        raise invalid
+
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise invalid
+
+    # The token names the hash it was minted against. A reset replaces that
+    # hash, so a token that has already been spent — or one issued before a
+    # later request — no longer matches and is refused here.
+    if token_data.fpr != password_fingerprint(user.hashed_password):
+        raise invalid
+
+    user.hashed_password = hash_password(payload.password)
+    db.add(user)
+    await db.flush()
+
+    logger.info("Password reset completed for %s", user.email)
+    return MessageResponse(message="Password updated. You can sign in now.")
 
 
 @router.get("/google/login", summary="Initiate Google OAuth login")
