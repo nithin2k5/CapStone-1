@@ -12,6 +12,13 @@ Production-ready REST API for phishing prevention and email security analysis.
 ## Features
 
 - JWT login / refresh tokens with role-based access (admin, user)
+- Password reset by emailed link. The token is short-lived, carries its own token
+  type so it cannot authenticate a session, and is bound to the password hash it
+  was minted against — so spending it retires it, as does issuing a newer one,
+  without a table of spent tokens. The request endpoint answers identically for
+  an address with no account, since anything that varies with it is a test for
+  who holds one. With `SMTP_HOST` unset the link is logged rather than sent,
+  which suits a local install and nowhere else
 - Gmail email retrieval (mock data when OAuth not configured)
 - Email parsing (headers, body, URLs, attachments)
 - Header analysis (SPF, DKIM, DMARC, sender anomalies)
@@ -81,6 +88,12 @@ uvicorn main:app --reload --port 8000
 | POST | `/api/v1/auth/login` | Login (JWT) |
 | POST | `/api/v1/auth/refresh` | Refresh token |
 | GET | `/api/v1/auth/me` | Current user |
+| PUT | `/api/v1/auth/me` | Update name / password |
+| POST | `/api/v1/auth/forgot-password` | Mail a reset link |
+| POST | `/api/v1/auth/reset-password` | Spend the link, set a new password |
+| GET | `/api/v1/auth/{google,microsoft}/login` | Begin OAuth |
+| GET | `/api/v1/auth/{google,microsoft}/callback` | OAuth redirect |
+| POST | `/api/v1/auth/{google,microsoft}` | OAuth code exchange (SPA) |
 | GET | `/api/v1/emails` | List emails |
 | GET | `/api/v1/emails/{id}` | Email detail |
 | POST | `/api/v1/emails/fetch` | Fetch from Gmail |
@@ -150,7 +163,7 @@ See `.env.example` for all configuration options.
 ## Testing
 
 ```bash
-pytest tests/ -v
+pytest          # 228 tests
 ```
 
 ## MVP Limitations

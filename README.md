@@ -52,6 +52,18 @@ ordinary classifier would ingest, under an identical prompt. The body is the onl
 variable, so the gap between the two verdicts is the measured effect of the
 concealed text — which catches payloads worded outside any pattern list.
 
+Two further checks cover what the probe cannot. A payload inside a message whose
+visible half is already clean moves no verdict, so there is no gap to measure:
+the **audience** classifier asks instead who the concealed text was written for —
+a reader, a mail client, or the system judging the message — and only the third
+answer counts as evidence, since legitimate mail conceals machine-directed text
+constantly. The **campaign** check asks whether this concealed half has arrived
+here before, because rotating the sending domain resets the header analyser, the
+URL reputation and the sender history at once while leaving the payload
+untouched; fingerprints are taken after normalisation, so the mutations that
+defeat pattern matching do not mint a new identity. Only fragments from
+quarantined messages count — bulk mail repeats footers across senders all day.
+
 The risk engine combines these as independent evidence, `1 - Π(1 - eᵢ)`, rather
 than averaging them: an analyser that finds nothing leaves the score where it
 was instead of diluting one that found something conclusive. Three findings —
@@ -68,7 +80,7 @@ Or separately — see [`server/README.md`](server/README.md) for the API,
 environment and Docker setup. The client is a Next.js app in `client/`.
 
 ```bash
-cd server && pytest                    # 180 tests
+cd server && pytest                    # 228 tests
 cd server && python -m benchmarks.run  # the table above, offline, ~1s
 ```
 
@@ -79,8 +91,10 @@ server/      FastAPI service — analysers, risk engine, scan pipeline
   app/services/    one analyser per file; differential_probe.py and
                    risk_engine.py are where the divergence work lives
   benchmarks/      the adversarial corpus and harness
-client/      Next.js dashboard; components/security/DivergencePanel.tsx
-             shows what a verdict is a claim about
+client/      Next.js dashboard; components/security/ shows what a verdict is
+             a claim about — DivergencePanel.tsx the rendered/analysed gap,
+             AudienceVerdict.tsx and CampaignHistory.tsx the two questions
+             the hidden text's wording cannot settle
 ```
 
 ## What this is not
@@ -93,3 +107,9 @@ residual risks the benchmark measured rather than the ones optimism suggests.
 The weights are hand-chosen rather than fitted, the benchmark corpus is
 synthetic, and its model backend is a stand-in that obeys payloads by
 construction. Those are stated plainly wherever a number is reported.
+
+The audience classifier is the one component with no efficacy number at all: it
+cannot be benchmarked against a stand-in model that would answer the audience
+question with whatever it was written to answer, and the measurement against a
+real model has not been taken. It has unit tests and a mechanism, and that is
+all it has — see `server/benchmarks/README.md`.
