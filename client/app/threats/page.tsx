@@ -5,8 +5,29 @@ import { ThreatCard } from "@/components/security/ThreatCard";
 
 import { useEffect, useState } from "react";
 import { getDashboardStats, RecentThreat } from "@/lib/api";
+
+type ThreatRow = {
+  id: string;
+  severity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
+  type: string;
+  source: string;
+  time: string;
+  actionTaken: "BLOCKED" | "QUARANTINED" | "MONITORED";
+};
+
+// The API's risk levels and the card's severities are not the same set: a
+// "safe" message has no severity to show, so it enters at the bottom of the
+// scale rather than as an uppercased string the card does not recognise.
+const SEVERITY: Record<RecentThreat["risk_level"], ThreatRow["severity"]> = {
+  critical: "CRITICAL",
+  high: "HIGH",
+  medium: "MEDIUM",
+  low: "LOW",
+  safe: "LOW",
+};
+
 export default function ThreatsPage() {
-  const [threats, setThreats] = useState<any[]>([]);
+  const [threats, setThreats] = useState<ThreatRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -14,9 +35,9 @@ export default function ThreatsPage() {
       try {
         const stats = await getDashboardStats();
         if (stats?.recent_threats) {
-          const formatted = stats.recent_threats.map((t: RecentThreat) => ({
+          const formatted: ThreatRow[] = stats.recent_threats.map((t: RecentThreat) => ({
             id: t.email_id,
-            severity: t.risk_level.toUpperCase() as any,
+            severity: SEVERITY[t.risk_level] ?? "LOW",
             type: t.subject || "Unknown Threat",
             source: t.sender,
             time: t.received_at ? new Date(t.received_at).toLocaleTimeString() : "Unknown",

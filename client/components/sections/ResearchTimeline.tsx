@@ -96,7 +96,7 @@ export default function ResearchTimeline() {
                   className={`ml-16 md:ml-0 md:w-1/2 glass-card p-6 rounded-2xl border border-indigo-500/20 hover:border-purple-500/50 hover:shadow-[0_0_25px_rgba(139,92,246,0.2)] transition-all ${index % 2 === 0 ? "md:pl-12" : "md:pr-12 text-left md:text-right"}`}
                 >
                   <div className={`text-xs font-mono tracking-wider mb-2 uppercase font-bold ${phase.status === "completed" ? "text-purple-400" : phase.status === "in-progress" ? "text-blue-400 animate-pulse" : "text-zinc-500"}`}>
-                    {phase.phase} // {phase.status}
+                    {phase.phase} {"//"} {phase.status}
                   </div>
                   <h3 className="text-xl font-bold text-foreground mb-3">{phase.title}</h3>
                   <p className="text-muted-foreground leading-relaxed">

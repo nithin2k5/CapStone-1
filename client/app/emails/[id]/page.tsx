@@ -3,7 +3,7 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { ArrowLeft, ShieldAlert, CheckCircle2, ShieldX, Link as LinkIcon, FileText, Download } from "lucide-react";
+import { ArrowLeft, ShieldAlert, CheckCircle2, ShieldX, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -13,6 +13,26 @@ import { DivergencePanel } from "@/components/security/DivergencePanel";
 import { AudienceVerdict } from "@/components/security/AudienceVerdict";
 import { CampaignHistory } from "@/components/security/CampaignHistory";
 import { SafeMessagePreview } from "@/components/security/SafeMessagePreview";
+
+/**
+ * Every value recorded under a header name, joined.
+ *
+ * Two things the stored headers do that a plain lookup does not survive: a
+ * header repeated across receiving hops is kept as a list, and the name is
+ * stored with whatever casing the message used. Authentication-Results is
+ * usually both.
+ */
+function headerText(
+  headers: Record<string, string | string[]> | undefined,
+  name: string,
+): string {
+  if (!headers) return "";
+  const wanted = name.toLowerCase();
+  return Object.entries(headers)
+    .filter(([key]) => key.toLowerCase() === wanted)
+    .flatMap(([, value]) => (Array.isArray(value) ? value : [value]))
+    .join(" ");
+}
 
 export default function EmailDetailPage() {
   const params = useParams();
@@ -51,7 +71,7 @@ export default function EmailDetailPage() {
   const riskLevel = email.risk_score > 80 ? "CRITICAL" : email.risk_score > 50 ? "HIGH" : "SAFE";
   const receivedAt = email.received_at || email.created_at;
 
-  const authResults = email.raw_headers?.["Authentication-Results"] || "";
+  const authResults = headerText(email.raw_headers, "Authentication-Results");
   const spfMatch = authResults.match(/spf=([a-z]+)/i);
   const dkimMatch = authResults.match(/dkim=([a-z]+)/i);
   const dmarcMatch = authResults.match(/dmarc=([a-z]+)/i);

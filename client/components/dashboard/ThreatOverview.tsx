@@ -3,13 +3,16 @@
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { useState } from "react";
+import type { DashboardData } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 const fallbackData = [
   { time: "00:00", clean: 0, threats: 0 },
 ];
 
-export function ThreatOverview({ data }: { data?: any[] }) {
+type MonthlyPoint = DashboardData["monthly_statistics"][number];
+
+export function ThreatOverview({ data }: { data?: MonthlyPoint[] }) {
   const [range, setRange] = useState<"24H" | "7D" | "30D">("30D");
 
   const chartData = data && data.length > 0 ? data.map(d => ({

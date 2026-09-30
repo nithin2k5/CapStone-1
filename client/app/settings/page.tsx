@@ -6,8 +6,15 @@ import { ShieldCheck, Mail, Lock, Bell, Server, KeyRound } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { getAuthSession, clearAuthSession, type AuthSession } from "@/lib/auth";
-import { getSettings, updateSettings, updateProfile, type UserSettings } from "@/lib/api";
+import { clearAuthSession } from "@/lib/auth";
+import { useAuthSession } from "@/lib/useAuthSession";
+import {
+  getSettings,
+  updateSettings,
+  updateProfile,
+  type UserSettings,
+  type UserUpdateRequest,
+} from "@/lib/api";
 
 const tabs = [
   { id: "account", label: "Account", icon: Lock },
@@ -20,20 +27,20 @@ const tabs = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState("email");
-  const [session, setSession] = useState<AuthSession | null>(null);
+  const session = useAuthSession();
   const [userSettings, setUserSettings] = useState<UserSettings | null>(null);
   const [saving, setSaving] = useState(false);
-  const [profileName, setProfileName] = useState("");
+  // Null until the field is touched, so the name shown follows the session
+  // until the user decides otherwise. Seeding state from the session in an
+  // effect instead would cost a second render on every mount.
+  const [nameDraft, setNameDraft] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileSuccess, setProfileSuccess] = useState(false);
 
+  const profileName = nameDraft ?? session?.name ?? "";
+
   useEffect(() => {
-    const authSession = getAuthSession();
-    setSession(authSession);
-    if (authSession?.name) {
-      setProfileName(authSession.name);
-    }
     getSettings().then(setUserSettings).catch(console.error);
   }, []);
 
@@ -41,7 +48,7 @@ export default function SettingsPage() {
     setProfileSaving(true);
     setProfileSuccess(false);
     try {
-      const updates: any = {};
+      const updates: UserUpdateRequest = {};
       if (profileName && profileName !== session?.name) {
         updates.name = profileName;
       }
@@ -181,7 +188,7 @@ export default function SettingsPage() {
                       <input 
                         type="text" 
                         value={profileName}
-                        onChange={(e) => setProfileName(e.target.value)}
+                        onChange={(e) => setNameDraft(e.target.value)}
                         className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-indigo-500/50"
                       />
                     </div>
@@ -272,7 +279,7 @@ export default function SettingsPage() {
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="text-sm font-medium text-foreground mb-1">Daily System Summary</h4>
-                      <p className="text-xs text-muted-foreground max-w-md">Receive a high-level summary of the day's traffic and mitigated threats.</p>
+                      <p className="text-xs text-muted-foreground max-w-md">Receive a high-level summary of the day&apos;s traffic and mitigated threats.</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input 

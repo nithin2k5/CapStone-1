@@ -38,7 +38,7 @@ export function MicrosoftCallbackHandler() {
             try {
               const errData = await res.json();
               errorDetail = JSON.stringify(errData);
-            } catch (e) {
+            } catch {
               errorDetail = "Could not parse error response";
             }
             throw new Error(`Microsoft OAuth code exchange failed: ${errorDetail}`);

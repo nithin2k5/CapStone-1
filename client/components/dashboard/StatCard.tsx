@@ -1,14 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 import { LucideIcon } from "lucide-react";
 
 type StatCardProps = {
   label: string;
   value: string;
   change?: string;
-  trend?: "up" | "down" | "neutral";
   icon: LucideIcon;
   delay?: number;
 };
@@ -17,7 +15,6 @@ export default function StatCard({
   label,
   value,
   change,
-  trend = "neutral",
   icon: Icon,
   delay = 0,
 }: StatCardProps) {

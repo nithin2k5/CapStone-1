@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Bell, Search, User } from "lucide-react";
-import { getAuthSession, type AuthSession } from "@/lib/auth";
+import { useAuthSession } from "@/lib/useAuthSession";
 import Image from "next/image";
 
 type DashboardHeaderProps = {
@@ -11,11 +10,7 @@ type DashboardHeaderProps = {
 };
 
 export default function DashboardHeader({ title, subtitle }: DashboardHeaderProps) {
-  const [session, setSession] = useState<AuthSession | null>(null);
-
-  useEffect(() => {
-    setSession(getAuthSession());
-  }, []);
+  const session = useAuthSession();
 
   const displayName = session?.name ?? "Admin User";
   const role =

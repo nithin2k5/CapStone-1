@@ -11,9 +11,19 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { getEmailQueue, EmailItem } from "@/lib/api";
 
+/** A quarantined message as this table shows it, not as the API returns it. */
+type QuarantineRow = {
+  id: string;
+  sender: string;
+  subject: string;
+  time: string;
+  level: "CRITICAL" | "HIGH" | "MEDIUM";
+  reason: string;
+};
+
 export default function QuarantinePage() {
   const [selected, setSelected] = useState<string[]>([]);
-  const [emails, setEmails] = useState<any[]>([]);
+  const [emails, setEmails] = useState<QuarantineRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,7 +31,7 @@ export default function QuarantinePage() {
       try {
         const data = await getEmailQueue(1, 50, "quarantined");
         if (data.items.length > 0) {
-          const formatted = data.items.map((item: EmailItem) => ({
+          const formatted: QuarantineRow[] = data.items.map((item: EmailItem) => ({
             id: item.id,
             sender: item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender,
             subject: item.subject || "No Subject",

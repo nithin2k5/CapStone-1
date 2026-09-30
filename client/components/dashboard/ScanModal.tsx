@@ -12,63 +12,72 @@ interface ScanModalProps {
   onClose: () => void;
 }
 
+const FIRST_STEP = "Initializing secure connection...";
+
+// Narration while the request is in flight. The request is one call; these are
+// the stages it stands for, shown so a scan that takes a few seconds does not
+// look like a hung dialog.
+const STEPS = [
+  "Fetching recent inbox activity...",
+  "Extracting raw email headers and metadata...",
+  "Analyzing URLs and domains against threat intelligence...",
+  "Scanning attachments for malware signatures...",
+  "Applying AI phishing detection models...",
+  "Finalizing risk scores...",
+];
+
 export function ScanModal({ isOpen, onClose }: ScanModalProps) {
-  const [scanning, setScanning] = useState(false);
   const [results, setResults] = useState<EmailItem[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [scanStep, setScanStep] = useState<string>("Initializing secure connection...");
+  const [scanStep, setScanStep] = useState<string>(FIRST_STEP);
+
+  // Not a fact worth storing: the modal is scanning exactly while it is open
+  // and neither an answer nor a failure has arrived. As state it had to be set
+  // synchronously by the effect that starts the scan, and could disagree with
+  // the results beside it.
+  const scanning = isOpen && results === null && error === null;
 
   useEffect(() => {
-    if (isOpen) {
-      runScan();
-    } else {
-      // Reset state on close
-      setTimeout(() => {
+    if (!isOpen) {
+      // Clear once the close animation is done, not during it.
+      const reset = setTimeout(() => {
         setResults(null);
         setError(null);
-        setScanning(false);
+        setScanStep(FIRST_STEP);
       }, 300);
+      return () => clearTimeout(reset);
     }
-  }, [isOpen]);
 
-  const runScan = async () => {
-    setScanning(true);
-    setError(null);
-    setResults(null);
-    
-    // Simulate fake UI steps for the scanning process to feel more realistic
-    const steps = [
-      "Fetching recent inbox activity...",
-      "Extracting raw email headers and metadata...",
-      "Analyzing URLs and domains against threat intelligence...",
-      "Scanning attachments for malware signatures...",
-      "Applying AI phishing detection models...",
-      "Finalizing risk scores..."
-    ];
-    
+    let cancelled = false;
     let stepIndex = 0;
     const stepInterval = setInterval(() => {
-      if (stepIndex < steps.length) {
-        setScanStep(steps[stepIndex]);
-        stepIndex++;
-      } else {
+      if (stepIndex >= STEPS.length) {
         clearInterval(stepInterval);
+        return;
       }
+      setScanStep(STEPS[stepIndex]);
+      stepIndex++;
     }, 800);
 
-    try {
-      // Actually run the scan in the background
-      const data = await fetchLiveGmailMessages("inbox", 10);
+    (async () => {
+      try {
+        const data = await fetchLiveGmailMessages("inbox", 10);
+        if (cancelled) return;
+        setScanStep("Scan complete!");
+        setResults(data.items || []);
+      } catch {
+        if (cancelled) return;
+        setError("Failed to complete email scan. Please check your connection.");
+      } finally {
+        clearInterval(stepInterval);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
       clearInterval(stepInterval);
-      setScanStep("Scan complete!");
-      setResults(data.items || []);
-    } catch (err) {
-      clearInterval(stepInterval);
-      setError("Failed to complete email scan. Please check your connection.");
-    } finally {
-      setScanning(false);
-    }
-  };
+    };
+  }, [isOpen]);
 
   const safeCount = results?.filter(r => r.status === "safe").length || 0;
   const blockedCount = results?.filter(r => r.status === "blocked").length || 0;

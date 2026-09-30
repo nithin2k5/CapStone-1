@@ -138,7 +138,7 @@ export interface EmailItem {
 export interface EmailDetail extends EmailItem {
   body_text?: string;
   body_html?: string;
-  raw_headers?: any;
+  raw_headers?: Record<string, string | string[]>;
 }
 
 export interface EmailListResponse {
@@ -164,7 +164,14 @@ export async function fetchLiveGmailMessages(mailbox = "inbox", maxResults = 20)
   });
 }
 
-export async function runThreatScan(maxEmails = 50): Promise<any> {
+export interface ScanAllResponse {
+  scanned: number;
+  quarantined: number;
+  safe: number;
+  results: ScanResult[];
+}
+
+export async function runThreatScan(maxEmails = 50): Promise<ScanAllResponse> {
   return fetchWithAuth("/scan/all", {
     method: "POST",
     body: JSON.stringify({ max_emails: maxEmails }),
@@ -328,12 +335,20 @@ export async function downloadReport(): Promise<void> {
   document.body.removeChild(a);
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  created_at: string;
+}
+
 export interface UserUpdateRequest {
   name?: string;
   password?: string;
 }
 
-export async function updateProfile(data: UserUpdateRequest): Promise<any> {
+export async function updateProfile(data: UserUpdateRequest): Promise<UserProfile> {
   return fetchWithAuth("/auth/me", {
     method: "PUT",
     body: JSON.stringify(data),

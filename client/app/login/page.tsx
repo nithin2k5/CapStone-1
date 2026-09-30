@@ -47,8 +47,8 @@ export default function LoginPage() {
         expiresAt: data.access_token ? Date.now() + 30 * 60 * 1000 : undefined,
       });
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to sign in");
     } finally {
       setIsLoading(false);
     }

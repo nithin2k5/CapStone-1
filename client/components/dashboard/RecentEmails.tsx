@@ -10,8 +10,18 @@ import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
 
 // Mock data removed in favor of dynamic backend fetching
 
+type RecentRow = {
+  id: string;
+  sender: string;
+  email: string;
+  subject: string;
+  time: string;
+  level: "CRITICAL" | "HIGH" | "SAFE";
+  status: string;
+};
+
 export function RecentEmails() {
-  const [emails, setEmails] = useState<any[]>([]);
+  const [emails, setEmails] = useState<RecentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -22,7 +32,7 @@ export function RecentEmails() {
           data = await fetchLiveGmailMessages("inbox", 5);
         }
         if (data.items.length > 0) {
-          const formatted = data.items.map((item: EmailItem) => {
+          const formatted: RecentRow[] = data.items.map((item: EmailItem) => {
             const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
             const senderEmail = item.sender.includes("<") ? item.sender.split("<")[1].replace(">", "") : item.sender;
             return {

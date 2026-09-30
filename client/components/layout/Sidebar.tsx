@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
-  Shield,
   LayoutDashboard,
   ShieldAlert,
   Mail,
@@ -15,12 +14,19 @@ import {
   ShieldCheck,
   BarChart3,
   Box,
+  type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { clearAuthSession } from "@/lib/auth";
 
-const navItems = [
+type NavLink = {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+};
+
+const navItems: NavLink[] = [
   { name: "Overview", href: "/dashboard", icon: LayoutDashboard },
   { name: "Emails", href: "/emails", icon: Mail },
   { name: "Threats", href: "/threats", icon: ShieldAlert },
@@ -28,7 +34,7 @@ const navItems = [
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
 ];
 
-const systemItems = [
+const systemItems: NavLink[] = [
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -42,7 +48,7 @@ export function Sidebar() {
     router.push("/login");
   };
 
-  const NavItem = ({ item }: { item: any }) => {
+  const NavItem = ({ item }: { item: NavLink }) => {
     const isActive =
       pathname === item.href ||
       (item.href !== "/dashboard" && pathname.startsWith(item.href));

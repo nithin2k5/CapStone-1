@@ -2,15 +2,25 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/Badge";
-import { Search, Filter, ShieldCheck, ShieldAlert, AlertTriangle, ArrowRight } from "lucide-react";
+import { Search, Filter, ShieldCheck, ShieldAlert, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
 
 // Mock data removed in favor of dynamic backend fetching
 
+type EmailRow = {
+  id: string;
+  sender: string;
+  subject: string;
+  time: string;
+  level: "CRITICAL" | "HIGH" | "SAFE";
+  status: string;
+  analysis: string;
+};
+
 export function EmailTable() {
-  const [emailsState, setEmailsState] = useState<any[]>([]);
+  const [emailsState, setEmailsState] = useState<EmailRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -28,7 +38,7 @@ export function EmailTable() {
         setTotal(data.total || 0);
 
         if (data.items.length > 0) {
-          const formatted = data.items.map((item: EmailItem) => {
+          const formatted: EmailRow[] = data.items.map((item: EmailItem) => {
             const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
             return {
               id: item.id,
@@ -80,7 +90,7 @@ export function EmailTable() {
                 
                 setTotal(data.total || 0);
                 if (data.items.length > 0) {
-                  const formatted = data.items.map((item: EmailItem) => {
+                  const formatted: EmailRow[] = data.items.map((item: EmailItem) => {
                     const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
                     return {
                       id: item.id,
