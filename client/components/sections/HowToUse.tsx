@@ -32,21 +32,21 @@ const steps = [
   {
     title: "Run a scan",
     description:
-      "Every message goes through header checks (SPF, DKIM, DMARC), URL reputation, attachment inspection, and the content model.",
+      "Every message goes through header checks, URL reputation, attachment inspection, the content model, and the perceptual layer.",
     icon: ScanLine,
     location: "/dashboard",
   },
   {
     title: "Read the verdicts",
     description:
-      "Open any message to see its per-layer scores, the weighted risk total, and a plain-language explanation of what tripped the detection.",
+      "Open any message to see each analyser's score, how the evidence composed, and a plain-language account of what tripped detection.",
     icon: ListChecks,
     location: "/emails",
   },
   {
     title: "Handle quarantine",
     description:
-      "High-risk mail is suspended for manual review. Release anything caught by mistake, or delete confirmed phishing permanently.",
+      "Mail scoring above 60 is suspended for manual review. Release anything caught by mistake, or delete confirmed phishing permanently.",
     icon: Lock,
     location: "/quarantine",
   },
@@ -63,52 +63,60 @@ export default function HowToUse() {
   return (
     <section
       id="how-to-use"
-      className="border-t border-border bg-secondary/40 py-24 sm:py-28"
+      className="relative border-y border-border bg-secondary/40 py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="dot-bg pointer-events-none absolute inset-0 opacity-50" />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Getting started"
-          title="Six steps to a mailbox that screens itself"
-          description="From signing up to tuning thresholds, the whole workflow runs in the browser."
+          title={
+            <>
+              How to <span className="text-gradient">use the gateway</span>
+            </>
+          }
+          description="Six steps from signing up to a mailbox that screens itself."
         />
 
-        <ol className="mt-14 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        <ol className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {steps.map((step, i) => (
             <motion.li
               key={step.title}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 22 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.35, delay: (i % 3) * 0.07 }}
-              className="glass-card group flex flex-col p-6"
+              transition={{ duration: 0.45, delay: (i % 3) * 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="panel-lift accent-rule group relative flex flex-col overflow-hidden p-7"
             >
-              <div className="flex items-center justify-between gap-3">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-background text-muted-foreground transition-colors group-hover:border-accent/40 group-hover:bg-[var(--accent-subtle)] group-hover:text-accent">
-                  <step.icon className="h-[18px] w-[18px]" />
-                </span>
-                <span className="font-mono text-[13px] text-muted-foreground">
-                  {String(i + 1).padStart(2, "0")}
-                </span>
-              </div>
+              {/* Oversized step numeral */}
+              <span className="display pointer-events-none absolute right-5 top-3 select-none text-[4.5rem] leading-none text-foreground/[0.045] transition-colors duration-300 group-hover:text-accent/15">
+                {i + 1}
+              </span>
 
-              <h3 className="mt-5 text-[15px] font-semibold text-foreground">
+              <span className="chip relative h-12 w-12">
+                <step.icon className="h-5 w-5" />
+              </span>
+
+              <h3 className="display relative mt-6 text-[17px] text-foreground">
                 {step.title}
               </h3>
-              <p className="mt-2.5 flex-1 text-sm leading-relaxed text-muted-foreground">
+              <p className="relative mt-3 flex-1 text-[14px] leading-relaxed text-muted-foreground">
                 {step.description}
               </p>
 
-              <span className="token mt-5 self-start">{step.location}</span>
+              <span className="token relative mt-6 self-start">
+                {step.location}
+              </span>
             </motion.li>
           ))}
         </ol>
 
-        <div className="mt-12 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Link href="/signup" className="btn-primary px-5 py-3 text-sm">
+        <div className="mt-14 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Link href="/signup" className="btn-primary px-6 py-3.5 text-sm">
             Start protecting your inbox
             <ArrowRight className="h-4 w-4" />
           </Link>
-          <Link href="/docs" className="btn-secondary px-5 py-3 text-sm">
+          <Link href="/docs" className="btn-secondary px-6 py-3.5 text-sm">
             <BookOpen className="h-4 w-4" />
             Read the docs
           </Link>

@@ -3,76 +3,77 @@
 import { motion } from "framer-motion";
 import {
   Server,
-  ShieldAlert,
-  Database,
   Scan,
-  LayoutDashboard,
+  Eye,
+  Bot,
   Gauge,
+  Database,
+  LayoutDashboard,
+  ArrowDown,
 } from "lucide-react";
 import SectionHeading from "./SectionHeading";
 
-const pipeline = [
-  {
-    name: "Gmail / Microsoft Graph",
-    icon: Server,
-    note: "Read-only, after delivery",
-  },
-  { name: "FastAPI service", icon: LayoutDashboard, note: "Async request layer" },
-  {
-    name: "Dual-channel parser",
-    icon: Scan,
-    note: "Rendered text vs. machine-visible text",
-  },
-];
+const ease = [0.22, 1, 0.36, 1] as const;
 
+/**
+ * `weight` is RiskEngine.RELIABILITY — the ceiling a maxed-out finding from
+ * that analyser alone can reach. These are not shares of a total: the engine
+ * composes them as independent evidence, so they do not sum to 1.
+ */
 const analysers = [
-  "Header analyser",
-  "URL scanner",
-  "Attachment scanner",
-  "LLM content analyser",
-  "Perceptual analyser",
+  { name: "Header", detail: "SPF · DKIM · DMARC", weight: "0.90" },
+  { name: "URL", detail: "Reputation · homograph", weight: "0.85" },
+  { name: "Attachment", detail: "Type · macro · archive", weight: "0.90" },
+  { name: "Content", detail: "LLM classification", weight: "0.80" },
+  { name: "Perceptual", detail: "Channel divergence", weight: "0.85" },
 ];
 
-const downstream = [
-  { name: "Risk engine", icon: Gauge, note: "Weighted, capped composition" },
-  { name: "Quarantine and store", icon: Database, note: "Suspended for review" },
-  { name: "Analyst dashboard", icon: ShieldAlert, note: "Verdict with evidence" },
-];
-
-function Step({
-  name,
-  note,
+/** A labelled node in the pipeline. */
+function Node({
   icon: Icon,
-  index,
+  title,
+  detail,
+  tone = "accent",
+  delay = 0,
 }: {
-  name: string;
-  note: string;
   icon: typeof Server;
-  index: number;
+  title: string;
+  detail: string;
+  tone?: "accent" | "accent-2";
+  delay?: number;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 14 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="glass-card flex items-center gap-4 px-5 py-4"
+      transition={{ duration: 0.4, delay, ease }}
+      className="panel flex items-center gap-4 px-5 py-4"
     >
-      <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground">
-        <Icon className="h-4 w-4" />
+      <span className={`chip h-10 w-10 shrink-0 ${tone === "accent-2" ? "chip-2" : ""}`}>
+        <Icon className="h-[18px] w-[18px]" />
       </span>
       <div className="min-w-0">
-        <div className="text-sm font-medium text-foreground">{name}</div>
-        <div className="mt-0.5 text-[13px] text-muted-foreground">{note}</div>
+        <div className="text-[14px] font-semibold text-foreground">{title}</div>
+        <div className="mt-0.5 font-mono text-[11.5px] text-muted-foreground">
+          {detail}
+        </div>
       </div>
     </motion.div>
   );
 }
 
-function Connector() {
+/** Vertical connector between stages. */
+function Flow({ label }: { label?: string }) {
   return (
-    <div aria-hidden className="flex justify-center py-2">
-      <span className="h-6 w-px bg-border" />
+    <div aria-hidden className="relative flex flex-col items-center py-3">
+      <span className="rule-fade-y h-8 w-px" />
+      {label && (
+        <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+          {label}
+        </span>
+      )}
+      <ArrowDown className="mt-1 h-3.5 w-3.5 text-muted-foreground" />
     </div>
   );
 }
@@ -81,59 +82,203 @@ export default function Architecture() {
   return (
     <section
       id="architecture"
-      className="border-t border-border bg-secondary/40 py-24 sm:py-28"
+      className="relative border-y border-border bg-secondary/40 py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div className="dot-bg pointer-events-none absolute inset-0 opacity-60" />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Architecture"
-          title="How a message moves through the gateway"
-          description="The gateway reads mail after delivery over the provider API, so it never sits in the send path. The parser splits each message into what the recipient renders and what the model ingests; every layer downstream sees both."
+          tone="accent-2"
+          title={
+            <>
+              System <span className="text-gradient-blue">architecture</span>
+            </>
+          }
+          description="The gateway reads mail after delivery over the provider API, so it never sits in the send path. One message becomes two documents — and every layer downstream sees both."
         />
 
-        <div className="mx-auto mt-14 max-w-xl">
-          {pipeline.map((step, i) => (
-            <div key={step.name}>
-              <Step {...step} index={i} />
-              <Connector />
-            </div>
-          ))}
+        <div className="mx-auto mt-16 max-w-3xl">
+          <Node
+            icon={Server}
+            title="Gmail / Microsoft Graph"
+            detail="read-only · after delivery"
+          />
 
-          {/* Analysis layers run in parallel */}
+          <Flow label="raw rfc 5322" />
+
+          <Node
+            icon={Scan}
+            title="Dual-channel parser"
+            detail="one message, two documents"
+          />
+
+          {/* ---- The fork: this is the thesis of the project ---- */}
+          <div aria-hidden className="relative h-10">
+            <span className="rule-fade-y absolute left-1/2 top-0 h-5 w-px -translate-x-1/2" />
+            <span
+              className="absolute left-1/4 right-1/4 top-5 h-px"
+              style={{ background: "var(--border-strong)" }}
+            />
+            <span
+              className="absolute left-1/4 top-5 h-5 w-px"
+              style={{ background: "var(--border-strong)" }}
+            />
+            <span
+              className="absolute right-1/4 top-5 h-5 w-px"
+              style={{ background: "var(--border-strong)" }}
+            />
+          </div>
+
           <motion.div
-            initial={{ opacity: 0, y: 12 }}
+            initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, margin: "-40px" }}
-            transition={{ duration: 0.35 }}
-            className="glass-card p-5"
+            transition={{ duration: 0.45, ease }}
+            className="grid gap-4 sm:grid-cols-2"
           >
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <span className="text-sm font-medium text-foreground">
+            <div
+              className="panel glow-accent p-5"
+              style={{
+                borderColor: "color-mix(in srgb, var(--accent) 38%, var(--border))",
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Eye className="h-4 w-4 text-accent" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
+                  rendered channel
+                </span>
+              </div>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">
+                What the recipient actually sees once the mail client applies the
+                CSS and collapses the markup.
+              </p>
+            </div>
+
+            <div
+              className="panel glow-accent-2 p-5"
+              style={{
+                borderColor: "color-mix(in srgb, var(--accent-2) 38%, var(--border))",
+              }}
+            >
+              <div className="flex items-center gap-2.5">
+                <Bot className="h-4 w-4 text-accent-2" />
+                <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent-2">
+                  machine channel
+                </span>
+              </div>
+              <p className="mt-3 text-[13.5px] leading-relaxed text-muted-foreground">
+                What a classifier ingests — including the 24 concealment channels
+                the reader never renders.
+              </p>
+            </div>
+          </motion.div>
+
+          <Flow label="both documents" />
+
+          {/* ---- Analysers in parallel ---- */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.45, ease }}
+            className="panel accent-rule overflow-hidden p-6"
+          >
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-[14px] font-semibold text-foreground">
                 Analysis layers
               </span>
-              <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                run in parallel
+              <span className="font-mono text-[10.5px] uppercase tracking-[0.16em] text-muted-foreground">
+                independent evidence · reliability ceiling
               </span>
             </div>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {analysers.map((name) => (
-                <div
-                  key={name}
-                  className="rounded-lg border border-border bg-background px-3 py-2.5 text-[13px] text-muted-foreground"
+
+            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3">
+              {analysers.map((a, i) => (
+                <motion.div
+                  key={a.name}
+                  initial={{ opacity: 0, scale: 0.97 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.3, delay: i * 0.06 }}
+                  className="group rounded-xl border border-border bg-elevated px-4 py-3.5 transition-colors hover:border-accent/50"
                 >
-                  {name}
-                </div>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="text-[13.5px] font-semibold text-foreground">
+                      {a.name}
+                    </span>
+                    <span className="font-mono text-[11px] text-accent">
+                      {a.weight}
+                    </span>
+                  </div>
+                  <div className="mt-1 font-mono text-[11px] text-muted-foreground">
+                    {a.detail}
+                  </div>
+                </motion.div>
               ))}
             </div>
           </motion.div>
 
-          <Connector />
+          <Flow label="weighted evidence" />
 
-          {downstream.map((step, i) => (
-            <div key={step.name}>
-              <Step {...step} index={i} />
-              {i < downstream.length - 1 && <Connector />}
+          {/* Risk engine, with the inversion called out */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-40px" }}
+            transition={{ duration: 0.4, ease }}
+            className="panel glow-accent overflow-hidden"
+            style={{
+              borderColor: "color-mix(in srgb, var(--accent) 38%, var(--border))",
+            }}
+          >
+            <div className="flex items-center gap-4 px-5 py-4">
+              <span className="chip h-10 w-10 shrink-0">
+                <Gauge className="h-[18px] w-[18px]" />
+              </span>
+              <div className="min-w-0">
+                <div className="text-[14px] font-semibold text-foreground">
+                  Risk engine
+                </div>
+                <div className="mt-0.5 font-mono text-[11.5px] text-muted-foreground">
+                  P(malicious) = 1 − Π(1 − eᵢ)
+                </div>
+              </div>
             </div>
-          ))}
+
+            <div
+              className="border-t px-5 py-3.5"
+              style={{
+                borderColor: "color-mix(in srgb, var(--accent) 20%, var(--border))",
+                background: "var(--accent-subtle)",
+              }}
+            >
+              <p className="font-mono text-[11.5px] leading-relaxed text-muted-foreground">
+                <span className="text-accent">if</span> concealed instructions{" "}
+                <span className="text-accent">and</span> content verdict is calm{" "}
+                <span className="text-accent">then</span> add evidence term 0.75
+              </p>
+            </div>
+          </motion.div>
+
+          <Flow />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Node
+              icon={Database}
+              title="Quarantine + store"
+              detail="suspended for review"
+              tone="accent-2"
+              delay={0}
+            />
+            <Node
+              icon={LayoutDashboard}
+              title="Analyst dashboard"
+              detail="verdict with evidence"
+              tone="accent-2"
+              delay={0.08}
+            />
+          </div>
         </div>
       </div>
     </section>

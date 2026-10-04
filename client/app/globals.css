@@ -2,12 +2,23 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ---------------------------------------------------------------------------
+   Design system
+   Two accents, used for different jobs, never interchangeably:
+     accent    (emerald) - the gateway acting: verdicts, CTAs, confirmations
+     accent-2  (cyan)    - data and instrumentation: metrics, telemetry, links
+   Everything else is a neutral or a semantic (success / warning / danger).
+   Glow is a scale, not an ad-hoc shadow: --glow-1..3, tuned per theme.
+--------------------------------------------------------------------------- */
+
 @theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-secondary: var(--secondary);
   --color-card: var(--card);
+  --color-elevated: var(--elevated);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-muted-foreground: var(--muted-foreground);
 
   --color-accent: var(--accent);
@@ -15,170 +26,303 @@
   --color-accent-contrast: var(--accent-contrast);
   --color-accent-subtle: var(--accent-subtle);
 
+  --color-accent-2: var(--accent-2);
+  --color-accent-2-subtle: var(--accent-2-subtle);
+
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
 
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-heading: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-grotesk), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
 @layer base {
   :root {
     --background: #ffffff;
-    --foreground: #0f172a;
-    --secondary: #f1f5f9;
+    --foreground: #0b1220;
+    --secondary: #f4f6f9;
     --card: #ffffff;
-    --border: #e2e8f0;
-    --muted-foreground: #5b6779;
+    --elevated: #fbfcfd;
+    --border: #e3e8ef;
+    --border-strong: #cbd4e1;
+    --muted-foreground: #58657a;
 
     --accent: #047857;
     --accent-hover: #065f46;
     --accent-contrast: #ffffff;
-    --accent-subtle: rgba(4, 120, 87, 0.08);
+    --accent-subtle: rgba(4, 120, 87, 0.09);
+
+    --accent-2: #0e7490;
+    --accent-2-subtle: rgba(14, 116, 144, 0.09);
 
     --success: #047857;
     --warning: #b45309;
-    --danger: #b91c1c;
+    --danger: #be123c;
 
-    --shadow-color: 215 25% 27%;
+    /* Glow is restrained in light: coloured elevation, not neon */
+    --glow-1: 0 1px 2px rgba(11, 18, 32, 0.05), 0 2px 8px -2px rgba(11, 18, 32, 0.06);
+    --glow-2: 0 2px 4px rgba(11, 18, 32, 0.05), 0 12px 28px -10px rgba(11, 18, 32, 0.14);
+    --glow-3: 0 4px 8px rgba(11, 18, 32, 0.06), 0 28px 56px -18px rgba(11, 18, 32, 0.2);
+    --glow-accent: 0 8px 28px -10px rgba(4, 120, 87, 0.35);
+    --glow-accent-2: 0 8px 28px -10px rgba(14, 116, 144, 0.32);
+    --glow-danger: 0 8px 28px -10px rgba(190, 18, 60, 0.3);
+
+    --grid-line: rgba(11, 18, 32, 0.055);
+    --scan-opacity: 0.1;
   }
 
   .dark {
-    --background: #09090b;
-    --foreground: #fafafa;
-    --secondary: #18181b;
-    --card: #101012;
-    --border: #27272a;
-    --muted-foreground: #a1a1aa;
+    --background: #050608;
+    --foreground: #e8ecf1;
+    --secondary: #0e1116;
+    --card: #0a0d11;
+    --elevated: #11151b;
+    --border: #1e242d;
+    --border-strong: #2d3642;
+    --muted-foreground: #8b98a9;
 
     --accent: #10b981;
     --accent-hover: #34d399;
-    --accent-contrast: #04281c;
+    --accent-contrast: #022c20;
     --accent-subtle: rgba(16, 185, 129, 0.12);
+
+    --accent-2: #22d3ee;
+    --accent-2-subtle: rgba(34, 211, 238, 0.12);
 
     --success: #34d399;
     --warning: #fbbf24;
-    --danger: #f87171;
+    --danger: #fb7185;
 
-    --shadow-color: 0 0% 0%;
+    /* Glow carries the aesthetic in dark: real luminance */
+    --glow-1: 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
+    --glow-2: 0 8px 24px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    --glow-3: 0 24px 64px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --glow-accent: 0 0 0 1px rgba(16, 185, 129, 0.25), 0 0 32px -6px rgba(16, 185, 129, 0.35);
+    --glow-accent-2: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 0 32px -6px rgba(34, 211, 238, 0.32);
+    --glow-danger: 0 0 0 1px rgba(251, 113, 133, 0.28), 0 0 32px -6px rgba(251, 113, 133, 0.3);
+
+    --grid-line: rgba(232, 236, 241, 0.045);
+    --scan-opacity: 0.28;
   }
 
   * {
     border-color: var(--border);
   }
 
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    font-family: var(--font-sans);
-    font-weight: 600;
-    letter-spacing: -0.021em;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.03em;
     text-wrap: balance;
-  }
-
-  h1 {
-    letter-spacing: -0.032em;
   }
 
   :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+    border-radius: 2px;
   }
 }
 
 @layer components {
-  /* Surfaces */
+  /* ---- Surfaces ------------------------------------------------------- */
+
+  .panel,
   .glass {
-    @apply bg-card border border-border rounded-xl;
+    @apply relative bg-card border border-border rounded-2xl;
+    box-shadow: var(--glow-1);
   }
 
+  .panel-flush {
+    @apply relative bg-card border border-border rounded-2xl overflow-hidden;
+    box-shadow: var(--glow-2);
+  }
+
+  /* Interactive card: lifts and picks up an accent ring on hover */
+  .panel-lift,
   .glass-card {
-    @apply bg-card border border-border rounded-xl transition-[border-color,box-shadow,transform] duration-200;
-    box-shadow:
-      0 1px 2px hsl(var(--shadow-color) / 0.04),
-      0 1px 3px hsl(var(--shadow-color) / 0.04);
+    @apply relative bg-card border border-border rounded-2xl;
+    box-shadow: var(--glow-1);
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.25s ease, border-color 0.25s ease;
   }
 
+  .panel-lift:hover,
   .glass-card:hover {
-    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
-    box-shadow:
-      0 1px 2px hsl(var(--shadow-color) / 0.05),
-      0 8px 24px -8px hsl(var(--shadow-color) / 0.12);
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    box-shadow: var(--glow-2), var(--glow-accent);
   }
 
-  /* Buttons */
+  .panel-lift-2:hover {
+    border-color: color-mix(in srgb, var(--accent-2) 45%, var(--border));
+    box-shadow: var(--glow-2), var(--glow-accent-2);
+  }
+
+  /* Gradient hairline across the top of a card */
+  .accent-rule::before {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 2px;
+    border-radius: 1rem 1rem 0 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      var(--accent) 25%,
+      var(--accent-2) 75%,
+      transparent
+    );
+    opacity: 0.55;
+    transition: opacity 0.25s ease;
+  }
+
+  .panel-lift:hover .accent-rule::before,
+  .glass-card:hover .accent-rule::before,
+  .accent-rule:hover::before {
+    opacity: 1;
+  }
+
+  /* Icon chip */
+  .chip {
+    @apply inline-flex items-center justify-center rounded-xl border transition-colors duration-250;
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+    background: var(--accent-subtle);
+    color: var(--accent);
+  }
+
+  .chip-2 {
+    border-color: color-mix(in srgb, var(--accent-2) 22%, var(--border));
+    background: var(--accent-2-subtle);
+    color: var(--accent-2);
+  }
+
+  /* ---- Buttons -------------------------------------------------------- */
+
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium
-           bg-accent text-accent-contrast border border-transparent
-           transition-colors duration-150;
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl font-semibold
+           bg-accent text-accent-contrast border border-transparent;
+    box-shadow: var(--glow-accent);
+    transition: background-color 0.18s ease, box-shadow 0.25s ease,
+      transform 0.18s ease;
   }
 
   .btn-primary:hover {
     background-color: var(--accent-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--glow-2), var(--glow-accent);
   }
 
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium
-           bg-transparent text-foreground border border-border
-           transition-colors duration-150;
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl font-semibold
+           bg-transparent text-foreground;
+    border: 1px solid var(--border-strong);
+    transition: border-color 0.2s ease, box-shadow 0.25s ease,
+      transform 0.18s ease, color 0.2s ease;
   }
 
   .btn-secondary:hover {
-    @apply bg-secondary;
-    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+    color: var(--accent-2);
+    border-color: color-mix(in srgb, var(--accent-2) 55%, var(--border));
+    transform: translateY(-2px);
+    box-shadow: var(--glow-accent-2);
   }
 
-  /* Small uppercase eyebrow above a section heading */
+  /* ---- Type ----------------------------------------------------------- */
+
+  .display {
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.04;
+  }
+
   .eyebrow {
-    @apply inline-flex items-center gap-2 font-mono text-[11px] font-medium
-           uppercase tracking-[0.14em] text-muted-foreground;
+    @apply inline-flex items-center gap-2 font-mono text-[11px] font-medium uppercase
+           tracking-[0.2em];
+    color: var(--accent);
   }
 
-  /* Inline technical token (a route, a header name, a value) */
+  .eyebrow-2 {
+    color: var(--accent-2);
+  }
+
   .token {
-    @apply font-mono text-[12px] rounded-md px-1.5 py-0.5 border border-border bg-secondary text-muted-foreground;
+    @apply font-mono text-[12px] rounded-md px-2 py-0.5 border;
+    border-color: color-mix(in srgb, var(--accent-2) 25%, var(--border));
+    background: var(--accent-2-subtle);
+    color: var(--accent-2);
+  }
+
+  /* Status pill */
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1
+           font-mono text-[11px] font-medium uppercase tracking-wider;
   }
 }
 
 @layer utilities {
-  .text-gradient,
+  .text-gradient {
+    background: linear-gradient(100deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .text-gradient-blue {
-    @apply text-accent;
+    background: linear-gradient(100deg, var(--accent-2), var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .text-gradient-subtle {
     @apply text-foreground;
   }
 
-  /* Faint dot field, legible in both themes */
+  .glow-accent {
+    box-shadow: var(--glow-accent);
+  }
+  .glow-accent-2 {
+    box-shadow: var(--glow-accent-2);
+  }
+  .glow-danger {
+    box-shadow: var(--glow-danger);
+  }
+
+  /* Engineering grid */
   .grid-bg {
-    background-image: radial-gradient(
-      circle at 1px 1px,
-      color-mix(in srgb, var(--foreground) 14%, transparent) 1px,
-      transparent 0
-    );
-    background-size: 32px 32px;
+    background-image: linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+    background-size: 48px 48px;
   }
 
-  .section-divider {
-    @apply border-t border-border;
+  .dot-bg {
+    background-image: radial-gradient(circle at 1px 1px, var(--grid-line) 1.5px, transparent 0);
+    background-size: 28px 28px;
   }
 
-  /* Legacy aliases kept so pages outside the home page keep compiling */
-  .neon-glow,
-  .neon-glow-blue {
+  /* Hairline that fades at both ends */
+  .rule-fade {
+    background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+  }
+
+  .rule-fade-y {
+    background: linear-gradient(180deg, transparent, var(--border-strong), transparent);
+  }
+
+  /* Legacy aliases: other pages still reference these.
+     .glass / .glass-card share the component selectors above. */
+  .neon-glow {
     border-bottom: 1px solid var(--accent);
   }
-
+  .neon-glow-blue {
+    border-bottom: 1px solid var(--accent-2);
+  }
   .neon-glow-hover:hover {
     @apply bg-accent text-accent-contrast;
   }
-
   .scanlines {
     position: relative;
   }
@@ -193,27 +337,68 @@ body {
 }
 
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
 }
 ::-webkit-scrollbar-track {
   background: var(--background);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--border);
+  background: var(--border-strong);
   border-radius: 9999px;
-  border: 2px solid var(--background);
+  border: 3px solid var(--background);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--muted-foreground);
+  background: var(--accent);
+}
+
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes sweep {
+  from {
+    transform: translateY(-20vh);
+  }
+  to {
+    transform: translateY(120vh);
+  }
+}
+
+@keyframes pulse-ring {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.5);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 38s linear infinite;
+}
+.animate-sweep {
+  animation: sweep 9s linear infinite;
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2.4s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+  .animate-marquee,
+  .animate-sweep {
+    animation: none !important;
   }
 }

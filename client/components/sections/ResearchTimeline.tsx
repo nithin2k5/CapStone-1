@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Check } from "lucide-react";
+import { Check, Loader } from "lucide-react";
 import SectionHeading from "./SectionHeading";
 
 const phases = [
@@ -23,7 +23,7 @@ const phases = [
     phase: "Phase 3",
     title: "Dual-channel extraction",
     description:
-      "Parse each message twice — rendered and machine-visible — across seventeen concealment channels, from display:none and zero-size text to matched foreground colours and invisible codepoints.",
+      "Parse each message twice — rendered and machine-visible — across twenty-four concealment channels, from display:none and zero-size text to matched foreground colours and invisible codepoints.",
     status: "complete",
   },
   {
@@ -37,22 +37,26 @@ const phases = [
     phase: "Phase 5",
     title: "Calibration and evasion testing",
     description:
-      "The risk weights are hand-chosen and compose until they saturate the cap; pattern matching is literal, so paraphrase evades it where the volume and script signals do not. Fitting the weights to a labelled corpus and measuring paraphrase robustness are the open problems.",
+      "Reliability ceilings are still hand-chosen; fitting them needs labelled mail this project does not have. Pattern matching is literal, so paraphrase evades it where the volume and script signals do not. Those two are the open problems.",
     status: "in progress",
   },
 ] as const;
 
 export default function ResearchTimeline() {
   return (
-    <section id="research" className="py-24 sm:py-28">
+    <section id="research" className="relative py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
           eyebrow="Research"
-          title="How the system arrived at the perceptual layer"
-          description="Four phases shipped, and one still open — including the limitations we have not solved."
+          title={
+            <>
+              Research <span className="text-gradient">trajectory</span>
+            </>
+          }
+          description="How the system arrived at the perceptual layer, and what remains unsolved in it."
         />
 
-        <ol className="mx-auto mt-14 max-w-3xl">
+        <ol className="relative mx-auto mt-16 max-w-3xl">
           {phases.map((phase, i) => {
             const done = phase.status === "complete";
             const last = i === phases.length - 1;
@@ -60,53 +64,81 @@ export default function ResearchTimeline() {
             return (
               <motion.li
                 key={phase.phase}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 18 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.35 }}
-                className="relative flex gap-5 sm:gap-6"
+                transition={{ duration: 0.45, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+                className="relative flex gap-6"
               >
                 {/* Rail */}
                 <div className="flex flex-col items-center">
                   <span
-                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border ${
-                      done
-                        ? "border-accent/40 bg-[var(--accent-subtle)] text-accent"
-                        : "border-border bg-secondary text-muted-foreground"
+                    className={`relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${
+                      done ? "glow-accent" : "glow-accent-2"
                     }`}
+                    style={{
+                      borderColor: done
+                        ? "color-mix(in srgb, var(--accent) 45%, var(--border))"
+                        : "color-mix(in srgb, var(--accent-2) 45%, var(--border))",
+                      background: done
+                        ? "var(--accent-subtle)"
+                        : "var(--accent-2-subtle)",
+                      color: done ? "var(--accent)" : "var(--accent-2)",
+                    }}
                   >
                     {done ? (
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="h-4 w-4" />
                     ) : (
-                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                      <Loader className="h-4 w-4 animate-spin" />
                     )}
                   </span>
-                  {!last && <span className="w-px flex-1 bg-border" />}
+
+                  {!last && (
+                    <span
+                      className="w-px flex-1"
+                      style={{
+                        background:
+                          "linear-gradient(to bottom, var(--accent), var(--border) 70%)",
+                        opacity: 0.4,
+                      }}
+                    />
+                  )}
                 </div>
 
-                {/* Content */}
-                <div className={last ? "pb-0" : "pb-10"}>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                      {phase.phase}
-                    </span>
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
-                        done
-                          ? "bg-[var(--accent-subtle)] text-accent"
-                          : "bg-secondary text-muted-foreground"
-                      }`}
-                    >
-                      {phase.status}
-                    </span>
-                  </div>
+                {/* Card */}
+                <div className={last ? "pb-0" : "pb-9"}>
+                  <div
+                    className={`panel-lift accent-rule overflow-hidden p-6 ${
+                      done ? "" : "panel-lift-2"
+                    }`}
+                  >
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+                        {phase.phase}
+                      </span>
+                      <span
+                        className="pill"
+                        style={{
+                          borderColor: done
+                            ? "color-mix(in srgb, var(--accent) 32%, var(--border))"
+                            : "color-mix(in srgb, var(--accent-2) 32%, var(--border))",
+                          background: done
+                            ? "var(--accent-subtle)"
+                            : "var(--accent-2-subtle)",
+                          color: done ? "var(--accent)" : "var(--accent-2)",
+                        }}
+                      >
+                        {phase.status}
+                      </span>
+                    </div>
 
-                  <h3 className="mt-2 text-[15px] font-semibold text-foreground">
-                    {phase.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                    {phase.description}
-                  </p>
+                    <h3 className="display mt-3 text-[17px] text-foreground">
+                      {phase.title}
+                    </h3>
+                    <p className="mt-3 text-[14px] leading-relaxed text-muted-foreground">
+                      {phase.description}
+                    </p>
+                  </div>
                 </div>
               </motion.li>
             );
