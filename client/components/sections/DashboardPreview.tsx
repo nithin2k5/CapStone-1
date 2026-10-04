@@ -1,179 +1,250 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldAlert, Activity, Globe, Mail, AlertTriangle, XSquare } from "lucide-react";
+import { AlertTriangle, Mail, Activity, BarChart3 } from "lucide-react";
+import SectionHeading from "./SectionHeading";
+
+const vectors = [
+  { source: "Concealed instructions", percent: 45 },
+  { source: "Spoofed domains", percent: 30 },
+  { source: "Malicious URLs", percent: 15 },
+  { source: "Dangerous attachments", percent: 10 },
+];
+
+const activity = [
+  42, 38, 55, 48, 62, 71, 65, 58, 82, 91, 88, 76, 69, 74, 85, 92, 98, 87, 79,
+  83, 95, 88, 76, 69,
+];
+
+const intercepted = [
+  {
+    time: "10:42",
+    sender: "admin@paypaI.com",
+    subject: "Account suspended",
+    type: "Homograph domain",
+    score: 91,
+  },
+  {
+    time: "10:38",
+    sender: "hr@company-portal.net",
+    subject: "Q3 bonus document",
+    type: "Macro document",
+    score: 84,
+  },
+  {
+    time: "10:15",
+    sender: "support@microsoft-update.com",
+    subject: "Action required",
+    type: "DKIM failure",
+    score: 78,
+  },
+  {
+    time: "09:55",
+    sender: "billing@invoice-cdn.co",
+    subject: "Invoice #9921",
+    type: "Hidden instructions",
+    score: 88,
+  },
+];
 
 export default function DashboardPreview() {
   return (
-    <section id="dashboard" className="py-24 relative z-10 bg-background border-t-4 border-border border-b-4">
-      <div className="container mx-auto px-6">
-        <div className="text-left max-w-3xl mb-16 border-l-4 border-[#10B981] pl-6">
-          <motion.h2
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="font-heading text-3xl md:text-4xl font-bold mb-4 text-foreground"
-          >
-            Enterprise <span className="text-[#10B981]">SOC Dashboard</span>
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.1 }}
-            className="text-muted-foreground text-lg font-mono"
-          >
-            [SYSTEM_OVERVIEW] Real-time visibility into incoming payloads and intercepted threats.
-          </motion.p>
-        </div>
+    <section id="dashboard" className="py-24 sm:py-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <SectionHeading
+          eyebrow="Console"
+          title="Every verdict, with the evidence behind it"
+          description="Analysts see the per-layer scores, what each one found, and why the composition landed where it did."
+          align="left"
+        />
 
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.5 }}
-          className="border-2 border-border bg-card shadow-[10px_10px_0px_0px_rgba(16,185,129,0.3)] relative"
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.45 }}
+          className="glass mt-14 overflow-hidden shadow-[0_24px_60px_-30px_rgba(15,23,42,0.2)] dark:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.65)]"
         >
-          <div className="bg-secondary border-b-2 border-border px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 bg-[#10B981] animate-pulse" />
-              <span className="font-mono text-sm text-foreground font-bold tracking-widest uppercase">LIVE THREAT FEED</span>
+          {/* Window chrome */}
+          <div className="flex items-center justify-between gap-3 border-b border-border bg-secondary px-5 py-3">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              <span className="text-[13px] font-medium text-foreground">
+                Threat overview
+              </span>
             </div>
-            <div className="flex gap-2">
-              <div className="w-4 h-4 border border-[#10B981]" />
-              <div className="w-4 h-4 border border-[#FFD700]" />
-              <div className="w-4 h-4 border border-[#00FF41]" />
+            <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              last 24 hours
+            </span>
+          </div>
+
+          <div className="grid gap-px bg-border lg:grid-cols-3">
+            {/* Risk gauge */}
+            <div className="bg-card p-6">
+              <h3 className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                <Activity className="h-3.5 w-3.5" />
+                Mailbox risk
+              </h3>
+
+              <div className="mt-6 flex items-center justify-center">
+                <div className="relative flex h-36 w-36 items-center justify-center">
+                  <svg viewBox="0 0 128 128" className="h-full w-full -rotate-90">
+                    <circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      fill="none"
+                      strokeWidth="8"
+                      stroke="var(--border)"
+                    />
+                    <motion.circle
+                      cx="64"
+                      cy="64"
+                      r="56"
+                      fill="none"
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      stroke="var(--danger)"
+                      strokeDasharray="351"
+                      initial={{ strokeDashoffset: 351 }}
+                      whileInView={{ strokeDashoffset: 351 - 351 * 0.78 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 1.1, ease: "easeOut" }}
+                    />
+                  </svg>
+                  <div className="absolute text-center">
+                    <div className="font-mono text-3xl font-semibold tracking-tight text-foreground">
+                      78
+                    </div>
+                    <div className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+                      of 100
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <p className="mt-5 text-center text-[13px] font-medium text-[var(--danger)]">
+                Elevated — review quarantine
+              </p>
+            </div>
+
+            {/* Vectors */}
+            <div className="bg-card p-6">
+              <h3 className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                <BarChart3 className="h-3.5 w-3.5" />
+                Why mail was flagged
+              </h3>
+
+              <div className="mt-6 space-y-4">
+                {vectors.map((item, i) => (
+                  <div key={item.source}>
+                    <div className="mb-1.5 flex items-baseline justify-between gap-3">
+                      <span className="text-[13px] text-foreground">
+                        {item.source}
+                      </span>
+                      <span className="font-mono text-[12px] text-muted-foreground">
+                        {item.percent}%
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                      <motion.div
+                        className="h-full rounded-full bg-accent"
+                        initial={{ width: 0 }}
+                        whileInView={{ width: `${item.percent}%` }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6, delay: i * 0.08 }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Activity */}
+            <div className="bg-card p-6">
+              <h3 className="flex items-center gap-2 text-[13px] font-medium text-muted-foreground">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Flagged volume
+              </h3>
+
+              <div className="mt-6 flex h-36 items-end gap-[3px]">
+                {activity.map((height, i) => (
+                  <motion.div
+                    key={i}
+                    className={`flex-1 rounded-sm ${
+                      height > 85 ? "bg-[var(--danger)]" : "bg-border"
+                    }`}
+                    initial={{ height: 0 }}
+                    whileInView={{ height: `${height}%` }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: i * 0.015 }}
+                  />
+                ))}
+              </div>
+
+              <div className="mt-3 flex justify-between font-mono text-[11px] text-muted-foreground">
+                <span>00:00</span>
+                <span>23:00</span>
+              </div>
             </div>
           </div>
 
-          <div className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="space-y-6">
-              <div className="p-6 border-2 border-border bg-background relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-2 bg-[#EF4444] text-black font-bold text-xs">CRITICAL</div>
-                <h3 className="text-muted-foreground text-sm font-bold tracking-widest mb-6 flex items-center gap-2 uppercase">
-                  <Activity className="w-4 h-4 text-[#EF4444]" /> Global Risk Score
-                </h3>
-                <div className="flex items-center justify-center">
-                  <div className="relative w-32 h-32 flex items-center justify-center">
-                    <svg className="w-full h-full -rotate-90">
-                      <circle cx="64" cy="64" r="56" className="stroke-[#111]" strokeWidth="8" fill="none" />
-                      <motion.circle
-                         cx="64" cy="64" r="56"
-                         className="stroke-[#EF4444]"
-                         strokeWidth="8" fill="none"
-                         strokeDasharray="351"
-                         initial={{ strokeDashoffset: 351 }}
-                         whileInView={{ strokeDashoffset: 351 - (351 * 0.78) }}
-                         viewport={{ once: true }}
-                         transition={{ duration: 1.5, ease: "easeOut" }}
-                       />
-                     </svg>
-                     <div className="absolute text-4xl font-black text-foreground">78</div>
-                  </div>
-                </div>
-                <div className="text-center mt-6 text-[#EF4444] text-sm font-black tracking-widest uppercase">HIGH RISK STATE</div>
-              </div>
+          {/* Table */}
+          <div className="border-t border-border bg-card">
+            <h3 className="flex items-center gap-2 px-6 pt-6 text-[13px] font-medium text-muted-foreground">
+              <Mail className="h-3.5 w-3.5" />
+              Recently quarantined
+            </h3>
 
-              <div className="p-6 border-2 border-border bg-background">
-                <h3 className="text-muted-foreground text-sm font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
-                  <Globe className="w-4 h-4 text-[#00F0FF]" /> Attack Vectors
-                </h3>
-                <div className="space-y-4">
-                  {[
-                    { source: "Botnet-A", percent: 45 },
-                    { source: "Spoofed Domains", percent: 30 },
-                    { source: "Malicious IPs", percent: 15 },
-                    { source: "Zero-Day Files", percent: 10 },
-                  ].map((item, i) => (
-                    <div key={i}>
-                      <div className="flex justify-between text-xs mb-1 font-mono uppercase">
-                        <span className="text-foreground font-bold">{item.source}</span>
-                        <span className="text-[#00F0FF]">{item.percent}%</span>
-                      </div>
-                      <div className="h-3 w-full bg-secondary border border-border">
-                        <motion.div
-                          className="h-full bg-[#00F0FF]"
-                          initial={{ width: 0 }}
-                          whileInView={{ width: `${item.percent}%` }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.8, delay: i * 0.1 }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="lg:col-span-2 space-y-6">
-              <div className="p-6 border-2 border-border bg-background h-64 flex flex-col">
-                <h3 className="text-muted-foreground text-sm font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
-                  <ShieldAlert className="w-4 h-4 text-[#FFD700]" /> Threat Activity (Last 24h)
-                </h3>
-                <div className="flex-1 flex items-end gap-1">
-                  {[42, 38, 55, 48, 62, 71, 65, 58, 82, 91, 88, 76, 69, 74, 85, 92, 98, 87, 79, 83, 95, 88, 76, 69].map((height, i) => (
-                    <motion.div
-                      key={i}
-                      className={`flex-1 transition-all ${height > 85 ? "bg-[#EF4444]" : "bg-border"}`}
-                      initial={{ height: 0 }}
-                      whileInView={{ height: `${height}%` }}
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left">
+                <thead>
+                  <tr className="border-b border-border text-[11px] uppercase tracking-wider text-muted-foreground">
+                    <th className="px-6 py-2.5 font-medium">Time</th>
+                    <th className="px-6 py-2.5 font-medium">Sender</th>
+                    <th className="px-6 py-2.5 font-medium">Subject</th>
+                    <th className="px-6 py-2.5 font-medium">Primary finding</th>
+                    <th className="px-6 py-2.5 text-right font-medium">Risk</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {intercepted.map((row, i) => (
+                    <motion.tr
+                      key={row.sender}
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.3, delay: i * 0.02 }}
-                    />
+                      transition={{ duration: 0.25, delay: i * 0.06 }}
+                      className="border-b border-border last:border-0 transition-colors hover:bg-secondary/60"
+                    >
+                      <td className="whitespace-nowrap px-6 py-3.5 font-mono text-[12px] text-muted-foreground">
+                        {row.time}
+                      </td>
+                      <td className="px-6 py-3.5 font-mono text-[12px] text-foreground">
+                        {row.sender}
+                      </td>
+                      <td className="max-w-[200px] truncate px-6 py-3.5 text-[13px] text-muted-foreground">
+                        {row.subject}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-3.5 text-[13px] text-muted-foreground">
+                        {row.type}
+                      </td>
+                      <td className="px-6 py-3.5 text-right">
+                        <span className="inline-flex rounded-md bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2 py-0.5 font-mono text-[12px] font-medium text-[var(--danger)]">
+                          {row.score}
+                        </span>
+                      </td>
+                    </motion.tr>
                   ))}
-                </div>
-              </div>
-
-              <div className="p-6 border-2 border-border bg-background">
-                <h3 className="text-muted-foreground text-sm font-bold tracking-widest mb-4 flex items-center gap-2 uppercase">
-                  <Mail className="w-4 h-4 text-[#00F0FF]" /> Intercepted Payloads
-                </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left font-mono text-sm">
-                    <thead>
-                      <tr className="text-muted-foreground border-b-2 border-border">
-                        <th className="pb-2 font-bold uppercase">Time</th>
-                        <th className="pb-2 font-bold uppercase">Sender</th>
-                        <th className="pb-2 font-bold uppercase">Subject</th>
-                        <th className="pb-2 font-bold uppercase">Threat Type</th>
-                        <th className="pb-2 font-bold uppercase">Action</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-foreground">
-                      {[
-                        { time: "10:42 AM", sender: "admin@paypaI.com", subject: "Account Suspended", type: "Phishing" },
-                        { time: "10:38 AM", sender: "hr@company-portal.net", subject: "Q3 Bonus Document", type: "Malware (PDF)" },
-                        { time: "10:15 AM", sender: "support@microsoft-update.com", subject: "Action Required", type: "Spoofing" },
-                        { time: "09:55 AM", sender: "unknown@192.168.x.x", subject: "Invoice #9921", type: "Malicious URL" },
-                      ].map((row, i) => (
-                        <motion.tr
-                          key={i}
-                          initial={{ opacity: 0, x: -10 }}
-                          whileInView={{ opacity: 1, x: 0 }}
-                          viewport={{ once: true }}
-                          transition={{ duration: 0.2, delay: i * 0.1 }}
-                          className="border-b border-border hover:bg-border/50 transition-colors"
-                        >
-                          <td className="py-3 text-muted-foreground text-xs">{row.time}</td>
-                          <td className="py-3 text-[#EF4444] text-xs font-bold">{row.sender}</td>
-                          <td className="py-3 truncate max-w-[150px]">{row.subject}</td>
-                          <td className="py-3 flex items-center gap-1.5 text-xs text-[#FFD700]">
-                            <AlertTriangle className="w-3.5 h-3.5" /> {row.type}
-                          </td>
-                          <td className="py-3">
-                            <span className="px-2 py-1 bg-[#EF4444] text-black text-xs flex items-center gap-1 w-max font-bold uppercase">
-                              <XSquare className="w-3 h-3" /> Blocked
-                            </span>
-                          </td>
-                        </motion.tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
+                </tbody>
+              </table>
             </div>
           </div>
         </motion.div>
+
+        <p className="mt-4 text-[13px] text-muted-foreground">
+          Sample data shown for illustration.
+        </p>
       </div>
     </section>
   );

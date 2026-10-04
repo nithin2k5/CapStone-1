@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { Syne, JetBrains_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-const syne = Syne({
-  variable: "--font-syne",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -30,10 +31,10 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${syne.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground font-mono overflow-x-hidden selection:bg-accent selection:text-foreground transition-colors duration-300">
+      <body className="min-h-full flex flex-col bg-background text-foreground font-sans overflow-x-hidden selection:bg-accent selection:text-accent-contrast">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <Suspense fallback={null}>
             <MicrosoftCallbackHandler />

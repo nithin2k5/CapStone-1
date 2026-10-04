@@ -1,32 +1,24 @@
-"use client";
-
-import { motion } from "framer-motion";
-
 export default function AnimatedBackground() {
   return (
-    <div className="fixed inset-0 z-[-1] overflow-hidden bg-background pointer-events-none scanlines transition-colors duration-300">
-      {/* Brutalist Moving Grid */}
-      <motion.div
-        animate={{ y: [0, 40] }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        className="absolute -top-10 -left-10 -right-10 bottom-0 grid-bg opacity-[0.4]"
-      />
-      
-      {/* Harsh vignette overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,var(--background)_95%)] transition-colors duration-300" />
-      
-      {/* Glitching Alert Block */}
-      <motion.div
-        animate={{ opacity: [0, 0, 0.1, 0, 0.05, 0], x: [-10, 10, -5, 5, 0] }}
-        transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-        className="absolute top-1/4 right-1/4 w-[300px] h-[30px] bg-[#10B981] mix-blend-overlay"
+    <div
+      aria-hidden
+      className="fixed inset-0 z-[-1] overflow-hidden bg-background pointer-events-none"
+    >
+      {/* Faint dot field, masked so it fades out below the fold */}
+      <div
+        className="absolute inset-0 grid-bg opacity-[0.55]"
+        style={{
+          maskImage:
+            "radial-gradient(130% 80% at 50% 0%, #000 20%, transparent 75%)",
+          WebkitMaskImage:
+            "radial-gradient(130% 80% at 50% 0%, #000 20%, transparent 75%)",
+        }}
       />
 
-      {/* Sweeping Cyber Line */}
-      <motion.div
-        animate={{ y: ["-100vh", "100vh"] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 w-full h-[2px] bg-[#00F0FF] shadow-[0_0_10px_rgba(0,240,255,0.8)] opacity-30"
+      {/* Single soft accent wash behind the hero */}
+      <div
+        className="absolute -top-40 left-1/2 h-[420px] w-[min(1100px,120vw)] -translate-x-1/2 rounded-full blur-[130px] opacity-[0.10] dark:opacity-[0.16]"
+        style={{ background: "var(--accent)" }}
       />
     </div>
   );

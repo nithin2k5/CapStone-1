@@ -14,11 +14,11 @@ import Footer from "@/components/sections/Footer";
 
 export default function Home() {
   return (
-    <main className="relative min-h-screen">
+    <div className="relative min-h-screen">
       <AnimatedBackground />
       <Navbar />
-      
-      <div className="flex flex-col gap-0">
+
+      <div>
         <Hero />
         <Stats />
         <Features />
@@ -32,6 +32,6 @@ export default function Home() {
       </div>
 
       <Footer />
-    </main>
+    </div>
   );
 }

@@ -3,36 +3,36 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  { label: "Analysis layers scored", value: "5" },
-  { label: "Concealment channels detected", value: "17" },
-  { label: "Injection pattern classes", value: "8" },
-  { label: "Multiplier on a suppressed verdict", value: "2.5x" },
-  { label: "Perceptual weight in final score", value: "15%" },
+  { value: "5", label: "Analysis layers scored" },
+  { value: "17", label: "Concealment channels detected" },
+  { value: "8", label: "Injection pattern classes" },
+  { value: "2.5×", label: "Multiplier on a suppressed verdict" },
+  { value: "15%", label: "Perceptual weight in final score" },
 ];
 
 export default function Stats() {
   return (
-    <section className="py-20 relative z-10 border-y border-purple-500/20 bg-black/90 shadow-[0_0_40px_rgba(139,92,246,0.08)]">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-          {stats.map((stat, index) => (
+    <section className="border-y border-border bg-secondary/40">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <dl className="grid grid-cols-2 divide-border sm:grid-cols-3 lg:grid-cols-5 lg:divide-x">
+          {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="flex flex-col items-center justify-center text-center space-y-2 group p-4 rounded-2xl hover:bg-purple-500/5 border border-transparent hover:border-purple-500/20 transition-all duration-300"
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.35, delay: i * 0.06 }}
+              className="px-2 py-8 lg:px-6"
             >
-              <div className="font-heading text-4xl md:text-5xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-indigo-300 to-blue-400 group-hover:from-purple-300 group-hover:to-blue-300 transition-all duration-300 drop-shadow-[0_0_12px_rgba(139,92,246,0.3)]">
+              <dt className="font-mono text-3xl font-semibold tracking-tight text-foreground">
                 {stat.value}
-              </div>
-              <div className="text-sm text-indigo-200/70 uppercase tracking-wider font-semibold">
+              </dt>
+              <dd className="mt-2 text-[13px] leading-snug text-muted-foreground">
                 {stat.label}
-              </div>
+              </dd>
             </motion.div>
           ))}
-        </div>
+        </dl>
       </div>
     </section>
   );

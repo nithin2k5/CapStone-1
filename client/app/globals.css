@@ -8,141 +8,212 @@
   --color-secondary: var(--secondary);
   --color-card: var(--card);
   --color-border: var(--border);
-
   --color-muted-foreground: var(--muted-foreground);
 
-  --color-accent: #10B981;
-  --color-accent-blue: #00F0FF;
-  --color-success: #00FF41;
-  --color-warning: #FFD700;
-  --color-danger: #FF003C;
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-contrast: var(--accent-contrast);
+  --color-accent-subtle: var(--accent-subtle);
 
-  --font-sans: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  --font-heading: var(--font-syne), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-heading: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
 }
 
 @layer base {
   :root {
     --background: #ffffff;
-    --foreground: #050505;
-    --secondary: #f3f4f6;
-    --card: #f9fafb;
-    --border: #e5e7eb;
-    --muted-foreground: #6b7280;
+    --foreground: #0f172a;
+    --secondary: #f1f5f9;
+    --card: #ffffff;
+    --border: #e2e8f0;
+    --muted-foreground: #5b6779;
+
+    --accent: #047857;
+    --accent-hover: #065f46;
+    --accent-contrast: #ffffff;
+    --accent-subtle: rgba(4, 120, 87, 0.08);
+
+    --success: #047857;
+    --warning: #b45309;
+    --danger: #b91c1c;
+
+    --shadow-color: 215 25% 27%;
   }
-  
+
   .dark {
-    --background: #050505;
-    --foreground: #e0e0e0;
-    --secondary: #121212;
-    --card: #0a0a0a;
-    --border: #333333;
-    --muted-foreground: #888888;
+    --background: #09090b;
+    --foreground: #fafafa;
+    --secondary: #18181b;
+    --card: #101012;
+    --border: #27272a;
+    --muted-foreground: #a1a1aa;
+
+    --accent: #10b981;
+    --accent-hover: #34d399;
+    --accent-contrast: #04281c;
+    --accent-subtle: rgba(16, 185, 129, 0.12);
+
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+
+    --shadow-color: 0 0% 0%;
+  }
+
+  * {
+    border-color: var(--border);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    letter-spacing: -0.021em;
+    text-wrap: balance;
+  }
+
+  h1 {
+    letter-spacing: -0.032em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  /* Surfaces */
+  .glass {
+    @apply bg-card border border-border rounded-xl;
+  }
+
+  .glass-card {
+    @apply bg-card border border-border rounded-xl transition-[border-color,box-shadow,transform] duration-200;
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-color) / 0.04),
+      0 1px 3px hsl(var(--shadow-color) / 0.04);
+  }
+
+  .glass-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+    box-shadow:
+      0 1px 2px hsl(var(--shadow-color) / 0.05),
+      0 8px 24px -8px hsl(var(--shadow-color) / 0.12);
+  }
+
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium
+           bg-accent text-accent-contrast border border-transparent
+           transition-colors duration-150;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--accent-hover);
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg font-medium
+           bg-transparent text-foreground border border-border
+           transition-colors duration-150;
+  }
+
+  .btn-secondary:hover {
+    @apply bg-secondary;
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  }
+
+  /* Small uppercase eyebrow above a section heading */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 font-mono text-[11px] font-medium
+           uppercase tracking-[0.14em] text-muted-foreground;
+  }
+
+  /* Inline technical token (a route, a header name, a value) */
+  .token {
+    @apply font-mono text-[12px] rounded-md px-1.5 py-0.5 border border-border bg-secondary text-muted-foreground;
   }
 }
 
 @layer utilities {
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#10B981] to-[#00F0FF];
-  }
+  .text-gradient,
   .text-gradient-blue {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#00F0FF] to-foreground;
+    @apply text-accent;
   }
+
   .text-gradient-subtle {
     @apply text-foreground;
   }
-  .glass {
-    @apply bg-card border border-border shadow-[4px_4px_0px_0px_var(--color-border)];
-  }
-  .glass-card {
-    @apply bg-card border-2 border-border shadow-[8px_8px_0px_0px_rgba(16,185,129,0.5)] transition-transform duration-300;
-  }
-  .glass-card:hover {
-    @apply translate-x-[-4px] translate-y-[-4px] shadow-[12px_12px_0px_0px_rgba(0,240,255,0.8)] border-[#00F0FF];
-  }
-  .neon-glow {
-    box-shadow: none;
-    border-bottom: 2px solid #10B981;
-  }
-  .neon-glow-blue {
-    box-shadow: none;
-    border-bottom: 2px solid #00F0FF;
-  }
-  .neon-glow-hover:hover {
-    background-color: #10B981;
-    color: var(--background);
-    box-shadow: none;
-  }
-  .btn-primary {
-    @apply bg-[#10B981] text-[#050505] font-bold border-2 border-[#10B981] shadow-[4px_4px_0px_0px_var(--color-foreground)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_var(--color-foreground)] transition-all duration-150;
-  }
-  .btn-secondary {
-    @apply bg-transparent text-[#3B82F6] font-bold border-2 border-[#3B82F6] shadow-[4px_4px_0px_0px_rgba(59,130,246,0.3)] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(59,130,246,0.3)] hover:bg-[#3B82F6] hover:text-[#050505] transition-all duration-150;
-  }
-  
-  /* Brutalist Grid Background */
+
+  /* Faint dot field, legible in both themes */
   .grid-bg {
-    background-size: 40px 40px;
-    background-image: 
-      linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-image: radial-gradient(
+      circle at 1px 1px,
+      color-mix(in srgb, var(--foreground) 14%, transparent) 1px,
+      transparent 0
+    );
+    background-size: 32px 32px;
   }
-  
-  /* Scanline effect */
+
+  .section-divider {
+    @apply border-t border-border;
+  }
+
+  /* Legacy aliases kept so pages outside the home page keep compiling */
+  .neon-glow,
+  .neon-glow-blue {
+    border-bottom: 1px solid var(--accent);
+  }
+
+  .neon-glow-hover:hover {
+    @apply bg-accent text-accent-contrast;
+  }
+
   .scanlines {
     position: relative;
-  }
-  .scanlines::before {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    right: 0;
-    background: linear-gradient(
-      to bottom,
-      rgba(255,255,255,0),
-      rgba(255,255,255,0) 50%,
-      rgba(0,0,0,0.1) 50%,
-      rgba(0,0,0,0.1)
-    );
-    background-size: 100% 4px;
-    pointer-events: none;
-    z-index: 50;
   }
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 ::-webkit-scrollbar {
-  width: 12px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
   background: var(--background);
-  border-left: 1px solid var(--border);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--border);
-  border: 1px solid var(--background);
+  border-radius: 9999px;
+  border: 2px solid var(--background);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #10B981;
+  background: var(--muted-foreground);
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-syne), sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
-
-p, span, div, a, button {
-  font-family: var(--font-jetbrains), monospace;
-}
-

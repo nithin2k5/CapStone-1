@@ -2,104 +2,164 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { ShieldAlert, Terminal, Activity } from "lucide-react";
+import { ArrowRight, BookOpen, ShieldAlert } from "lucide-react";
+
+const scanLines = [
+  { label: "SPF, DKIM, DMARC", value: "pass", tone: "ok" },
+  { label: "URLs, attachments", value: "clean", tone: "ok" },
+  { label: "Content model verdict", value: "not phishing · 12/100", tone: "ok" },
+] as const;
 
 export default function Hero() {
   return (
-    <section className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden border-b-4 border-border">
-      <div className="container mx-auto px-6 relative z-10">
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          
-          {/* Left Column: Massive Typography */}
+    <section className="relative overflow-hidden pt-32 pb-20 sm:pt-40 sm:pb-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid items-center gap-16 lg:grid-cols-[1.05fr_1fr] lg:gap-12">
+          {/* Copy */}
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="flex-1 w-full"
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="inline-flex items-center gap-3 px-4 py-2 border-2 border-[#10B981] bg-[#10B981]/10 text-[#10B981] font-bold uppercase tracking-widest text-xs mb-8">
-              <span className="w-2 h-2 bg-[#10B981] animate-ping" />
-              LAYER: POST-DELIVERY / ANTI-INJECTION
-            </div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-medium text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+              Post-delivery analysis · prompt-injection aware
+            </span>
 
-            <h1 className="font-heading text-5xl md:text-6xl font-bold leading-tight tracking-tight mb-6 text-foreground">
-              The email you read is not the email your <span className="text-[#10B981]">filter</span> reads.
+            <h1 className="mt-6 text-4xl font-semibold leading-[1.08] tracking-tight text-foreground sm:text-5xl lg:text-[3.4rem]">
+              The email you read is not the email your filter reads.
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl font-mono leading-relaxed border-l-4 border-[#3B82F6] pl-4">
-              Phishing filters now run on language models, so attackers write to the model instead of
-              the victim &mdash; instructions hidden in markup the recipient never renders. This gateway scores the
-              gap between the rendered message and the analysed one, and treats a confident &ldquo;safe&rdquo; verdict on a
-              message carrying concealed instructions as the strongest signal it has.
+            <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted-foreground">
+              Phishing filters now run on language models, so attackers write to
+              the model instead of the victim — instructions hidden in markup the
+              recipient never renders. This gateway scores the gap between the
+              rendered message and the analysed one, and treats a confident
+              &ldquo;safe&rdquo; verdict on a message carrying concealed
+              instructions as the strongest signal it has.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-stretch gap-6 w-full max-w-md">
-              <Link href="/signup" className="btn-primary py-5 px-8 flex items-center justify-between group">
-                <span>Scan a mailbox</span>
-                <Terminal className="w-5 h-5 group-hover:scale-110 transition-transform" />
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link href="/signup" className="btn-primary px-5 py-3 text-sm">
+                Scan a mailbox
+                <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/dashboard" className="btn-secondary py-5 px-8 flex items-center justify-between">
-                <span>View console</span>
-                <Activity className="w-5 h-5" />
+              <Link href="/docs" className="btn-secondary px-5 py-3 text-sm">
+                <BookOpen className="h-4 w-4" />
+                Read the method
               </Link>
             </div>
+
+            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-border pt-8">
+              {[
+                { v: "44%", k: "of verdicts flipped by hidden text, unguarded" },
+                { v: "0%", k: "flipped with divergence analysis on" },
+                { v: "112", k: "matched attack/control pairs measured" },
+              ].map((s) => (
+                <div key={s.v}>
+                  <dt className="font-mono text-2xl font-semibold tracking-tight text-foreground">
+                    {s.v}
+                  </dt>
+                  <dd className="mt-1.5 text-[13px] leading-snug text-muted-foreground">
+                    {s.k}
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </motion.div>
 
-          {/* Right Column: Terminal Window UI */}
+          {/* Verdict panel */}
           <motion.div
-            initial={{ opacity: 0, y: 50 }}
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
-            className="flex-1 w-full lg:max-w-xl mt-16 lg:mt-0"
+            transition={{ duration: 0.5, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+            className="w-full"
           >
-            <div className="glass-card w-full h-[500px] flex flex-col font-mono text-sm">
-              {/* Terminal Header */}
-              <div className="border-b-2 border-border p-4 flex justify-between items-center bg-secondary">
-                <div className="flex gap-2">
-                  <div className="w-3 h-3 bg-[#10B981]" />
-                  <div className="w-3 h-3 bg-[#FFD700]" />
-                  <div className="w-3 h-3 bg-[#00FF41]" />
+            <div className="glass overflow-hidden shadow-[0_24px_60px_-28px_rgba(15,23,42,0.22)] dark:shadow-[0_24px_60px_-24px_rgba(0,0,0,0.7)]">
+              {/* Panel header */}
+              <div className="flex items-center justify-between gap-3 border-b border-border bg-secondary px-4 py-3">
+                <div className="flex items-center gap-2 font-mono text-xs text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+                  message 4417
                 </div>
-                <div className="text-muted-foreground tracking-widest text-xs">ROOT@GATEWAY:~</div>
+                <span className="truncate font-mono text-xs text-muted-foreground">
+                  &ldquo;Invoice overdue&rdquo;
+                </span>
               </div>
-              
-              {/* Terminal Body */}
-              <div className="p-6 flex-1 flex flex-col gap-4 overflow-hidden relative">
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                  className="text-[#00F0FF]">&gt; scan --message 4417 &quot;Invoice overdue&quot;</motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.1 }}
-                  className="text-muted-foreground">Headers [SPF/DKIM/DMARC]: <span className="text-[#00FF41]">PASS</span></motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.6 }}
-                  className="text-muted-foreground">URLs, attachments: <span className="text-[#00FF41]">CLEAN</span></motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 2.1 }}
-                  className="text-muted-foreground">LLM verdict: <span className="text-[#00FF41]">NOT PHISHING</span> <span className="text-muted-foreground">(12/100)</span></motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 2.9 }}
-                  className="text-[#EF4444] font-bold mt-2 flex items-start gap-2 bg-[#EF4444]/10 p-2 border border-[#EF4444]">
-                  <ShieldAlert className="w-4 h-4 animate-pulse shrink-0 mt-0.5" />
-                  <span>71% OF BODY TEXT CONCEALED FROM READER<br />
-                  <span className="font-normal">hidden span: <span className="text-[#FFD700]">instruction override</span>, <span className="text-[#FFD700]">verdict forcing</span></span></span>
-                </motion.div>
-                
-                <motion.div 
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 3.7 }}
-                  className="text-[#EF4444] font-bold uppercase">&gt;&gt; Calm verdict inverted. Risk 12 &rarr; 84. Quarantined.</motion.div>
 
-                <div className="absolute bottom-6 left-6 flex items-center gap-2 text-[#00FF41] mt-auto">
-                  <span className="animate-pulse">_</span>
-                </div>
+              {/* Layer results */}
+              <div className="divide-y divide-border">
+                {scanLines.map((line, i) => (
+                  <motion.div
+                    key={line.label}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 + i * 0.22, duration: 0.3 }}
+                    className="flex items-center justify-between gap-4 px-4 py-3.5"
+                  >
+                    <span className="text-[13px] text-muted-foreground">
+                      {line.label}
+                    </span>
+                    <span className="font-mono text-[13px] font-medium text-[var(--success)]">
+                      {line.value}
+                    </span>
+                  </motion.div>
+                ))}
               </div>
+
+              {/* The finding that overturns it */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.15, duration: 0.35 }}
+                className="border-t border-border bg-[color-mix(in_srgb,var(--danger)_7%,transparent)] px-4 py-4"
+              >
+                <div className="flex gap-3">
+                  <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-[var(--danger)]" />
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground">
+                      71% of body text concealed from the reader
+                    </p>
+                    <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                      Hidden span classified as{" "}
+                      <span className="font-mono text-[12px] text-foreground">
+                        instruction override
+                      </span>{" "}
+                      and{" "}
+                      <span className="font-mono text-[12px] text-foreground">
+                        verdict forcing
+                      </span>
+                      .
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Final action */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.45, duration: 0.3 }}
+                className="flex items-center justify-between gap-4 border-t border-border px-4 py-3.5"
+              >
+                <span className="text-[13px] text-muted-foreground">
+                  Risk score
+                </span>
+                <span className="flex items-center gap-2 font-mono text-[13px]">
+                  <span className="text-muted-foreground line-through">12</span>
+                  <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                  <span className="font-semibold text-[var(--danger)]">84</span>
+                  <span className="ml-1 rounded-md bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-[var(--danger)]">
+                    quarantined
+                  </span>
+                </span>
+              </motion.div>
             </div>
-          </motion.div>
 
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Illustrative verdict from the benchmark corpus.
+            </p>
+          </motion.div>
         </div>
       </div>
     </section>

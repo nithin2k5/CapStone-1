@@ -1,85 +1,112 @@
 "use client";
 
-import { Shield } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { GithubIcon, TwitterIcon, LinkedinIcon } from "@/components/ui/SocialIcons";
 
+const columns = [
+  {
+    heading: "Product",
+    links: [
+      { label: "Features", href: "/#features" },
+      { label: "Architecture", href: "/#architecture" },
+      { label: "How it works", href: "/#how-to-use" },
+      { label: "Console", href: "/dashboard" },
+    ],
+  },
+  {
+    heading: "Resources",
+    links: [
+      { label: "Documentation", href: "/docs" },
+      { label: "Research", href: "/#research" },
+      { label: "Threat model", href: "/docs" },
+    ],
+  },
+  {
+    heading: "Legal",
+    links: [
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Terms of service", href: "/privacy" },
+      { label: "Security policy", href: "/privacy" },
+      { label: "Contact", href: "/#contact" },
+    ],
+  },
+];
+
+const socials = [
+  { label: "GitHub", href: "https://github.com", Icon: GithubIcon },
+  { label: "X", href: "#", Icon: TwitterIcon },
+  { label: "LinkedIn", href: "#", Icon: LinkedinIcon },
+];
+
 export default function Footer() {
   return (
-    <footer className="bg-black border-t border-white/[0.06] pt-16 pb-8 relative z-10">
-      <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
-          
+    <footer className="border-t border-border bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+        <div className="grid gap-12 lg:grid-cols-[2fr_3fr]">
           {/* Brand */}
-          <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08]">
-                <Shield className="w-4 h-4 text-muted-foreground" />
-              </div>
-              <span className="font-heading font-bold text-lg tracking-tight text-foreground">
+          <div>
+            <Link href="/" className="inline-flex items-center gap-2.5">
+              <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-accent-contrast">
+                <ShieldCheck className="h-[18px] w-[18px]" />
+              </span>
+              <span className="text-[15px] font-semibold tracking-tight text-foreground">
                 Secure Email Gateway
               </span>
             </Link>
-            <p className="text-muted-foreground text-sm max-w-sm mb-6 leading-relaxed">
-              Next-generation phishing prevention powered by artificial intelligence and real-time threat intelligence.
+
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Post-delivery phishing analysis that scores the gap between the
+              message a recipient renders and the message a classifier reads.
             </p>
-            <div className="flex gap-4">
-              <Link href="#" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
-                <GithubIcon />
-              </Link>
-              <Link href="#" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
-                <TwitterIcon />
-              </Link>
-              <Link href="#" className="w-10 h-10 rounded-full bg-foreground/5 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
-                <LinkedinIcon />
-              </Link>
+
+            <div className="mt-6 flex gap-2">
+              {socials.map(({ label, href, Icon }) => (
+                <Link
+                  key={label}
+                  href={href}
+                  target={href.startsWith("http") ? "_blank" : undefined}
+                  rel={href.startsWith("http") ? "noreferrer" : undefined}
+                  aria-label={label}
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-accent/40 hover:text-foreground"
+                >
+                  <Icon />
+                </Link>
+              ))}
             </div>
           </div>
 
-          {/* Quick Links */}
-          <div>
-            <h4 className="text-foreground font-bold mb-4">Quick Links</h4>
-            <ul className="space-y-3">
-              {[
-                { label: "Architecture", href: "/#architecture" },
-                { label: "Research", href: "/#research" },
-              ].map((link) => (
-                <li key={link.label}>
-                  <Link href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
+          {/* Link columns */}
+          <div className="grid gap-8 sm:grid-cols-3">
+            {columns.map((column) => (
+              <div key={column.heading}>
+                <h3 className="text-[13px] font-semibold text-foreground">
+                  {column.heading}
+                </h3>
+                <ul className="mt-4 space-y-3">
+                  {column.links.map((link) => (
+                    <li key={link.label}>
+                      <Link
+                        href={link.href}
+                        className="text-[13px] text-muted-foreground transition-colors hover:text-foreground"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="text-foreground font-bold mb-4">Legal</h4>
-            <ul className="space-y-3">
-              {[
-                { label: "Privacy Policy", href: "/privacy" },
-                { label: "Terms of Service", href: "/privacy" },
-                { label: "Security Policy", href: "/privacy" },
-                { label: "Contact", href: "/#contact" },
-              ].map((link) => (
-                <li key={link.label}>
-                  <Link href={link.href} className="text-muted-foreground hover:text-foreground transition-colors text-sm">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
         </div>
 
-        <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Secure Email Gateway. All rights reserved.
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
+          <p className="text-[13px] text-muted-foreground">
+            © {new Date().getFullYear()} Secure Email Gateway. A research
+            project.
           </p>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <span className="w-2 h-2 rounded-full bg-white/40 animate-pulse" />
+          <div className="flex items-center gap-2 text-[13px] text-muted-foreground">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
             All systems operational
           </div>
         </div>
