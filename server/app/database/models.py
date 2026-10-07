@@ -18,6 +18,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.core.crypto import EncryptedToken
+
 
 class Base(DeclarativeBase):
     pass
@@ -56,10 +58,22 @@ class User(Base):
     role: Mapped[UserRole] = mapped_column(
         Enum(UserRole, name="user_role"), default=UserRole.USER, nullable=False
     )
-    google_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    google_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    microsoft_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    microsoft_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # EncryptedToken, not Text. These are durable full-mailbox credentials, and
+    # the encryption lives in the column type so no call site has to remember
+    # it — plain columns plus the intention to be careful is what produced
+    # plaintext refresh tokens here in the first place.
+    google_access_token: Mapped[str | None] = mapped_column(
+        EncryptedToken, nullable=True
+    )
+    google_refresh_token: Mapped[str | None] = mapped_column(
+        EncryptedToken, nullable=True
+    )
+    microsoft_access_token: Mapped[str | None] = mapped_column(
+        EncryptedToken, nullable=True
+    )
+    microsoft_refresh_token: Mapped[str | None] = mapped_column(
+        EncryptedToken, nullable=True
+    )
     # Where this mailbox was last synchronised to. Incremental sync resumes from
     # here, which is what makes a restart resume rather than re-read the newest
     # handful of messages and lose everything behind them.

@@ -72,6 +72,15 @@ class Settings(BaseSettings):
         default=True, alias="AUDIENCE_ANALYSIS_ENABLED"
     )
 
+    # Encryption for stored mailbox credentials. A refresh token is durable
+    # full-mailbox access that survives a password change, which makes this
+    # database a more valuable target than any message it protects. With no key
+    # set the columns pass through unchanged and startup says so — refusing to
+    # start would break every existing install on upgrade.
+    #
+    #   python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'
+    token_encryption_key: str = Field(default="", alias="TOKEN_ENCRYPTION_KEY")
+
     # Gmail push notifications. Polling leaves a judged-dangerous message live
     # in the inbox for up to one interval; a watch closes that to a round trip.
     # Requires a Pub/Sub topic whose publisher is gmail-api-push@system

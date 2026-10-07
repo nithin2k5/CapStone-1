@@ -203,6 +203,45 @@ window is not recoverable by this path.
 See `.env.example` for the Pub/Sub topic, subscription and IAM setup. Push
 cannot be enabled without a public HTTPS endpoint.
 
+## The credentials this gateway holds
+
+The system stores Google and Microsoft refresh tokens for every connected user.
+A refresh token is durable, full-mailbox access that survives the user changing
+their password, so this database is a higher-value target than any message it
+protects. The tokens were stored as plain text in columns beside the email
+address they belong to.
+
+`THREAT_MODEL.md` covers the recipient, the classifier's input channel, the
+pipeline's trust in its own components and the analyst's screen. It does not
+cover the gateway as a credential store, and "Out of scope" does not exclude it.
+
+Those columns are now an `EncryptedToken` type (`app/core/crypto.py`), so every
+read and write goes through encryption whatever the calling code does — plain
+columns plus the intention to be careful is what produced plaintext refresh
+tokens in the first place.
+
+What it buys, stated precisely: protection against a database read that is not
+also a read of the application's configuration — a stolen dump, a backup on the
+wrong disk, a misconfigured replica, a `SELECT *` through an injection. It does
+**not** protect against an attacker who has the running host, because the key
+must be readable by the process that uses it. Changing that needs a KMS or an
+HSM, which is a deployment decision rather than a code one.
+
+Set `TOKEN_ENCRYPTION_KEY` to turn it on. With no key the columns pass through
+unchanged and startup logs a warning — refusing to start would break every
+existing install on upgrade, and generating a key automatically would make the
+tokens unrecoverable on the next restart. Tokens written before the key was set
+stay readable and are re-stored encrypted the next time anything writes them,
+which the token refresh does routinely.
+
+Two things this does not address, both deployment rather than code:
+
+- `DATABASE_URL` defaults to MySQL `root` with no password. With the above in
+  the same database, that is the softest target in the system. The application
+  should have its own user with rights on its own schema.
+- Key custody. Stored beside the ciphertext it protects nothing, and losing it
+  means every user must reconnect their mailbox.
+
 ## Who the sender is pretending to be
 
 SPF, DKIM and DMARC answer whether a message was authorised by the domain it
