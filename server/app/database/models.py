@@ -60,6 +60,15 @@ class User(Base):
     google_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     microsoft_access_token: Mapped[str | None] = mapped_column(Text, nullable=True)
     microsoft_refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Where this mailbox was last synchronised to. Incremental sync resumes from
+    # here, which is what makes a restart resume rather than re-read the newest
+    # handful of messages and lose everything behind them.
+    gmail_history_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # When the Gmail watch lapses. A lapsed watch stops notifying silently, so
+    # the expiry is stored and renewed rather than assumed.
+    gmail_watch_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

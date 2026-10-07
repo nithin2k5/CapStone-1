@@ -158,6 +158,138 @@ class GmailService:
                 raise ValueError("invalid_grant")
             return None
 
+    # ------------------------------------------------------------------
+    # Push notifications.
+    #
+    # Polling leaves a message live in the inbox for the length of the poll
+    # interval, which is the window an attacker needs — the user only has to
+    # click once before the sweep arrives. A watch asks Gmail to publish a
+    # notification the moment the mailbox changes, so the gap becomes the
+    # round trip rather than the interval.
+    # ------------------------------------------------------------------
+
+    WATCH_LABELS = ["INBOX"]
+
+    async def watch(self, access_token: str, topic: str) -> dict[str, Any] | None:
+        """
+        Ask Gmail to publish mailbox changes to a Pub/Sub topic.
+
+        Returns the mailbox's current historyId and the watch expiry. A watch
+        lapses after seven days, so the returned expiry is stored and renewed;
+        a lapsed watch is silent, which is the failure mode worth avoiding.
+        """
+        url = "https://gmail.googleapis.com/gmail/v1/users/me/watch"
+        body = {"topicName": topic, "labelIds": self.WATCH_LABELS}
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(
+                url, headers={"Authorization": f"Bearer {access_token}"}, json=body
+            )
+            if res.status_code == 200:
+                return res.json()
+            logger.error(
+                "Gmail watch registration failed: %s - %s", res.status_code, res.text
+            )
+            return None
+
+    async def stop_watch(self, access_token: str) -> bool:
+        """Cancel the watch. Used when a grant is revoked or a user disconnects."""
+        url = "https://gmail.googleapis.com/gmail/v1/users/me/stop"
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(
+                url, headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if res.status_code in (200, 204):
+                return True
+            logger.warning(
+                "Gmail watch stop failed: %s - %s", res.status_code, res.text
+            )
+            return False
+
+    async def fetch_history(
+        self,
+        access_token: str,
+        start_history_id: str,
+        mailbox: str = "inbox",
+    ) -> tuple[list[GmailMessage], str | None, bool]:
+        """
+        Fetch the messages added since `start_history_id`.
+
+        Returns the messages, the mailbox's new historyId, and whether the
+        cursor was too old to use. Gmail keeps roughly a week of history and
+        answers 404 once a cursor falls outside it; that is not an error but an
+        instruction to resynchronise, so it is reported as a flag rather than
+        swallowed. Without it a gateway down for a long weekend would resume
+        from a cursor Gmail no longer honours and quietly fetch nothing.
+        """
+        headers = {"Authorization": f"Bearer {access_token}"}
+        added_ids: list[str] = []
+        new_history_id: str | None = None
+        page_token: str | None = None
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            while True:
+                url = (
+                    "https://gmail.googleapis.com/gmail/v1/users/me/history"
+                    f"?startHistoryId={start_history_id}"
+                    "&historyTypes=messageAdded"
+                    f"&labelId={self.WATCH_LABELS[0]}"
+                )
+                if page_token:
+                    url += f"&pageToken={page_token}"
+
+                res = await client.get(url, headers=headers)
+                if res.status_code == 404:
+                    logger.warning(
+                        "Gmail history cursor %s is no longer valid; a full "
+                        "resynchronisation is required.",
+                        start_history_id,
+                    )
+                    return [], None, True
+                if res.status_code != 200:
+                    logger.error(
+                        "Gmail history list failed: %s - %s", res.status_code, res.text
+                    )
+                    return [], None, False
+
+                data = res.json()
+                new_history_id = data.get("historyId") or new_history_id
+                for record in data.get("history", []):
+                    for added in record.get("messagesAdded", []):
+                        message = added.get("message", {})
+                        msg_id = message.get("id")
+                        # A message can be added and removed within one history
+                        # page, and the same id can appear in several records.
+                        if msg_id and msg_id not in added_ids:
+                            added_ids.append(msg_id)
+
+                page_token = data.get("nextPageToken")
+                if not page_token:
+                    break
+
+            messages = await self._fetch_details(client, headers, added_ids, mailbox)
+
+        return messages, new_history_id, False
+
+    async def current_history_id(self, access_token: str) -> str | None:
+        """
+        Read the mailbox's history cursor without fetching anything.
+
+        Used to establish a starting point when a watch could not be registered,
+        so the fallback poll still advances a cursor instead of re-reading the
+        same newest-N messages forever.
+        """
+        url = "https://gmail.googleapis.com/gmail/v1/users/me/profile"
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.get(
+                url, headers={"Authorization": f"Bearer {access_token}"}
+            )
+            if res.status_code == 200:
+                return str(res.json().get("historyId") or "") or None
+            logger.warning(
+                "Gmail profile read failed: %s - %s", res.status_code, res.text
+            )
+            return None
+
     async def modify_message_labels(
         self,
         access_token: str,
@@ -343,28 +475,44 @@ class GmailService:
                 logger.info("No Gmail messages found matching q=%s", query)
                 return []
 
-            messages: list[GmailMessage] = []
-            for item in message_summaries:
-                msg_id = item["id"]
-                detail_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}?format=full"
-                detail_res = await client.get(detail_url, headers=headers)
-                if detail_res.status_code == 200:
-                    gmail_msg = self._parse_gmail_message_json(
-                        detail_res.json(), mailbox
-                    )
-                    if get_settings().dkim_verify_enabled:
-                        gmail_msg.parsed.raw_message = await self.fetch_raw_message(
-                            client, headers, msg_id
-                        )
-                    messages.append(gmail_msg)
-                else:
-                    logger.warning(
-                        "Failed to fetch message detail for id=%s: %s",
-                        msg_id,
-                        detail_res.status_code,
-                    )
+            return await self._fetch_details(
+                client, headers, [item["id"] for item in message_summaries], mailbox
+            )
 
-            return messages
+    async def _fetch_details(
+        self,
+        client: httpx.AsyncClient,
+        headers: dict[str, str],
+        message_ids: list[str],
+        mailbox: str,
+    ) -> list[GmailMessage]:
+        """
+        Fetch and parse the named messages.
+
+        Shared by the list path and the history path, so a message reached by a
+        push notification is parsed exactly like one reached by a poll — same
+        attachments, same raw bytes for DKIM. A divergence here would mean the
+        faster path scored messages differently from the slower one.
+        """
+        messages: list[GmailMessage] = []
+        for msg_id in message_ids:
+            detail_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{msg_id}?format=full"
+            detail_res = await client.get(detail_url, headers=headers)
+            if detail_res.status_code == 200:
+                gmail_msg = self._parse_gmail_message_json(detail_res.json(), mailbox)
+                if get_settings().dkim_verify_enabled:
+                    gmail_msg.parsed.raw_message = await self.fetch_raw_message(
+                        client, headers, msg_id
+                    )
+                messages.append(gmail_msg)
+            else:
+                logger.warning(
+                    "Failed to fetch message detail for id=%s: %s",
+                    msg_id,
+                    detail_res.status_code,
+                )
+
+        return messages
 
     def _parse_gmail_message_json(
         self, msg_data: dict[str, Any], mailbox: str

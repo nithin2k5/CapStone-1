@@ -72,6 +72,39 @@ class Settings(BaseSettings):
         default=True, alias="AUDIENCE_ANALYSIS_ENABLED"
     )
 
+    # Gmail push notifications. Polling leaves a judged-dangerous message live
+    # in the inbox for up to one interval; a watch closes that to a round trip.
+    # Requires a Pub/Sub topic whose publisher is gmail-api-push@system
+    # .gserviceaccount.com and a push subscription pointing at
+    # POST {api_prefix}/gmail/push. Without a public URL for that endpoint this
+    # stays off and the fallback sweep below is the only path.
+    gmail_push_enabled: bool = Field(default=False, alias="GMAIL_PUSH_ENABLED")
+    gmail_pubsub_topic: str = Field(default="", alias="GMAIL_PUBSUB_TOPIC")
+    # The service account Pub/Sub signs push requests as, and the audience it
+    # signs them for. Both are checked before a notification is acted on: the
+    # endpoint is public, so anything unverified is an attacker's way to make
+    # the gateway fetch on demand.
+    gmail_push_service_account: str = Field(
+        default="", alias="GMAIL_PUSH_SERVICE_ACCOUNT"
+    )
+    gmail_push_audience: str = Field(default="", alias="GMAIL_PUSH_AUDIENCE")
+
+    # The fallback sweep. It is a safety net, not the primary path: it catches
+    # what a dropped notification or a lapsed watch would otherwise lose. The
+    # interval was hardcoded at 300s, which made the exposure window a constant
+    # nobody could tune per deployment.
+    scheduler_enabled: bool = Field(default=True, alias="SCHEDULER_ENABLED")
+    scheduler_interval_seconds: int = Field(
+        default=300, alias="SCHEDULER_INTERVAL_SECONDS"
+    )
+    # Raised from 10. With a cursor the sweep fetches what actually arrived, so
+    # this is a ceiling on a burst rather than a window that silently drops mail.
+    scheduler_max_results: int = Field(default=100, alias="SCHEDULER_MAX_RESULTS")
+    # Gmail expires a watch after seven days and recommends renewing daily.
+    watch_renew_interval_seconds: int = Field(
+        default=86400, alias="WATCH_RENEW_INTERVAL_SECONDS"
+    )
+
     # Password reset. The token is a short-lived JWT bound to the password hash
     # it was minted against, so using it invalidates it — single use without a
     # table to keep spent tokens in.

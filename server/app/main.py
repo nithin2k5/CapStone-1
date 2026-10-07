@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, dashboard, emails, scan
+from app.api import auth, dashboard, emails, gmail_push, scan
 from app.api.settings import router as settings_router
 from app.core.config import get_settings
 from app.core.logging import RequestLoggingMiddleware, setup_logging
@@ -54,6 +54,7 @@ def create_app() -> FastAPI:
     app.include_router(auth.router)  # Support direct calls like http://localhost:8000/auth/google/callback
     app.include_router(emails.router, prefix=api_prefix)
     app.include_router(scan.router, prefix=api_prefix)
+    app.include_router(gmail_push.router, prefix=api_prefix)
     app.include_router(dashboard.router, prefix=api_prefix)
     app.include_router(settings_router, prefix=api_prefix)
 

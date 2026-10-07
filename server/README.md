@@ -101,6 +101,7 @@ uvicorn main:app --reload --port 8000
 | POST | `/api/v1/scan/all` | Scan all pending |
 | GET | `/api/v1/scan/result/{id}` | Get scan result |
 | GET | `/api/v1/dashboard` | Dashboard stats |
+| POST | `/api/v1/gmail/push` | Pub/Sub mailbox notification (Google only; verified) |
 | GET | `/health` | Health check |
 
 ## Example Flow
@@ -166,12 +167,48 @@ See `.env.example` for all configuration options.
 pytest          # 228 tests
 ```
 
+## How mail reaches the scanner
+
+Two triggers, one pipeline. A message is scored identically however it arrived —
+same analysers, same risk engine, same thresholds — because both triggers call
+`MailboxSyncService.sync_user` and only differ in what wakes it.
+
+**Push** (`POST /api/v1/gmail/push`) is the primary path when configured. Gmail
+publishes to a Pub/Sub topic the moment the inbox changes, so the gap between
+arrival and verdict is a round trip rather than a poll interval. That gap is the
+window in which a message judged dangerous is live in the inbox and one click is
+all the attack needs, which is the reason to prefer push over a timer.
+
+The endpoint is reachable from the internet by necessity, so it verifies before
+it acts: the request must carry an OIDC token Google signed for the configured
+audience, and the signing service account must be the configured one. With
+either value unset it refuses every notification rather than accepting
+unverified ones — the alternative is an open trigger that makes the gateway
+fetch on demand for any address a caller names. A verified notification always
+answers 200, including one it cannot process, because Pub/Sub redelivers
+anything else forever.
+
+**The sweep** is the fallback, and the only path when push is off. It catches
+what a dropped notification or a lapsed watch would lose, and renews the
+watches — Gmail expires one after seven days and stops notifying without
+saying so.
+
+Synchronisation is incremental either way. `users.gmail_history_id` is a cursor
+that advances only after the fetched messages have been scanned, so a crash
+mid-scan re-fetches rather than skips. When a cursor falls outside Gmail's
+history window — roughly a week, so a long outage — the sync reports that it
+resynchronised instead of quietly fetching nothing, because mail behind that
+window is not recoverable by this path.
+
+See `.env.example` for the Pub/Sub topic, subscription and IAM setup. Push
+cannot be enabled without a public HTTPS endpoint.
+
 ## MVP Limitations
 
 The following are **not integrated** in v1 but have clean interfaces ready:
 
 - VirusTotal · ClamAV · Google Safe Browsing
-- Redis caching · Celery background tasks
+- Redis caching · Celery (the sweep and the push handler run in-process)
 - LLM / ML models (AI service uses heuristics)
 - Live Gmail API (uses mock emails when OAuth not configured)
 
