@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
-from app.database.models import Email, EmailStatus, RiskLevel, ScanResult
+from app.database.models import Email, RiskLevel, ScanResult
 from app.repositories.email_repository import EmailRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
@@ -163,7 +163,12 @@ class ScanService:
             quarantined=self.risk_engine.should_quarantine(risk.final_score),
         )
 
-        email.status = EmailStatus.SCANNED
+        # The verdict is the status. apply_quarantine above set BLOCKED,
+        # QUARANTINED or SAFE and flushed it; this line used to overwrite all
+        # three with SCANNED, so the mailbox move happened but the row recorded
+        # no decision. Every scanned message read as SCANNED, which the
+        # dashboard groups with safe mail, so its quarantined and blocked counts
+        # were structurally zero.
         await db.flush()
 
         logger.info(
