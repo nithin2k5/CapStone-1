@@ -7,6 +7,7 @@ from app.services.audience_analysis import AudienceAnalysisResult
 from app.services.campaign_analysis import CampaignAnalysisResult
 from app.services.differential_probe import DifferentialProbeResult
 from app.services.header_analysis import HeaderAnalysisResult
+from app.services.impersonation_analysis import ImpersonationAnalysisResult
 from app.services.perceptual_analysis import PerceptualAnalysisResult
 from app.services.url_analysis import URLAnalysisResult
 from app.utils.helpers import score_to_risk_level
@@ -68,6 +69,10 @@ class RiskEngine:
         "attachment": 0.90,
         "ai": 0.80,
         "perceptual": 0.85,
+        # Relationship signals. Below the authentication checks because the
+        # history they read is only as deep as this gateway has been watching,
+        # so a confident-looking finding can rest on a thin record.
+        "impersonation": 0.75,
     }
 
     # Combinations that mean more together than apart. Each contributes one more
@@ -86,6 +91,16 @@ class RiskEngine:
         "measured_suppression": 0.75,
         "reported_injection": 0.70,
         "concealed_link_and_solicitation": 0.55,
+        # A stranger asking for credentials or money. Neither half is evidence
+        # alone — most legitimate mail is a first contact, and plenty of known
+        # senders ask for payment — but a request worth making up a sender for,
+        # from a sender this mailbox has never heard from, is the shape of the
+        # attack the authentication checks are structurally unable to see.
+        "first_contact_and_solicitation": 0.50,
+        # A known name from an unknown address, replying somewhere else again.
+        # The classic business email compromise triad.
+        "impersonation_and_reply_to": 0.80,
+        "impersonation_and_solicitation": 0.75,
     }
 
     QUARANTINE_THRESHOLD = 60.0
@@ -106,11 +121,13 @@ class RiskEngine:
         probe: DifferentialProbeResult | None = None,
         audience: AudienceAnalysisResult | None = None,
         campaign: CampaignAnalysisResult | None = None,
+        impersonation: ImpersonationAnalysisResult | None = None,
     ) -> RiskEngineResult:
         perceptual = perceptual or PerceptualAnalysisResult()
         probe = probe or DifferentialProbeResult()
         audience = audience or AudienceAnalysisResult()
         campaign = campaign or CampaignAnalysisResult()
+        impersonation = impersonation or ImpersonationAnalysisResult()
 
         # The probe scored a body containing attacker-controlled text, so its
         # verdict may only raise the content component, never lower it. Where the
@@ -129,6 +146,10 @@ class RiskEngine:
             attachment.score / 100.0 * self.RELIABILITY["attachment"],
             ai_content_score / 100.0 * self.RELIABILITY["ai"],
             perceptual.score / 100.0 * self.RELIABILITY["perceptual"],
+            # Zero unless a name or address was actually imitated. First contact
+            # contributes nothing here by design; it reaches the score only
+            # through the combination below.
+            impersonation.score / 100.0 * self.RELIABILITY["impersonation"],
         ]
         explanation_parts: list[str] = []
 
@@ -136,17 +157,40 @@ class RiskEngine:
             evidence.append(self.COMBINATION_STRENGTH[rule])
             explanation_parts.append(message)
 
+        solicits = ai.requests_financials or ai.requests_credentials
+
         if ai.is_urgent and url.has_suspicious_domain:
             add(
                 "urgency_and_link",
                 "Compounding Risk: Urgency language combined with suspicious link",
             )
 
-        if header.reply_to_mismatch and (ai.requests_financials or ai.requests_credentials):
+        if header.reply_to_mismatch and solicits:
             add(
                 "reply_to_and_solicitation",
                 "Critical Risk: Reply-To mismatch combined with financial/credential request",
             )
+
+        if impersonation.first_contact and solicits:
+            add(
+                "first_contact_and_solicitation",
+                "Elevated Risk: First contact from this sender, soliciting "
+                "credentials or payment",
+            )
+
+        if impersonation.display_name_impersonation or impersonation.lookalike_address:
+            if header.reply_to_mismatch:
+                add(
+                    "impersonation_and_reply_to",
+                    "Critical Risk: Sender imitates a known correspondent and "
+                    "directs replies elsewhere",
+                )
+            if solicits:
+                add(
+                    "impersonation_and_solicitation",
+                    "Critical Risk: Sender imitates a known correspondent while "
+                    "soliciting credentials or payment",
+                )
 
         if header.failed_dmarc and attachment.score > 50:
             add(
@@ -328,6 +372,15 @@ class RiskEngine:
                     "confidence": audience.confidence,
                     "reason": audience.reason,
                     "skipped_reason": audience.skipped_reason,
+                },
+                "impersonation": {
+                    "ran": impersonation.ran,
+                    "first_contact": impersonation.first_contact,
+                    "display_name_impersonation": impersonation.display_name_impersonation,
+                    "lookalike_address": impersonation.lookalike_address,
+                    "impersonated": impersonation.impersonated,
+                    "findings": impersonation.findings,
+                    "skipped_reason": impersonation.skipped_reason,
                 },
                 "campaign": {
                     "ran": campaign.ran,

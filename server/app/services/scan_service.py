@@ -12,6 +12,7 @@ from app.services.campaign_analysis import CampaignAnalysisService
 from app.services.differential_probe import DifferentialProbeService
 from app.services.dkim_verification import DKIMVerificationService
 from app.services.header_analysis import HeaderAnalysisService
+from app.services.impersonation_analysis import ImpersonationAnalysisService
 from app.services.perceptual_analysis import PerceptualAnalysisService
 from app.services.quarantine_service import QuarantineService
 from app.services.risk_engine import RiskEngine
@@ -34,6 +35,7 @@ class ScanService:
         probe_service: DifferentialProbeService | None = None,
         audience_service: AudienceAnalysisService | None = None,
         campaign_service: CampaignAnalysisService | None = None,
+        impersonation_service: ImpersonationAnalysisService | None = None,
         dkim_service: DKIMVerificationService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
@@ -48,6 +50,9 @@ class ScanService:
         self.probe_service = probe_service or DifferentialProbeService(self.ai_service)
         self.audience_service = audience_service or AudienceAnalysisService(self.ai_service)
         self.campaign_service = campaign_service or CampaignAnalysisService()
+        self.impersonation_service = (
+            impersonation_service or ImpersonationAnalysisService()
+        )
         self.dkim_service = dkim_service or DKIMVerificationService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
@@ -132,6 +137,12 @@ class ScanService:
         # sending domain resets every other analyser and leaves the hidden half
         # untouched, so the payload is the part worth recognising again.
         campaign_result = await self.campaign_service.analyze(db, email, parsed.rendered)
+        # Who the sender is pretending to be. Authentication answers whether the
+        # claiming domain authorised the message, which is exactly what business
+        # email compromise passes; this reads the relationship instead.
+        impersonation_result = await self.impersonation_service.analyze(
+            db, email.user_id, email.sender or ""
+        )
 
         risk = self.risk_engine.calculate(
             header_result,
@@ -142,6 +153,7 @@ class ScanService:
             probe_result,
             audience_result,
             campaign_result,
+            impersonation_result,
         )
 
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)

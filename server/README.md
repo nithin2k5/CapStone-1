@@ -203,6 +203,44 @@ window is not recoverable by this path.
 See `.env.example` for the Pub/Sub topic, subscription and IAM setup. Push
 cannot be enabled without a public HTTPS endpoint.
 
+## Who the sender is pretending to be
+
+SPF, DKIM and DMARC answer whether a message was authorised by the domain it
+claims, and that is exactly what business email compromise passes: a correctly
+signed message from a domain the attacker genuinely controls, soliciting a
+payment in a colleague's name. The threat model concedes the point — a message
+from an authenticated, compromised colleague passes every authentication check
+here, correctly.
+
+`impersonation_analysis.py` reads the relationship instead, from the Email rows
+already scanned rather than a table of its own:
+
+- **First contact** — this mailbox has never had mail from this address.
+- **Display-name impersonation** — a name this mailbox knows, arriving from an
+  address it does not.
+- **Lookalike address** — within two edits of a known correspondent's address,
+  which covers the substitutions that work on a human eye (`biling` for
+  `billing`) without pulling in genuinely different addresses at the same
+  company.
+
+The restraint is the harder half, and it is where this kind of detector usually
+fails. **First contact scores nothing on its own.** Most legitimate mail is a
+first contact — receipts, newsletters, a new supplier, a recruiter — so treating
+an unfamiliar sender as suspicious would fire on ordinary mail all day. It is
+recorded for an analyst and reaches the score only alongside a request worth
+inventing a sender for. The signals that do score alone are the ones with no
+innocent reading: a name this mailbox knows, from an address it does not.
+
+A name has to have been seen at least twice before imitating it counts, since
+one prior message is as likely to be the attacker's own earlier attempt.
+Senders the gateway condemned are excluded from the contact list entirely —
+otherwise the first attack from an address would be the thing that legitimised
+every later impersonation of it.
+
+The real limitation is depth: history reaches back only as far as this gateway
+has been watching, so a genuinely established correspondent looks new to a fresh
+install. That is the main reason first contact is not scored by itself.
+
 ## Revisiting delivered mail
 
 Delivery-time scoring is one decision made with whatever evidence existed at
