@@ -33,18 +33,40 @@ class QuarantineService:
         email: Email,
         final_score: float,
     ) -> EmailStatus:
+        """
+        Decide the verdict, then record whether the mailbox applied it.
+
+        The mailbox move can fail — an expired grant, a revoked scope, a
+        provider outage — and its result used to be discarded. The row said
+        BLOCKED either way, so a message the gateway had failed to touch was
+        reported as one it had removed. The verdict and its enforcement are
+        now stored as the two separate facts they are.
+        """
         if self.risk_engine.should_block(final_score):
             email.status = EmailStatus.BLOCKED
             logger.warning("Email %s BLOCKED (score=%.2f)", email.id, final_score)
-            await self.move_to_trash(db, email.user_id, email.gmail_message_id)
+            enforced = await self.move_to_trash(db, email.user_id, email.gmail_message_id)
         elif self.risk_engine.should_quarantine(final_score):
             email.status = EmailStatus.QUARANTINED
             logger.warning("Email %s QUARANTINED (score=%.2f)", email.id, final_score)
-            await self.move_to_spam(db, email.user_id, email.gmail_message_id)
+            enforced = await self.move_to_spam(db, email.user_id, email.gmail_message_id)
         else:
             email.status = EmailStatus.SAFE
             logger.info("Email %s marked SAFE (score=%.2f)", email.id, final_score)
-            await self.move_to_inbox(db, email.user_id, email.gmail_message_id)
+            enforced = await self.move_to_inbox(db, email.user_id, email.gmail_message_id)
+
+        email.enforced = enforced
+        if not enforced and email.status in (EmailStatus.BLOCKED, EmailStatus.QUARANTINED):
+            # The only case that leaves a user exposed: the gateway judged the
+            # message dangerous and the message is still in the inbox. Logged at
+            # error because it needs an operator, not a reader of dashboards.
+            logger.error(
+                "Email %s judged %s but the mailbox did not apply it — message "
+                "remains in place for user %s",
+                email.id,
+                email.status.value,
+                email.user_id,
+            )
 
         email.risk_score = final_score
         await db.flush()

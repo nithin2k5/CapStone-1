@@ -24,6 +24,10 @@ class EmailResponse(BaseModel):
     received_at: datetime | None
     status: EmailStatusEnum
     risk_score: float
+    # False means the verdict was reached but the mailbox did not apply it; the
+    # message is still where it was. Surfaced so the UI never shows an
+    # unenforced block as a block.
+    enforced: bool = False
     mailbox: str
     created_at: datetime
 

@@ -42,6 +42,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 # Names are fixed constants, never request data.
 ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "scan_results": {"perceptual_score": "FLOAT DEFAULT 0"},
+    # Existing rows predate the distinction between a verdict and its
+    # enforcement, and nothing is known about whether their mailbox move
+    # landed. 0 is the honest default: unenforced until one succeeds.
+    "emails": {"enforced": "BOOLEAN NOT NULL DEFAULT 0"},
 }
 
 

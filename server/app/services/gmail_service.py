@@ -51,8 +51,13 @@ class GmailService:
     Falls back to realistic mock phishing emails if OAuth is not configured or token unavailable.
     """
 
+    # gmail.modify, not gmail.readonly. Enforcing a verdict means relabelling
+    # the message, and readonly consent makes every quarantine and block fail
+    # 403 while the verdict still lands in the database — a gateway that reports
+    # what it would have done. modify subsumes readonly's access and stops short
+    # of permanent deletion, which nothing here performs.
     SCOPES = [
-        "https://www.googleapis.com/auth/gmail.readonly",
+        "https://www.googleapis.com/auth/gmail.modify",
         "https://www.googleapis.com/auth/userinfo.email",
         "https://www.googleapis.com/auth/userinfo.profile",
     ]
@@ -171,7 +176,25 @@ class GmailService:
             if res.status_code == 200:
                 logger.info("Successfully modified labels for message %s", message_id)
                 return True
-            logger.error("Failed to modify labels for message %s: %s - %s", message_id, res.status_code, res.text)
+            if res.status_code in (401, 403):
+                # A config error, not a bad run: the grant cannot label mail, so
+                # every enforcement attempt for every user will fail until the
+                # user re-consents to the scopes above.
+                logger.error(
+                    "Mailbox refused label change for message %s (%s): the OAuth "
+                    "grant lacks gmail.modify. Re-consent required; no verdict "
+                    "can be enforced until then. %s",
+                    message_id,
+                    res.status_code,
+                    res.text,
+                )
+            else:
+                logger.error(
+                    "Failed to modify labels for message %s: %s - %s",
+                    message_id,
+                    res.status_code,
+                    res.text,
+                )
             return False
 
     # Gmail returns either the parsed structure or the original bytes, never
