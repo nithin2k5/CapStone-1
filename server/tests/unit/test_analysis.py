@@ -866,6 +866,12 @@ class _StubResult:
     def all(self):
         return []
 
+    def scalar_one_or_none(self):
+        # Nothing stored, so every lookup is a first sighting. The repository
+        # asks this before inserting, to update a verdict rather than let the
+        # unique constraint absorb the rescan.
+        return None
+
 
 class _StubSession:
     """
@@ -893,6 +899,22 @@ class _StubSession:
 
     async def rollback(self):
         return None
+
+    def begin_nested(self):
+        """
+        A savepoint the repository can fail inside without taking the caller's
+        transaction with it. Nothing here can violate a constraint, so this just
+        has to be a working async context manager.
+        """
+
+        class _Savepoint:
+            async def __aenter__(_self):
+                return _self
+
+            async def __aexit__(_self, *exc):
+                return False
+
+        return _Savepoint()
 
     async def execute(self, *args, **kwargs):
         self.queries.append(args)

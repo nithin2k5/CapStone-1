@@ -37,6 +37,7 @@ class ScanService:
         dkim_service: DKIMVerificationService | None = None,
         risk_engine: RiskEngine | None = None,
         quarantine_service: QuarantineService | None = None,
+        remediation_service=None,
     ):
         self.header_service = header_service or HeaderAnalysisService()
         self.url_service = url_service or URLAnalysisService()
@@ -50,6 +51,14 @@ class ScanService:
         self.dkim_service = dkim_service or DKIMVerificationService()
         self.risk_engine = risk_engine or RiskEngine()
         self.quarantine_service = quarantine_service or QuarantineService(self.risk_engine)
+        # Imported here because remediation drives scans through this service,
+        # and importing it at module scope would make that cycle an import-time
+        # one.
+        if remediation_service is None:
+            from app.services.remediation_service import RemediationService
+
+            remediation_service = RemediationService(self)
+        self.remediation_service = remediation_service
 
     def _email_to_parsed(self, email: Email) -> ParsedEmail:
         """
@@ -78,7 +87,11 @@ class ScanService:
         )
 
     async def scan_email(
-        self, db: AsyncSession, email: Email, parsed: ParsedEmail | None = None
+        self,
+        db: AsyncSession,
+        email: Email,
+        parsed: ParsedEmail | None = None,
+        remediate: bool = True,
     ) -> ScanResult:
         """
         Score an email and apply the resulting quarantine decision.
@@ -87,6 +100,11 @@ class ScanService:
         Attachments are not persisted on the Email row, so reconstructing from the
         database alone yields an empty attachment list — the fetch path supplies its
         own parse to keep attachment analysis alive.
+
+        `remediate` controls whether condemning a payload here also revisits
+        delivered mail carrying it. The retroactive pass sets it False on the
+        rescans it drives: those messages carry the fingerprints already being
+        handled, so a cascade would revisit the same set to no effect.
         """
         repo = EmailRepository(db)
         parsed = parsed or self._email_to_parsed(email)
@@ -156,11 +174,12 @@ class ScanService:
 
         # Recorded with the verdict attached, so a later message carrying the
         # same fragment inherits something worth inheriting.
+        condemned = self.risk_engine.should_quarantine(risk.final_score)
         await self.campaign_service.record(
             db,
             email,
             parsed.rendered,
-            quarantined=self.risk_engine.should_quarantine(risk.final_score),
+            quarantined=condemned,
         )
 
         # The verdict is the status. apply_quarantine above set BLOCKED,
@@ -178,6 +197,27 @@ class ScanService:
             risk.risk_level.value,
             risk.suppression,
         )
+
+        # After the sighting is stored, not before: the retroactive pass rescans
+        # delivered mail and relies on campaign analysis finding the verdict
+        # just recorded. Run earlier, there would be nothing for it to find and
+        # every rescan would reach the same conclusion as the first scan did.
+        if remediate and condemned:
+            fingerprints = self.campaign_service.fingerprints(parsed.rendered)
+            try:
+                await self.remediation_service.remediate_payload(
+                    db, email.user_id, fingerprints, triggering_email_id=email.id
+                )
+            except Exception as e:
+                # The scan itself stands. A failure to revisit delivered mail
+                # must not discard the verdict on the message in hand.
+                logger.error(
+                    "Retroactive remediation failed after email %s: %s",
+                    email.id,
+                    e,
+                    exc_info=True,
+                )
+
         return scan
 
     async def scan_all(

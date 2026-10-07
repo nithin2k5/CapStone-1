@@ -131,6 +131,13 @@ class Email(Base):
     # a message the dashboard called BLOCKED could still be sitting in the
     # inbox. False until an enforcement attempt succeeds.
     enforced: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    # When this message was pulled back after having been delivered. A verdict
+    # reached at delivery and one reached later on evidence that did not exist
+    # yet are different events, and the second is the only measure of whether
+    # revisiting delivered mail catches anything.
+    remediated_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     raw_headers: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     body_text: Mapped[str | None] = mapped_column(Text(length=16777215), nullable=True)
     body_html: Mapped[str | None] = mapped_column(Text(length=16777215), nullable=True)

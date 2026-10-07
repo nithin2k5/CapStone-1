@@ -203,6 +203,37 @@ window is not recoverable by this path.
 See `.env.example` for the Pub/Sub topic, subscription and IAM setup. Push
 cannot be enabled without a public HTTPS endpoint.
 
+## Revisiting delivered mail
+
+Delivery-time scoring is one decision made with whatever evidence existed at
+that instant, and the evidence keeps arriving. A message scored safe at nine in
+the morning used to stay safe for good — even when the identical concealed
+payload was quarantined at eleven arriving from a different domain. Campaign
+analysis only looked backward, asking whether an arriving payload had been
+condemned before; a payload condemned now had no way to reach the mail already
+delivered carrying it.
+
+A condemning verdict now triggers a pass over delivered mail sharing that
+payload's fingerprints. What makes it work is ordering: the pass runs after the
+sighting is stored, so campaign analysis finds the verdict just recorded where
+on the first scan there was nothing to find. The messages are therefore pulled
+because the pipeline scores them dangerous on the evidence now available, not
+because a verdict was copied across from a sibling — a rescan that still scores
+safe leaves the message where it is.
+
+`Email.remediated_at` records that a message was delivered first and pulled back
+later, which is the only measure of whether revisiting delivered mail catches
+anything. A pull the mailbox refuses is counted apart from one it applied, for
+the same reason `Email.enforced` exists: a verdict that could not be enforced is
+not a message that was removed.
+
+The pass does not cascade — the rescans it drives carry the fingerprints already
+being handled — and it is bounded to one user's mail and to fingerprints already
+stored. Its one real limit is that a retroactive rescan rebuilds the parse from
+the stored row, and attachments are not persisted there, so a message re-judged
+this way is scored without attachment analysis. Concealed text, headers and URLs
+all survive in the row and are scored normally.
+
 ## MVP Limitations
 
 The following are **not integrated** in v1 but have clean interfaces ready:

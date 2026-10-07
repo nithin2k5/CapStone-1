@@ -140,6 +140,15 @@ class CampaignAnalysisService:
             sample=next((s.sample for s in prior), ""),
         )
 
+    def fingerprints(self, rendered: RenderedEmail | None) -> list[str]:
+        """
+        The identities of this message's concealed fragments.
+
+        Exposed for the retroactive pass, which needs the fingerprints a verdict
+        was just attached to in order to find delivered mail carrying them.
+        """
+        return [mark for mark, _ in self._fragments(rendered)]
+
     async def record(
         self,
         db: AsyncSession,

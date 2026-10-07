@@ -28,6 +28,10 @@ class EmailResponse(BaseModel):
     # message is still where it was. Surfaced so the UI never shows an
     # unenforced block as a block.
     enforced: bool = False
+    # Set when the message was delivered first and pulled back later, so a
+    # reader can tell a verdict reached at delivery from one reached on
+    # evidence that arrived afterwards.
+    remediated_at: datetime | None = None
     mailbox: str
     created_at: datetime
 

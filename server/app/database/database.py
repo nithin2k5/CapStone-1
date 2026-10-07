@@ -45,7 +45,10 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
     # Existing rows predate the distinction between a verdict and its
     # enforcement, and nothing is known about whether their mailbox move
     # landed. 0 is the honest default: unenforced until one succeeds.
-    "emails": {"enforced": "BOOLEAN NOT NULL DEFAULT 0"},
+    "emails": {
+        "enforced": "BOOLEAN NOT NULL DEFAULT 0",
+        "remediated_at": "DATETIME NULL",
+    },
     "users": {
         "gmail_history_id": "VARCHAR(64) NULL",
         "gmail_watch_expires_at": "DATETIME NULL",
