@@ -25,3 +25,19 @@ characters per experimental body. Larger bodies are explicitly skipped rather
 than sampled. Failures retain partial evidence and report degradation. Findings
 are persisted in the existing scan JSON and displayed in email details, so no
 schema migration is needed. Existing differential-probe decisions remain active.
+
+## Concealed fragment isolation
+
+Enabled by `FRAGMENT_ISOLATION_ENABLED=true`. Runs only when the reconstructed
+hidden-text variant reproducibly moved the verdict. Bounded deletion testing
+removes groups of whitespace-delimited tokens; each candidate must preserve the
+effect on two calls. The final candidate is checked twice against two fresh
+visible-body controls, rejecting attribution if controls have drifted. Interacting
+fragments can survive together. A source hash, character ranges, candidate scores,
+trial hashes and call count are saved with the scan. Evidence is displayed as
+escaped text, never executable markup.
+
+At most 16 additional calls and 45 seconds. The result is a locally reduced
+candidate, not a globally minimal attack or proof of intent. Exhaustion, failed
+confirmation and model errors are explicit. It does not add another risk term
+for evidence already counted by stability testing.

@@ -266,7 +266,24 @@ export interface StabilityFindings {
   }[];
 }
 
+export interface IsolationFindings {
+  ran: boolean;
+  degraded: boolean;
+  reproduced: boolean;
+  budget_exhausted: boolean;
+  skipped_reason: string;
+  fragment: string;
+  original_chars: number;
+  source_sha256: string;
+  source_ranges: number[][];
+  direction: string;
+  control_scores: number[];
+  fragment_scores: number[];
+  calls: number;
+}
+
 export interface ScanFindings {
+  isolation?: IsolationFindings;
   stability?: StabilityFindings;
   header?: string[];
   urls?: string[];

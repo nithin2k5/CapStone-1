@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -18,6 +19,7 @@ from app.services.quarantine_service import QuarantineService
 from app.services.risk_engine import RiskEngine
 from app.services.url_analysis import URLAnalysisService
 from app.services.verdict_stability import VerdictStabilityService
+from app.services.fragment_isolation import FragmentIsolationService
 from app.utils.email_parser import ParsedEmail, parse_email_content
 
 logger = get_logger("scan")
@@ -42,6 +44,7 @@ class ScanService:
         quarantine_service: QuarantineService | None = None,
         remediation_service=None,
         stability_service=None,
+        isolation_service=None,
     ):
         self.header_service = header_service or HeaderAnalysisService()
         self.url_service = url_service or URLAnalysisService()
@@ -51,6 +54,7 @@ class ScanService:
         # Shares the AI service so both passes go through the same model and prompt.
         self.probe_service = probe_service or DifferentialProbeService(self.ai_service)
         self.stability_service = stability_service or VerdictStabilityService(self.ai_service)
+        self.isolation_service = isolation_service or FragmentIsolationService(self.ai_service)
         self.audience_service = audience_service or AudienceAnalysisService(self.ai_service)
         self.campaign_service = campaign_service or CampaignAnalysisService()
         self.impersonation_service = (
@@ -133,6 +137,7 @@ class ScanService:
         # concealed, so most messages cost no extra call.
         probe_result = await self.probe_service.probe(parsed, ai_result)
         stability_result = await self.stability_service.analyze(parsed, ai_result)
+        isolation_result = await self.isolation_service.analyze(parsed, stability_result)
         # Who the concealed half was written for. Independent of the probe: a
         # payload in an already-clean message moves no verdict, so there is no
         # effect for the probe to measure and this is the only thing that sees it.
@@ -161,6 +166,7 @@ class ScanService:
             stability=stability_result,
         )
 
+        risk.findings["isolation"] = asdict(isolation_result)
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)
 
         if email.scan_result:
