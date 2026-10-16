@@ -26,17 +26,30 @@ async def db(tmp_path):
 
 
 async def user(db):
-    row = User(id=uuid4(), name="Test", email=f"{uuid4()}@example.test", hashed_password="unused")
+    row = User(
+        id=uuid4(),
+        name="Test",
+        email=f"{uuid4()}@example.test",
+        hashed_password="unused",
+    )
     db.add(row)
     await db.flush()
     return row
 
 
 async def email(db, owner, day, body="Hello", status=EmailStatus.SAFE):
-    row = Email(id=uuid4(), user_id=owner.id, gmail_message_id=str(uuid4()),
-                sender="supplier@example.test", recipient=owner.email,
-                body_text=body, body_html="", status=status, risk_score=0,
-                created_at=datetime(2025, 1, 1, tzinfo=timezone.utc) + timedelta(days=day))
+    row = Email(
+        id=uuid4(),
+        user_id=owner.id,
+        gmail_message_id=str(uuid4()),
+        sender="supplier@example.test",
+        recipient=owner.email,
+        body_text=body,
+        body_html="",
+        status=status,
+        risk_score=0,
+        created_at=datetime(2025, 1, 1, tzinfo=timezone.utc) + timedelta(days=day),
+    )
     row.scan_result = None
     db.add(row)
     await db.flush()
@@ -46,8 +59,11 @@ async def email(db, owner, day, body="Hello", status=EmailStatus.SAFE):
 class Model:
     async def analyze_with_llm(self, parsed):
         solicits = "credentials" in parsed.body_text
-        return AIAnalysisResult(score=95 if "condemned" in parsed.body_text else 30 if solicits else 0,
-                                requests_credentials=solicits, source="heuristic")
+        return AIAnalysisResult(
+            score=95 if "condemned" in parsed.body_text else 30 if solicits else 0,
+            requests_credentials=solicits,
+            source="heuristic",
+        )
 
 
 class Headers:
@@ -57,14 +73,22 @@ class Headers:
 
 class Quarantine:
     async def apply_quarantine(self, db, email, score):
-        email.status = EmailStatus.BLOCKED if score >= 80 else EmailStatus.QUARANTINED if score >= 60 else EmailStatus.SAFE
+        email.status = (
+            EmailStatus.BLOCKED
+            if score >= 80
+            else EmailStatus.QUARANTINED
+            if score >= 60
+            else EmailStatus.SAFE
+        )
         email.enforced = True
         email.risk_score = score
         await db.flush()
 
 
 def scanner():
-    return ScanService(ai_service=Model(), header_service=Headers(), quarantine_service=Quarantine())
+    return ScanService(
+        ai_service=Model(), header_service=Headers(), quarantine_service=Quarantine()
+    )
 
 
 async def test_condemned_history_rechecks_direct_and_transitive_dependents(db):
@@ -85,7 +109,9 @@ async def test_condemned_history_rechecks_direct_and_transitive_dependents(db):
     assert result.findings["trust_invalidation"]["rescanned"] == 2
     assert result.findings["trust_invalidation"]["pulled"] == 2
     assert b.remediated_at and c.remediated_at
-    assert b.scan_result.findings["trust_reassessment"]["triggering_email_id"] == str(a.id)
+    assert b.scan_result.findings["trust_reassessment"]["triggering_email_id"] == str(
+        a.id
+    )
     assert b.scan_result.findings["sender_trust"]["supporting_email_ids"] == []
 
 
@@ -102,7 +128,9 @@ async def test_history_cannot_use_self_future_other_tenants_or_stale_evidence(db
     await TrustRepository(db).invalidate_descendants(owner.id, root.id)
     rows, truncated = await SenderHistoryRepository(db).evidence_before(current)
     assert rows == [] and not truncated
-    result = await ImpersonationAnalysisService().analyze(db, owner.id, current.sender, email=current)
+    result = await ImpersonationAnalysisService().analyze(
+        db, owner.id, current.sender, email=current
+    )
     assert result.first_contact
 
 
@@ -131,7 +159,17 @@ async def test_bounded_graph_walk_reports_overflow_and_does_not_cross_tenants(db
     selected, truncated = await repo.invalidate_descendants(owner.id, root.id, limit=2)
     assert len(selected) == 2 and truncated
     assert all(row.user_id == owner.id for row in selected)
-    stale = list((await db.execute(select(SenderTrustDependency).where(SenderTrustDependency.invalidated.is_(True)))).scalars().all())
+    stale = list(
+        (
+            await db.execute(
+                select(SenderTrustDependency).where(
+                    SenderTrustDependency.invalidated.is_(True)
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
     assert len(stale) == 3
 
 
@@ -170,9 +208,18 @@ async def test_failed_rescan_keeps_stale_edges_and_other_rescans_continue(db):
     assert outcome["failed"] == 1 and outcome["rescanned"] == 1
     await db.refresh(first)
     assert first.subject != "This write must roll back"
-    stale = list((await db.execute(select(SenderTrustDependency).where(
-        SenderTrustDependency.email_id == first_id, SenderTrustDependency.invalidated.is_(True),
-    ))).scalars().all())
+    stale = list(
+        (
+            await db.execute(
+                select(SenderTrustDependency).where(
+                    SenderTrustDependency.email_id == first_id,
+                    SenderTrustDependency.invalidated.is_(True),
+                )
+            )
+        )
+        .scalars()
+        .all()
+    )
     assert stale
     assert second.id == second_id and second.scan_result.findings["trust_reassessment"]
 

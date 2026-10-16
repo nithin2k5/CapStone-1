@@ -5,9 +5,16 @@ import re
 from dataclasses import dataclass, field
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.services.verdict_stability import (
-    StabilityResult, body_hash, checked_score, effect, reconstructed_body,
+    StabilityResult,
+    body_hash,
+    checked_score,
+    effect,
+    reconstructed_body,
 )
+
+logger = get_logger("fragment_isolation")
 
 
 @dataclass
@@ -34,15 +41,29 @@ class FragmentIsolationService:
 
     def __init__(self, ai_service, enabled=None):
         self.ai = ai_service
-        self.enabled = get_settings().fragment_isolation_enabled if enabled is None else enabled
+        self.enabled = (
+            get_settings().fragment_isolation_enabled if enabled is None else enabled
+        )
 
     async def analyze(self, parsed, stability: StabilityResult) -> IsolationResult:
         result = IsolationResult()
         if not self.enabled:
             result.skipped_reason = "Fragment isolation disabled"
             return result
-        seed = next((v for v in stability.variants if v["name"] == "reconstructed_hidden" and v["reproducible"]), None)
-        if not stability.ran or stability.degraded or stability.inconclusive or not seed:
+        seed = next(
+            (
+                v
+                for v in stability.variants
+                if v["name"] == "reconstructed_hidden" and v["reproducible"]
+            ),
+            None,
+        )
+        if (
+            not stability.ran
+            or stability.degraded
+            or stability.inconclusive
+            or not seed
+        ):
             result.skipped_reason = "No reproducible reconstructed hidden-text effect"
             return result
 
@@ -67,8 +88,14 @@ class FragmentIsolationService:
             body = reconstructed_body(parsed, fragment(indices))
             scores = [await score(body), await score(body)]
             direction = effect(scores, stability.control_scores, stability.threshold)
-            result.trials.append({"body_sha256": body_hash(body), "chars": len(fragment(indices)),
-                                  "scores": scores, "preserved": direction == result.direction})
+            result.trials.append(
+                {
+                    "body_sha256": body_hash(body),
+                    "chars": len(fragment(indices)),
+                    "scores": scores,
+                    "preserved": direction == result.direction,
+                }
+            )
             return direction == result.direction
 
         try:
@@ -83,7 +110,7 @@ class FragmentIsolationService:
                     for start in range(0, len(kept), width):
                         if result.calls + 2 > self.MAX_CALLS - 4:
                             break
-                        candidate = kept[:start] + kept[start + width:]
+                        candidate = kept[:start] + kept[start + width :]
                         if candidate and await preserves(candidate):
                             kept = candidate
                             granularity = max(2, granularity - 1)
@@ -95,13 +122,19 @@ class FragmentIsolationService:
                         granularity = min(len(kept), granularity * 2)
                 result.budget_exhausted = result.calls >= self.MAX_CALLS - 4
                 result.fragment = fragment(kept)
-                result.control_scores = [await score(parsed.rendered.visible_text) for _ in range(2)]
-                result.fragment_scores = [await score(reconstructed_body(parsed, result.fragment)) for _ in range(2)]
+                result.control_scores = [
+                    await score(parsed.rendered.visible_text) for _ in range(2)
+                ]
+                result.fragment_scores = [
+                    await score(reconstructed_body(parsed, result.fragment))
+                    for _ in range(2)
+                ]
                 controls = stability.control_scores + result.control_scores
                 # A drifted model cannot confirm a causal attribution.
                 result.reproduced = (
                     max(controls) - min(controls) < 15
-                    and effect(result.fragment_scores, controls, stability.threshold) == result.direction
+                    and effect(result.fragment_scores, controls, stability.threshold)
+                    == result.direction
                 )
                 for index in kept:
                     start, end = tokens[index].span()
@@ -111,6 +144,9 @@ class FragmentIsolationService:
                         result.source_ranges.append([start, end])
                 result.ran = True
         except Exception:
+            logger.exception("Fragment isolation experiment failed")
             result.degraded = True
-            result.skipped_reason = "Isolation incomplete: model failure or time budget exceeded"
+            result.skipped_reason = (
+                "Isolation incomplete: model failure or time budget exceeded"
+            )
         return result

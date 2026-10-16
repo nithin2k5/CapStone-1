@@ -89,7 +89,7 @@ class ParsedEmail:
     @property
     def visible_text(self) -> str:
         """The body as the recipient sees it, falling back to the plain body."""
-        if self.rendered and self.rendered.visible_text:
+        if self.rendered is not None:
             return self.rendered.visible_text
         return self.body_text
 
@@ -217,7 +217,7 @@ def _parse_style(style: str) -> dict[str, str]:
     for declaration in style.split(";"):
         prop, sep, value = declaration.partition(":")
         if sep:
-            declarations[prop.strip().lower()] = value.strip().lower()
+            declarations[prop.strip().lower()] = re.sub(r"\s*!important\s*$", "", value.strip().lower())
     return declarations
 
 

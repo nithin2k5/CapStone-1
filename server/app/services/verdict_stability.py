@@ -7,8 +7,11 @@ from dataclasses import dataclass, field
 from statistics import median
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.services.ai_analysis import AIAnalysisResult, AIAnalysisService
 from app.utils.email_parser import INVISIBLE_CODEPOINTS, ParsedEmail
+
+logger = get_logger("verdict_stability")
 
 
 @dataclass
@@ -59,9 +62,13 @@ class VerdictStabilityService:
 
     def __init__(self, ai_service=None, enabled=None):
         self.ai = ai_service or AIAnalysisService()
-        self.enabled = get_settings().verdict_stability_enabled if enabled is None else enabled
+        self.enabled = (
+            get_settings().verdict_stability_enabled if enabled is None else enabled
+        )
 
-    async def analyze(self, parsed: ParsedEmail, visible: AIAnalysisResult) -> StabilityResult:
+    async def analyze(
+        self, parsed: ParsedEmail, visible: AIAnalysisResult
+    ) -> StabilityResult:
         result = StabilityResult()
         if not self.enabled:
             result.skipped_reason = "Verdict stability testing disabled"
@@ -77,11 +84,17 @@ class VerdictStabilityService:
         variants = [
             ("as_ingested", rendered.machine_text),
             ("reconstructed_hidden", reconstructed_body(parsed, hidden)),
-            ("normalized_hidden", reconstructed_body(parsed, " ".join(
-                INVISIBLE_CODEPOINTS.sub("", hidden).split()
-            ))),
+            (
+                "normalized_hidden",
+                reconstructed_body(
+                    parsed, " ".join(INVISIBLE_CODEPOINTS.sub("", hidden).split())
+                ),
+            ),
         ]
-        if max(len(rendered.visible_text), *(len(body) for _, body in variants)) > self.MAX_BODY_CHARS:
+        if (
+            max(len(rendered.visible_text), *(len(body) for _, body in variants))
+            > self.MAX_BODY_CHARS
+        ):
             result.skipped_reason = "Body exceeds the 6000-character experiment budget"
             return result
 
@@ -94,31 +107,48 @@ class VerdictStabilityService:
                 # Do not reuse the main score: its prompt discloses concealment.
                 for _ in range(3):
                     result.control_scores.append(await score(rendered.visible_text))
-                result.noise_range = max(result.control_scores) - min(result.control_scores)
+                result.noise_range = max(result.control_scores) - min(
+                    result.control_scores
+                )
                 result.threshold = max(15.0, result.noise_range + 5.0)
                 if result.noise_range >= 15:
                     result.inconclusive = True
                     result.review_required = True
-                    result.findings.append("Identical control inputs produced unstable scores; attribution is inconclusive")
+                    result.findings.append(
+                        "Identical control inputs produced unstable scores; attribution is inconclusive"
+                    )
                 else:
                     cache = {}
                     for name, body in variants:
                         if body not in cache:
                             cache[body] = [await score(body), await score(body)]
                         scores = cache[body]
-                        direction = effect(scores, result.control_scores, result.threshold)
-                        result.variants.append({
-                            "name": name, "scores": scores, "body_sha256": body_hash(body),
-                            "direction": direction, "reproducible": bool(direction),
-                            "delta": round(median(scores) - median(result.control_scores), 2),
-                        })
+                        direction = effect(
+                            scores, result.control_scores, result.threshold
+                        )
+                        result.variants.append(
+                            {
+                                "name": name,
+                                "scores": scores,
+                                "body_sha256": body_hash(body),
+                                "direction": direction,
+                                "reproducible": bool(direction),
+                                "delta": round(
+                                    median(scores) - median(result.control_scores), 2
+                                ),
+                            }
+                        )
                         result.review_required |= bool(direction)
                     result.findings.append(
                         "Concealed-content variants reproducibly changed the verdict; review required"
-                        if result.review_required else "No reproducible change in the tested variants"
+                        if result.review_required
+                        else "No reproducible change in the tested variants"
                     )
                 result.ran = True
         except Exception:
+            logger.exception("Verdict stability experiment failed")
             result.degraded = True
-            result.findings.append("Stability experiment incomplete: model failure or time budget exceeded")
+            result.findings.append(
+                "Stability experiment incomplete: model failure or time budget exceeded"
+            )
         return result
