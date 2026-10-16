@@ -1,4 +1,5 @@
 from dataclasses import asdict
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -6,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import get_logger
 from app.database.models import Email, RiskLevel, ScanResult
 from app.repositories.email_repository import EmailRepository
+from app.repositories.trust_repository import TrustRepository
 from app.services.ai_analysis import AIAnalysisService
 from app.services.attachment_analysis import AttachmentAnalysisService
 from app.services.audience_analysis import AudienceAnalysisService
@@ -21,6 +23,7 @@ from app.services.url_analysis import URLAnalysisService
 from app.services.verdict_stability import VerdictStabilityService
 from app.services.fragment_isolation import FragmentIsolationService
 from app.services.accessibility_analysis import AccessibilityAnalysisService
+from app.services.trust_reassessment import TrustReassessmentService
 from app.utils.email_parser import ParsedEmail, parse_email_content
 
 logger = get_logger("scan")
@@ -47,6 +50,7 @@ class ScanService:
         stability_service=None,
         isolation_service=None,
         accessibility_service=None,
+        trust_service=None,
     ):
         self.header_service = header_service or HeaderAnalysisService()
         self.url_service = url_service or URLAnalysisService()
@@ -74,6 +78,7 @@ class ScanService:
 
             remediation_service = RemediationService(self)
         self.remediation_service = remediation_service
+        self.trust_service = trust_service or TrustReassessmentService(self)
 
     def _email_to_parsed(self, email: Email) -> ParsedEmail:
         """
@@ -107,6 +112,7 @@ class ScanService:
         email: Email,
         parsed: ParsedEmail | None = None,
         remediate: bool = True,
+        reassess_trust: bool = True,
     ) -> ScanResult:
         """
         Score an email and apply the resulting quarantine decision.
@@ -154,7 +160,7 @@ class ScanService:
         # claiming domain authorised the message, which is exactly what business
         # email compromise passes; this reads the relationship instead.
         impersonation_result = await self.impersonation_service.analyze(
-            db, email.user_id, email.sender or ""
+            db, email.user_id, email.sender or "", email=email,
         )
 
         risk = self.risk_engine.calculate(
@@ -172,6 +178,16 @@ class ScanService:
         )
 
         risk.findings["isolation"] = asdict(isolation_result)
+        risk.findings["sender_trust"] = {
+            "recorded": impersonation_result.ran,
+            "supporting_email_ids": impersonation_result.supporting_email_ids,
+            "history_truncated": impersonation_result.history_truncated,
+            "skipped_reason": impersonation_result.skipped_reason,
+        }
+        if email.scan_result and email.scan_result.findings:
+            prior_reassessment = email.scan_result.findings.get("trust_reassessment")
+            if prior_reassessment:
+                risk.findings["trust_reassessment"] = prior_reassessment
         await self.quarantine_service.apply_quarantine(db, email, risk.final_score)
 
         if email.scan_result:
@@ -199,10 +215,14 @@ class ScanService:
                 findings=risk.findings,
             )
             await repo.save_scan_result(scan)
+            email.scan_result = scan
 
         # Recorded with the verdict attached, so a later message carrying the
         # same fragment inherits something worth inheriting.
         condemned = self.risk_engine.should_quarantine(risk.final_score)
+        if impersonation_result.ran:
+            await TrustRepository(db).record(email, impersonation_result.supporting_email_ids)
+        scan.scan_time = datetime.now(timezone.utc)
         await self.campaign_service.record(
             db,
             email,
@@ -246,6 +266,17 @@ class ScanService:
                     exc_info=True,
                 )
 
+        # Trust invalidation also runs for campaign-triggered rescans. Only the
+        # trust traversal itself suppresses it, since it snapshots descendants.
+        if reassess_trust and condemned and email.id and email.created_at:
+            try:
+                async with db.begin_nested():
+                    outcome = await self.trust_service.reassess(db, email)
+                scan.findings = {**scan.findings, "trust_invalidation": outcome}
+                await db.flush()
+            except Exception:
+                logger.exception("Trust invalidation failed for email %s", email.id)
+                scan.findings = {**scan.findings, "trust_invalidation": {"error": "Reassessment incomplete"}}
         return scan
 
     async def scan_all(

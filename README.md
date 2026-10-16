@@ -72,6 +72,13 @@ also set a floor no other analyser's silence can pull below.
 
 ## Running it
 
+Four additional research features are integrated into scanning and email details:
+repeated verdict stability experiments, concealed-fragment isolation,
+accessibility comparison, and sender-evidence dependency reassessment. See
+[`server/RESEARCH_FEATURES.md`](server/RESEARCH_FEATURES.md) for budgets, switches,
+deployment requirements, and experimental limitations. The table above measures
+the original differential-probe benchmark, not these additions.
+
 ```bash
 ./start-all.sh          # API on :8000, web on :3000
 ```

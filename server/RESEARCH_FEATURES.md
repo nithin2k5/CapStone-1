@@ -61,3 +61,36 @@ tree or a screen-reader execution. Stylesheets, full ARIA role semantics, image
 OCR, and email-client-specific layout remain outside coverage. Inputs are capped
 at 100000 HTML characters, 3000 nodes and 64 nesting levels; excerpts and findings
 are bounded. No model calls or schema migration are needed.
+
+## Sender evidence dependencies
+
+The sender analyser records the exact earlier message IDs used to recognise an
+address or detect impersonation. Eligible history is limited to 2000 earlier,
+delivered messages in the same mailbox; the current message, future messages,
+remediated messages and invalidated evidence are excluded. Arrival order uses
+the database creation time with ID as a deterministic tie-breaker. Sender-supplied
+Date headers cannot establish this order.
+
+Edges are persisted in `sender_trust_dependencies`, a new table created by the
+existing startup `Base.metadata.create_all` path. Existing installations must
+restart the API with schema-creation privileges before scanning. Existing scans
+have no dependency records until rescanned; no historical edges are invented.
+
+When a message is condemned, the gateway snapshots its dependent messages,
+invalidates their evidence, and rescans delivered descendants in arrival order.
+The graph walk and rescan count are bounded to 100 messages per trigger. Immediate
+edges encountered beyond the budget are still invalidated and cannot confer
+trust. Further descendants beyond the traversal budget are not guaranteed to be
+invalidated; the source scan explicitly reports truncation for follow-up review.
+There is currently no background retry queue for overflow or failed rescans.
+
+Rescans replace their dependency edges, record the triggering message and old/new
+scores, and use savepoints to isolate failures. A dependent message can remain
+safe on its own evidence. Mailbox removals and failed enforcement are reported
+separately. Trust-triggered scans do not recursively launch more traversals;
+campaign-triggered rescans can still invalidate sender trust. Stored attachments
+are unavailable on these rescans, as with existing campaign remediation.
+
+This is provenance for sender-history decisions, not verification that a sender
+is trustworthy or detection of every compromised account. Supporting-message
+links and reassessment outcomes appear in email details.

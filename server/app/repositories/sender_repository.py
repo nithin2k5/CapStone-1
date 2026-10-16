@@ -1,9 +1,9 @@
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database.models import Email, EmailStatus
+from app.database.models import Email, EmailStatus, SenderTrustDependency
 
 
 class SenderHistoryRepository:
@@ -59,3 +59,27 @@ class SenderHistoryRepository:
             .limit(limit)
         )
         return [(row[0] or "", int(row[1])) for row in result.all()]
+
+    async def evidence_before(self, email: Email, limit: int = 2000):
+        """Bounded, tenant-local history with no self-support or forward edges."""
+        stale = exists().where(
+            SenderTrustDependency.email_id == Email.id,
+            SenderTrustDependency.user_id == email.user_id,
+            SenderTrustDependency.invalidated.is_(True),
+        )
+        result = await self.db.execute(
+            select(Email.id, Email.sender)
+            .where(
+                Email.user_id == email.user_id,
+                Email.id != email.id,
+                or_(Email.created_at < email.created_at,
+                    and_(Email.created_at == email.created_at, Email.id < email.id)),
+                Email.status.in_([EmailStatus.SAFE, EmailStatus.SCANNED]),
+                Email.remediated_at.is_(None),
+                ~stale,
+            )
+            .order_by(Email.created_at.desc(), Email.id.desc())
+            .limit(limit + 1)
+        )
+        rows = result.all()
+        return [(row[0], row[1] or "") for row in rows[:limit]], len(rows) > limit

@@ -23,6 +23,7 @@ address it does not.
 """
 
 from dataclasses import dataclass, field
+from collections import Counter
 from email.utils import parseaddr
 from uuid import UUID
 
@@ -66,6 +67,8 @@ class ImpersonationAnalysisResult:
     impersonated: str = ""
     findings: list[str] = field(default_factory=list)
     skipped_reason: str = ""
+    supporting_email_ids: list[str] = field(default_factory=list)
+    history_truncated: bool = False
 
 
 def _levenshtein(a: str, b: str, cap: int) -> int:
@@ -110,7 +113,7 @@ class ImpersonationAnalysisService:
         self._repository_factory = repository_factory
 
     async def analyze(
-        self, db: AsyncSession, user_id: UUID, sender: str
+        self, db: AsyncSession, user_id: UUID, sender: str, *, email=None
     ) -> ImpersonationAnalysisResult:
         result = ImpersonationAnalysisResult()
         display_name, address = split_sender(sender)
@@ -127,7 +130,15 @@ class ImpersonationAnalysisService:
 
         try:
             repo = self._repository_factory(db)
-            correspondents = await repo.known_correspondents(user_id)
+            evidence_rows = []
+            if email is not None:
+                if email.id is None or email.created_at is None:
+                    result.skipped_reason = "Persisted email identity and arrival order required"
+                    return result
+                evidence_rows, result.history_truncated = await repo.evidence_before(email)
+                correspondents = list(Counter(raw for _, raw in evidence_rows).items())
+            else:
+                correspondents = await repo.known_correspondents(user_id)
         except Exception as e:
             # Relationship context is an enrichment. Losing it must not fail the
             # scan, but it must also not read as "nothing found".
@@ -157,6 +168,7 @@ class ImpersonationAnalysisService:
             result.findings.append("First message this mailbox has had from this address")
 
         if not result.first_contact:
+            result.supporting_email_ids = [str(id_) for id_, raw in evidence_rows if split_sender(raw)[1] == address]
             # A known address is the end of it. The checks below are about
             # addresses this mailbox does not know.
             return result
@@ -164,6 +176,7 @@ class ImpersonationAnalysisService:
         # A name this mailbox knows, from an address it does not.
         name_sightings = 0
         impersonated_address = ""
+        supporting_addresses = set()
         for known_address, names in names_by_address.items():
             if known_address == address or display_name not in names:
                 continue
@@ -174,6 +187,7 @@ class ImpersonationAnalysisService:
         if display_name and name_sightings >= KNOWN_NAME_MIN_SIGHTINGS:
             result.display_name_impersonation = True
             result.impersonated = impersonated_address
+            supporting_addresses.add(impersonated_address)
             result.score = max(result.score, 55.0)
             result.findings.append(
                 f"Display name {display_name!r} belongs to a correspondent at "
@@ -189,6 +203,7 @@ class ImpersonationAnalysisService:
                 if 0 < distance <= LOOKALIKE_MAX_EDITS:
                     result.lookalike_address = True
                     result.impersonated = result.impersonated or known_address
+                    supporting_addresses.add(known_address)
                     result.score = max(result.score, 65.0)
                     result.findings.append(
                         f"Sender address is {distance} edit(s) from "
@@ -196,4 +211,5 @@ class ImpersonationAnalysisService:
                     )
                     break
 
+        result.supporting_email_ids = [str(id_) for id_, raw in evidence_rows if split_sender(raw)[1] in supporting_addresses]
         return result

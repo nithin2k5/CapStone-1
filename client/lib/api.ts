@@ -283,6 +283,28 @@ export interface IsolationFindings {
 }
 
 export interface ScanFindings {
+  sender_trust?: {
+    recorded: boolean;
+    supporting_email_ids: string[];
+    history_truncated: boolean;
+    skipped_reason: string;
+  };
+  trust_reassessment?: {
+    triggering_email_id: string;
+    previous_score: number;
+    new_score: number;
+    at: string;
+    enforced: boolean;
+  };
+  trust_invalidation?: {
+    considered?: number;
+    rescanned?: number;
+    pulled?: number;
+    unenforced?: number;
+    failed?: number;
+    truncated?: boolean;
+    error?: string;
+  };
   accessibility?: AccessibilityFindings;
   isolation?: IsolationFindings;
   stability?: StabilityFindings;

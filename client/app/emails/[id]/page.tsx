@@ -13,6 +13,7 @@ import { DivergencePanel } from "@/components/security/DivergencePanel";
 import { StabilityPanel } from "@/components/security/StabilityPanel";
 import { IsolationPanel } from "@/components/security/IsolationPanel";
 import { AccessibilityPanel } from "@/components/security/AccessibilityPanel";
+import { SenderTrustPanel } from "@/components/security/SenderTrustPanel";
 import { AudienceVerdict } from "@/components/security/AudienceVerdict";
 import { CampaignHistory } from "@/components/security/CampaignHistory";
 import { SafeMessagePreview } from "@/components/security/SafeMessagePreview";
@@ -296,6 +297,7 @@ export default function EmailDetailPage() {
       <StabilityPanel result={scanResult?.findings?.stability} />
       <IsolationPanel result={scanResult?.findings?.isolation} />
       <AccessibilityPanel result={scanResult?.findings?.accessibility} />
+      <SenderTrustPanel findings={scanResult?.findings} />
 
       {/* Two questions about the hidden half that its wording cannot settle:
           who it addresses, and whether it has arrived here before. */}

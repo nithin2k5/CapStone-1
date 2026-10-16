@@ -196,6 +196,20 @@ class ScanResult(Base):
     email: Mapped["Email"] = relationship(back_populates="scan_result")
 
 
+class SenderTrustDependency(Base):
+    """An email whose sender assessment used a previous email as evidence."""
+
+    __tablename__ = "sender_trust_dependencies"
+    __table_args__ = (
+        UniqueConstraint("email_id", "supporting_email_id", name="uq_sender_trust_edge"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    email_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), index=True)
+    supporting_email_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), index=True)
+    invalidated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+
 class PayloadSighting(Base):
     """
     One concealed fragment, as seen in one message.
