@@ -10,6 +10,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { getEmailById, EmailDetail, getScanResult, ScanResult } from "@/lib/api";
 import { DivergencePanel } from "@/components/security/DivergencePanel";
+import { StabilityPanel } from "@/components/security/StabilityPanel";
 import { AudienceVerdict } from "@/components/security/AudienceVerdict";
 import { CampaignHistory } from "@/components/security/CampaignHistory";
 import { SafeMessagePreview } from "@/components/security/SafeMessagePreview";
@@ -289,6 +290,8 @@ export default function EmailDetailPage() {
           <DivergencePanel perceptual={perceptual} probe={probe} />
         </motion.div>
       )}
+
+      <StabilityPanel result={scanResult?.findings?.stability} />
 
       {/* Two questions about the hidden half that its wording cannot settle:
           who it addresses, and whether it has arrived here before. */}

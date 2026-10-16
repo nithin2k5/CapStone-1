@@ -245,7 +245,29 @@ export interface CampaignFindings {
   skipped_reason: string;
 }
 
+export interface StabilityFindings {
+  ran: boolean;
+  degraded: boolean;
+  review_required: boolean;
+  inconclusive: boolean;
+  skipped_reason: string;
+  control_scores: number[];
+  noise_range: number;
+  threshold: number;
+  calls: number;
+  findings: string[];
+  variants: {
+    name: string;
+    scores: number[];
+    body_sha256: string;
+    direction: string;
+    reproducible: boolean;
+    delta: number;
+  }[];
+}
+
 export interface ScanFindings {
+  stability?: StabilityFindings;
   header?: string[];
   urls?: string[];
   url_findings?: string[];

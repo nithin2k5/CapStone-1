@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from app.database.models import RiskLevel
 from app.services.ai_analysis import AIAnalysisResult
@@ -10,6 +10,7 @@ from app.services.header_analysis import HeaderAnalysisResult
 from app.services.impersonation_analysis import ImpersonationAnalysisResult
 from app.services.perceptual_analysis import PerceptualAnalysisResult
 from app.services.url_analysis import URLAnalysisResult
+from app.services.verdict_stability import StabilityResult
 from app.utils.helpers import score_to_risk_level
 
 
@@ -122,12 +123,14 @@ class RiskEngine:
         audience: AudienceAnalysisResult | None = None,
         campaign: CampaignAnalysisResult | None = None,
         impersonation: ImpersonationAnalysisResult | None = None,
+        stability: StabilityResult | None = None,
     ) -> RiskEngineResult:
         perceptual = perceptual or PerceptualAnalysisResult()
         probe = probe or DifferentialProbeResult()
         audience = audience or AudienceAnalysisResult()
         campaign = campaign or CampaignAnalysisResult()
         impersonation = impersonation or ImpersonationAnalysisResult()
+        stability = stability or StabilityResult()
 
         # The probe scored a body containing attacker-controlled text, so its
         # verdict may only raise the content component, never lower it. Where the
@@ -286,6 +289,10 @@ class RiskEngine:
         # ever retuned, and what makes the guarantee readable in one place.
         floor = 0.0
         floor_reasons: list[str] = []
+        if stability.review_required:
+            floor = max(floor, self.QUARANTINE_THRESHOLD)
+            floor_reasons.append("an unreliable model verdict requiring review")
+            explanation_parts.append("Review required: verdict stability testing found unreliable scores")
         if perceptual.imperative_hidden:
             floor = max(floor, self.QUARANTINE_THRESHOLD)
             floor_reasons.append("concealed text instructing the analyser")
@@ -299,7 +306,7 @@ class RiskEngine:
         if floor > final_score:
             explanation_parts.append(
                 f"Score raised to the quarantine floor: {' and '.join(floor_reasons)} "
-                "has no benign explanation, whatever the other analysers found"
+                "requires review, whatever the other analysers found"
             )
             final_score = floor
 
@@ -341,6 +348,7 @@ class RiskEngine:
             risk_level=risk_level,
             explanation=explanation,
             findings={
+                "stability": asdict(stability),
                 "header": header.findings,
                 "urls": url.flagged_urls,
                 "url_findings": url.findings,
