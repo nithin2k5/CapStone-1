@@ -11,6 +11,7 @@ from app.services.impersonation_analysis import ImpersonationAnalysisResult
 from app.services.perceptual_analysis import PerceptualAnalysisResult
 from app.services.url_analysis import URLAnalysisResult
 from app.services.verdict_stability import StabilityResult
+from app.services.accessibility_analysis import AccessibilityResult
 from app.utils.helpers import score_to_risk_level
 
 
@@ -124,6 +125,7 @@ class RiskEngine:
         campaign: CampaignAnalysisResult | None = None,
         impersonation: ImpersonationAnalysisResult | None = None,
         stability: StabilityResult | None = None,
+        accessibility: AccessibilityResult | None = None,
     ) -> RiskEngineResult:
         perceptual = perceptual or PerceptualAnalysisResult()
         probe = probe or DifferentialProbeResult()
@@ -131,6 +133,7 @@ class RiskEngine:
         campaign = campaign or CampaignAnalysisResult()
         impersonation = impersonation or ImpersonationAnalysisResult()
         stability = stability or StabilityResult()
+        accessibility = accessibility or AccessibilityResult()
 
         # The probe scored a body containing attacker-controlled text, so its
         # verdict may only raise the content component, never lower it. Where the
@@ -289,6 +292,10 @@ class RiskEngine:
         # ever retuned, and what makes the guarantee readable in one place.
         floor = 0.0
         floor_reasons: list[str] = []
+        if accessibility.review_required:
+            floor = max(floor, self.QUARANTINE_THRESHOLD)
+            floor_reasons.append("conflicting security information across accessible and visible content")
+            explanation_parts.append("Review required: accessibility comparison found conflicting security information")
         if stability.review_required:
             floor = max(floor, self.QUARANTINE_THRESHOLD)
             floor_reasons.append("an unreliable model verdict requiring review")
@@ -349,6 +356,7 @@ class RiskEngine:
             explanation=explanation,
             findings={
                 "stability": asdict(stability),
+                "accessibility": asdict(accessibility),
                 "header": header.findings,
                 "urls": url.flagged_urls,
                 "url_findings": url.findings,

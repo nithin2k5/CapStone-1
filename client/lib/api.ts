@@ -283,6 +283,7 @@ export interface IsolationFindings {
 }
 
 export interface ScanFindings {
+  accessibility?: AccessibilityFindings;
   isolation?: IsolationFindings;
   stability?: StabilityFindings;
   header?: string[];
@@ -301,6 +302,20 @@ export interface ScanFindings {
   probe?: ProbeFindings;
   audience?: AudienceFindings;
   campaign?: CampaignFindings;
+}
+
+export interface AccessibilityFindings {
+  ran: boolean;
+  degraded: boolean;
+  review_required: boolean;
+  skipped_reason: string;
+  method: string;
+  visible_excerpt: string;
+  accessible_excerpt: string;
+  machine_excerpt: string;
+  evidence_truncated: boolean;
+  limitations: string[];
+  mismatches: { kind: string; visible: string; accessible: string; reason: string }[];
 }
 
 export interface ScanResult {

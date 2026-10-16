@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     )
     verdict_stability_enabled: bool = Field(default=True, alias="VERDICT_STABILITY_ENABLED")
     fragment_isolation_enabled: bool = Field(default=True, alias="FRAGMENT_ISOLATION_ENABLED")
+    accessibility_analysis_enabled: bool = Field(default=True, alias="ACCESSIBILITY_ANALYSIS_ENABLED")
 
     # Audience analysis. Asks who concealed text was written for — a reader, a
     # mail client, or the system judging the message. Covers the case the probe

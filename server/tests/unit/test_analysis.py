@@ -370,7 +370,6 @@ class TestTwoChannelExtraction:
             ),
             ("zero-height", '<p>Seen</p><div style="max-height:0">PAYLOAD</div>'),
             ("hidden-attribute", "<p>Seen</p><div hidden>PAYLOAD</div>"),
-            ("aria-hidden", '<p>Seen</p><div aria-hidden="true">PAYLOAD</div>'),
             ("mso-hide", '<p>Seen</p><div style="mso-hide:all">PAYLOAD</div>'),
             ("html-comment", "<p>Seen</p><!-- PAYLOAD -->"),
             ("transparent-color", '<p>Seen</p><span style="color:rgba(0,0,0,0)">PAYLOAD</span>'),

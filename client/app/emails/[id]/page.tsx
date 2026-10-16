@@ -12,6 +12,7 @@ import { getEmailById, EmailDetail, getScanResult, ScanResult } from "@/lib/api"
 import { DivergencePanel } from "@/components/security/DivergencePanel";
 import { StabilityPanel } from "@/components/security/StabilityPanel";
 import { IsolationPanel } from "@/components/security/IsolationPanel";
+import { AccessibilityPanel } from "@/components/security/AccessibilityPanel";
 import { AudienceVerdict } from "@/components/security/AudienceVerdict";
 import { CampaignHistory } from "@/components/security/CampaignHistory";
 import { SafeMessagePreview } from "@/components/security/SafeMessagePreview";
@@ -294,6 +295,7 @@ export default function EmailDetailPage() {
 
       <StabilityPanel result={scanResult?.findings?.stability} />
       <IsolationPanel result={scanResult?.findings?.isolation} />
+      <AccessibilityPanel result={scanResult?.findings?.accessibility} />
 
       {/* Two questions about the hidden half that its wording cannot settle:
           who it addresses, and whether it has arrived here before. */}

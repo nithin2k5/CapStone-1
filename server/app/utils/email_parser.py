@@ -337,9 +337,6 @@ def _concealment_channels(style: dict[str, str], attrs: dict[str, str]) -> list[
 
     if "hidden" in attrs:
         channels.append("hidden-attribute")
-    if attrs.get("aria-hidden") == "true":
-        channels.append("aria-hidden")
-
     return channels
 
 

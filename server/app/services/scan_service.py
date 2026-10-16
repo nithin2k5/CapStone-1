@@ -20,6 +20,7 @@ from app.services.risk_engine import RiskEngine
 from app.services.url_analysis import URLAnalysisService
 from app.services.verdict_stability import VerdictStabilityService
 from app.services.fragment_isolation import FragmentIsolationService
+from app.services.accessibility_analysis import AccessibilityAnalysisService
 from app.utils.email_parser import ParsedEmail, parse_email_content
 
 logger = get_logger("scan")
@@ -45,6 +46,7 @@ class ScanService:
         remediation_service=None,
         stability_service=None,
         isolation_service=None,
+        accessibility_service=None,
     ):
         self.header_service = header_service or HeaderAnalysisService()
         self.url_service = url_service or URLAnalysisService()
@@ -55,6 +57,7 @@ class ScanService:
         self.probe_service = probe_service or DifferentialProbeService(self.ai_service)
         self.stability_service = stability_service or VerdictStabilityService(self.ai_service)
         self.isolation_service = isolation_service or FragmentIsolationService(self.ai_service)
+        self.accessibility_service = accessibility_service or AccessibilityAnalysisService()
         self.audience_service = audience_service or AudienceAnalysisService(self.ai_service)
         self.campaign_service = campaign_service or CampaignAnalysisService()
         self.impersonation_service = (
@@ -132,6 +135,7 @@ class ScanService:
         attachment_result = self.attachment_service.analyze(parsed.attachments)
         ai_result = await self.ai_service.analyze_with_llm(parsed)
         perceptual_result = self.perceptual_service.analyze(parsed.rendered)
+        accessibility_result = self.accessibility_service.analyze(parsed)
         # Second pass over the body an ordinary classifier ingests, to measure what
         # the concealed half does to the verdict. Skips itself when nothing is
         # concealed, so most messages cost no extra call.
@@ -164,6 +168,7 @@ class ScanService:
             campaign_result,
             impersonation_result,
             stability=stability_result,
+            accessibility=accessibility_result,
         )
 
         risk.findings["isolation"] = asdict(isolation_result)

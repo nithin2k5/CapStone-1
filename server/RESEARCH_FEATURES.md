@@ -41,3 +41,23 @@ At most 16 additional calls and 45 seconds. The result is a locally reduced
 candidate, not a globally minimal attack or proof of intent. Exhaustion, failed
 confirmation and model errors are explicit. It does not add another risk term
 for evidence already counted by stability testing.
+
+## Accessibility comparison
+
+Enabled by `ACCESSIBILITY_ANALYSIS_ENABLED=true`. Compares estimated visible,
+accessible and classifier-ingested text. Supports names from `aria-labelledby`,
+`aria-label`, and image `alt`, with hidden ancestors and inline display/visibility
+rules. Offscreen text can remain accessible. `aria-hidden` no longer incorrectly
+removes visually present content from the main parser. Naming behavior follows
+the [W3C accessible names guidance](https://www.w3.org/WAI/ARIA/apg/practices/names-and-descriptions/).
+
+Normal descriptive labels and different wording do not score. Conflicting
+destinations/payment values, an accessible URL label disagreeing with a link's
+target, or analyser-directed instructions request review at the quarantine floor.
+The message is never rewritten and accessibility text is never stripped.
+
+This is an explicitly labelled static approximation, not a browser accessibility
+tree or a screen-reader execution. Stylesheets, full ARIA role semantics, image
+OCR, and email-client-specific layout remain outside coverage. Inputs are capped
+at 100000 HTML characters, 3000 nodes and 64 nesting levels; excerpts and findings
+are bounded. No model calls or schema migration are needed.
