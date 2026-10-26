@@ -1,0 +1,20 @@
+# Caddy obtains and renews the HTTPS certificate for {$DOMAIN} by itself.
+# HTTPS is not optional here: Google and Microsoft refuse OAuth redirects to a
+# plain-http address other than localhost, and Gmail push requires TLS.
+
+{$DOMAIN} {
+	encode gzip
+
+	# The API. The web app also has a /docs page, so only these paths go to the
+	# backend.
+	handle /api/* {
+		reverse_proxy api:8000
+	}
+	handle /health {
+		reverse_proxy api:8000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+}

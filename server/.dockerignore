@@ -1,0 +1,15 @@
+# `COPY . .` would otherwise bake local secrets and a macOS virtualenv into the
+# image. Configuration reaches the container as environment variables instead.
+.env
+.env.*
+!.env.example
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.sqlite3
+*.sqlite
+*.db

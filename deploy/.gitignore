@@ -1,0 +1,2 @@
+# Deployment secrets: database passwords, OAuth secrets, the token encryption key.
+.env
