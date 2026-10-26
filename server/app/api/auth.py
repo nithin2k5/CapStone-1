@@ -34,6 +34,7 @@ from app.schemas.auth import (
     UserUpdateRequest,
 )
 from app.services.mail_service import MailService
+from app.services.mailbox_tokens import expiry_from
 
 logger = get_logger("auth")
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -245,10 +246,12 @@ async def _process_google_code(
             role=UserRole.USER,
             google_access_token=access_token,
             google_refresh_token=refresh_token,
+            google_token_expires_at=expiry_from(tokens),
         )
         db.add(user)
     else:
         user.google_access_token = access_token
+        user.google_token_expires_at = expiry_from(tokens)
         if refresh_token:
             user.google_refresh_token = refresh_token
         db.add(user)

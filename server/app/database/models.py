@@ -68,6 +68,11 @@ class User(Base):
     google_refresh_token: Mapped[str | None] = mapped_column(
         EncryptedToken, nullable=True
     )
+    # When the access token above stops working. Recorded so it can be renewed
+    # before it lapses rather than after a call has already failed with it.
+    google_token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     microsoft_access_token: Mapped[str | None] = mapped_column(
         EncryptedToken, nullable=True
     )

@@ -27,6 +27,7 @@ from app.core.logging import get_logger
 from app.database.models import EmailStatus, User
 from app.repositories.email_repository import EmailRepository
 from app.services.gmail_service import GmailMessage, GmailService
+from app.services.mailbox_tokens import MailboxTokens, MailboxUnavailable
 from app.services.scan_service import ScanService
 
 logger = get_logger("mailbox_sync")
@@ -52,6 +53,7 @@ class MailboxSyncService:
     ):
         self.gmail_service = gmail_service or GmailService()
         self.scan_service = scan_service or ScanService()
+        self.tokens = MailboxTokens(self.gmail_service)
 
     # ------------------------------------------------------------------
     # Watch registration
@@ -79,9 +81,15 @@ class MailboxSyncService:
         if user.gmail_watch_expires_at and user.gmail_watch_expires_at > renew_at:
             return True
 
-        result = await self.gmail_service.watch(
-            user.google_access_token, settings.gmail_pubsub_topic
-        )
+        try:
+            result = await self.tokens.google(
+                db,
+                user,
+                lambda token: self.gmail_service.watch(token, settings.gmail_pubsub_topic),
+            )
+        except MailboxUnavailable as e:
+            logger.warning("Cannot register watch for user=%s: %s", user.id, e)
+            return False
         if not result:
             return False
 
@@ -119,12 +127,22 @@ class MailboxSyncService:
         if not user.google_access_token:
             return SyncOutcome(findings=["no google access token"])
 
+        try:
+            return await self._sync(db, user, reason)
+        except MailboxUnavailable as e:
+            # Logged at error: a mailbox the gateway can no longer read is one
+            # receiving mail nobody is scanning.
+            logger.error("Cannot sync mailbox for user=%s: %s", user.id, e)
+            return SyncOutcome(findings=[str(e)])
+
+    async def _sync(self, db: AsyncSession, user: User, reason: str) -> SyncOutcome:
         settings = get_settings()
         outcome = SyncOutcome()
 
         if user.gmail_history_id:
-            messages, new_history_id, stale = await self.gmail_service.fetch_history(
-                user.google_access_token, user.gmail_history_id
+            cursor = user.gmail_history_id
+            messages, new_history_id, stale = await self.tokens.google(
+                db, user, lambda token: self.gmail_service.fetch_history(token, cursor)
             )
             if stale:
                 outcome.resynchronised = True
@@ -136,16 +154,12 @@ class MailboxSyncService:
                     settings.scheduler_max_results,
                 )
                 messages = await self._fetch_newest(user, db, settings)
-                new_history_id = await self.gmail_service.current_history_id(
-                    user.google_access_token
-                )
+                new_history_id = await self._current_history_id(db, user)
         else:
             # First sync for this mailbox. Read the newest messages and establish
             # a cursor, so every sync after this one is incremental.
             messages = await self._fetch_newest(user, db, settings)
-            new_history_id = await self.gmail_service.current_history_id(
-                user.google_access_token
-            )
+            new_history_id = await self._current_history_id(db, user)
 
         outcome.fetched = len(messages)
         outcome.scanned = await self.scan_messages(db, user, messages)
@@ -170,16 +184,23 @@ class MailboxSyncService:
 
     async def _fetch_newest(self, user: User, db: AsyncSession, settings) -> list[GmailMessage]:
         try:
-            return await self.gmail_service.fetch_messages(
+            return await self.tokens.google(
+                db,
                 user,
-                user.google_access_token,
-                mailbox="inbox",
-                max_results=settings.scheduler_max_results,
-                db=db,
+                lambda token: self.gmail_service.fetch_messages(
+                    user,
+                    token,
+                    mailbox="inbox",
+                    max_results=settings.scheduler_max_results,
+                    db=db,
+                ),
             )
         except ValueError as e:
             logger.warning("Cannot fetch for user=%s: %s", user.id, e)
             return []
+
+    async def _current_history_id(self, db: AsyncSession, user: User) -> str | None:
+        return await self.tokens.google(db, user, self.gmail_service.current_history_id)
 
     async def scan_messages(
         self, db: AsyncSession, user: User, messages: list[GmailMessage]

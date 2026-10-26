@@ -15,6 +15,7 @@ from app.schemas.email import (
     FetchEmailsRequest,
 )
 from app.services.gmail_service import GmailService
+from app.services.mailbox_tokens import MailboxTokens, MailboxUnavailable
 from app.services.microsoft_service import MicrosoftService
 from app.services.scan_service import ScanService
 
@@ -81,14 +82,18 @@ async def fetch_emails(
                 db=db,
             )
         else:
-            messages = await gmail_service.fetch_messages(
+            messages = await MailboxTokens(gmail_service).google(
+                db,
                 current_user,
-                current_user.google_access_token,
-                payload.mailbox,
-                payload.max_results,
-                db=db,
+                lambda token: gmail_service.fetch_messages(
+                    current_user,
+                    token,
+                    payload.mailbox,
+                    payload.max_results,
+                    db=db,
+                ),
             )
-    except ValueError as e:
+    except (ValueError, MailboxUnavailable) as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     results = []

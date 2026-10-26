@@ -7,6 +7,11 @@ from app.core.logging import get_logger
 from app.database.models import Email, EmailStatus, User
 from app.services.risk_engine import RiskEngine
 from app.services.gmail_service import GmailService
+from app.services.mailbox_tokens import (
+    AccessTokenRejected,
+    MailboxTokens,
+    MailboxUnavailable,
+)
 from app.services.microsoft_service import MicrosoftService
 
 logger = get_logger("quarantine")
@@ -26,6 +31,7 @@ class QuarantineService:
         self.risk_engine = risk_engine or RiskEngine()
         self.gmail_service = gmail_service or GmailService()
         self.microsoft_service = microsoft_service or MicrosoftService()
+        self.tokens = MailboxTokens(self.gmail_service)
 
     async def apply_quarantine(
         self,
@@ -72,23 +78,6 @@ class QuarantineService:
         await db.flush()
         return email.status
         
-    async def _provider_for(self, db: AsyncSession, user_id: UUID):
-        """
-        Resolve which mailbox provider holds this user's messages.
-
-        A Microsoft-only user has no Google token, so keying off the Google token
-        alone silently skipped the mailbox move for every Outlook account.
-        """
-        result = await db.execute(select(User).where(User.id == user_id))
-        user = result.scalar_one_or_none()
-        if not user:
-            return None, None
-        if user.google_access_token:
-            return self.gmail_service, user.google_access_token
-        if user.microsoft_access_token:
-            return self.microsoft_service, user.microsoft_access_token
-        return None, None
-
     async def _move(
         self,
         db: AsyncSession,
@@ -98,19 +87,35 @@ class QuarantineService:
         add_labels: list[str],
         remove_labels: list[str],
     ) -> bool:
-        service, token = await self._provider_for(db, user_id)
-        if not token:
+        """
+        Apply one label change in whichever mailbox holds this user's messages.
+
+        A Microsoft-only user has no Google token, so keying off the Google token
+        alone silently skipped the mailbox move for every Outlook account.
+        """
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        if not user or not (user.google_access_token or user.microsoft_access_token):
             logger.warning(
                 "No mailbox access token found for user %s, cannot %s", user_id, action
             )
             return False
 
-        return await service.modify_message_labels(
-            access_token=token,
-            message_id=gmail_message_id,
-            add_labels=add_labels,
-            remove_labels=remove_labels,
-        )
+        def modify(service):
+            return lambda token: service.modify_message_labels(
+                access_token=token,
+                message_id=gmail_message_id,
+                add_labels=add_labels,
+                remove_labels=remove_labels,
+            )
+
+        try:
+            if user.google_access_token:
+                return await self.tokens.google(db, user, modify(self.gmail_service))
+            return await modify(self.microsoft_service)(user.microsoft_access_token)
+        except (MailboxUnavailable, AccessTokenRejected) as e:
+            logger.error("Cannot %s for user %s: %s", action, user_id, e)
+            return False
 
     async def move_to_spam(self, db: AsyncSession, user_id: UUID, gmail_message_id: str) -> bool:
         return await self._move(

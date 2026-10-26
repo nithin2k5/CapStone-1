@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.database.models import User
+from app.services.mailbox_tokens import AccessTokenRejected, GrantRevoked
 from app.utils.email_parser import (
     ParsedAttachment,
     ParsedEmail,
@@ -130,8 +131,14 @@ class GmailService:
                 return {}
             return res.json()
 
-    async def refresh_access_token(self, refresh_token: str) -> str | None:
-        """Refresh an expired access token using a stored refresh token."""
+    async def refresh_access_token(self, refresh_token: str) -> dict[str, Any] | None:
+        """
+        Exchange a refresh token for a new access token.
+
+        Returns the token endpoint's response, which carries the new token's
+        lifetime as well as the token, or None on a transient failure. Raises
+        GrantRevoked when Google refuses the refresh token itself.
+        """
         if not self.is_configured():
             return None
 
@@ -145,17 +152,14 @@ class GmailService:
         async with httpx.AsyncClient() as client:
             res = await client.post(url, data=data)
             if res.status_code == 200:
-                token_data = res.json()
-                new_token = token_data.get("access_token")
-                logger.info("Successfully refreshed Google access token")
-                return new_token
+                return res.json()
             logger.error(
                 "Failed to refresh Google access token: %s - %s",
                 res.status_code,
                 res.text,
             )
             if res.status_code == 400 and "invalid_grant" in res.text:
-                raise ValueError("invalid_grant")
+                raise GrantRevoked()
             return None
 
     # ------------------------------------------------------------------
@@ -186,6 +190,8 @@ class GmailService:
             )
             if res.status_code == 200:
                 return res.json()
+            if res.status_code == 401:
+                raise AccessTokenRejected()
             logger.error(
                 "Gmail watch registration failed: %s - %s", res.status_code, res.text
             )
@@ -245,6 +251,8 @@ class GmailService:
                         start_history_id,
                     )
                     return [], None, True
+                if res.status_code == 401:
+                    raise AccessTokenRejected()
                 if res.status_code != 200:
                     logger.error(
                         "Gmail history list failed: %s - %s", res.status_code, res.text
@@ -285,6 +293,8 @@ class GmailService:
             )
             if res.status_code == 200:
                 return str(res.json().get("historyId") or "") or None
+            if res.status_code == 401:
+                raise AccessTokenRejected()
             logger.warning(
                 "Gmail profile read failed: %s - %s", res.status_code, res.text
             )
@@ -308,7 +318,9 @@ class GmailService:
             if res.status_code == 200:
                 logger.info("Successfully modified labels for message %s", message_id)
                 return True
-            if res.status_code in (401, 403):
+            if res.status_code == 401:
+                raise AccessTokenRejected()
+            if res.status_code == 403:
                 # A config error, not a bad run: the grant cannot label mail, so
                 # every enforcement attempt for every user will fail until the
                 # user re-consents to the scopes above.
@@ -390,27 +402,24 @@ class GmailService:
         db: AsyncSession | None = None,
     ) -> list[GmailMessage]:
         """
-        Fetch live emails from Gmail API using stored OAuth tokens.
-        Automatically refreshes access token if expired.
-        Falls back to mock phishing emails if OAuth is unconfigured or unavailable.
+        Fetch the newest messages in a mailbox.
+
+        Raises AccessTokenRejected when the token has expired; renewal is the
+        caller's job, through MailboxTokens, so it happens the same way on every
+        path rather than on this one alone.
         """
-        if isinstance(user, User):
-            user_id = user.id
-            token = user.google_access_token or access_token
-            refresh = user.google_refresh_token
-        else:
-            user_id = user
-            token = access_token
-            refresh = None
-            user = None
+        user_id = user.id if isinstance(user, User) else user
+        token = access_token or (
+            user.google_access_token if isinstance(user, User) else None
+        )
 
         if token and self.is_configured():
             try:
-                messages = await self._fetch_from_gmail_api(
-                    token, refresh, user, db, mailbox, max_results
-                )
+                messages = await self._fetch_from_gmail_api(token, mailbox, max_results)
                 if messages is not None:
                     return messages
+            except AccessTokenRejected:
+                raise
             except Exception as e:
                 logger.error("Error fetching live Gmail API messages: %s", e)
 
@@ -418,12 +427,10 @@ class GmailService:
             "Failed to fetch live API messages for user=%s mailbox=%s. Token or configuration may be missing.", user_id, mailbox
         )
         raise ValueError("Unable to fetch emails: Token or configuration missing.")
+
     async def _fetch_from_gmail_api(
         self,
         access_token: str,
-        refresh_token: str | None,
-        user: User | None,
-        db: AsyncSession | None,
         mailbox: str,
         max_results: int,
     ) -> list[GmailMessage] | None:
@@ -434,32 +441,8 @@ class GmailService:
 
         async with httpx.AsyncClient(timeout=15.0) as client:
             res = await client.get(list_url, headers=headers)
-            if res.status_code == 401 and refresh_token:
-                logger.info(
-                    "Access token expired, attempting refresh for user=%s",
-                    user.id if user else "unknown",
-                )
-                try:
-                    new_token = await self.refresh_access_token(refresh_token)
-                except ValueError as e:
-                    if str(e) == "invalid_grant":
-                        if user and db:
-                            logger.warning("Google refresh token invalid. Clearing for user %s", user.id)
-                            user.google_access_token = None
-                            user.google_refresh_token = None
-                            db.add(user)
-                            await db.commit()
-                        return None
-                    new_token = None
-
-                if new_token:
-                    access_token = new_token
-                    headers = {"Authorization": f"Bearer {access_token}"}
-                    if user and db:
-                        user.google_access_token = new_token
-                        db.add(user)
-                        await db.commit()
-                    res = await client.get(list_url, headers=headers)
+            if res.status_code == 401:
+                raise AccessTokenRejected()
 
             if res.status_code != 200:
                 logger.error(
@@ -505,6 +488,12 @@ class GmailService:
                         client, headers, msg_id
                     )
                 messages.append(gmail_msg)
+            elif detail_res.status_code == 401:
+                # Raised rather than skipped: on the history path the cursor
+                # advances past whatever this batch returns, so a message dropped
+                # here would never be fetched again. The caller renews and retries
+                # the whole batch.
+                raise AccessTokenRejected()
             else:
                 logger.warning(
                     "Failed to fetch message detail for id=%s: %s",
