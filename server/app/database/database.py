@@ -54,6 +54,7 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "gmail_watch_expires_at": "DATETIME NULL",
         "google_token_expires_at": "DATETIME NULL",
         "microsoft_token_expires_at": "DATETIME NULL",
+        "microsoft_delta_link": "TEXT NULL",
     },
 }
 

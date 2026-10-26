@@ -82,6 +82,9 @@ class User(Base):
     microsoft_token_expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # Graph's equivalent of the Gmail history cursor: where the next Outlook
+    # sync resumes. A URL, and long, so Text rather than String.
+    microsoft_delta_link: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Where this mailbox was last synchronised to. Incremental sync resumes from
     # here, which is what makes a restart resume rather than re-read the newest
     # handful of messages and lose everything behind them.

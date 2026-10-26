@@ -146,6 +146,88 @@ class MicrosoftService:
                 "name": data.get("displayName", "Microsoft User")
             }
 
+    # `body` is required, not just `bodyPreview`: the preview is truncated to a few
+    # hundred characters, so analysing it means analysing an excerpt of the message.
+    MESSAGE_FIELDS = (
+        "id,subject,body,bodyPreview,from,toRecipients,receivedDateTime,"
+        "internetMessageId,internetMessageHeaders,replyTo"
+    )
+
+    async def delta(
+        self, access_token: str, delta_link: str | None
+    ) -> tuple[list[str], str | None, bool]:
+        """
+        The ids of messages added to the inbox since `delta_link`.
+
+        With no link, walks the whole inbox to establish one and returns its ids;
+        the caller decides whether to use them. Returns the ids, the link to
+        resume from next time, and whether the stored link had expired. Graph
+        answers 410 for an expired sync state, which means "start again", not
+        "nothing new" — reporting it as empty would look like a quiet mailbox.
+
+        Only ids are selected: delta also reports read-state changes on old mail,
+        and fetching full bodies for those on every sweep would be wasted calls.
+        """
+        url = delta_link or f"{GRAPH}/me/mailFolders/inbox/messages/delta?$select=id"
+        headers = {**graph_headers(access_token), "Prefer": 'IdType="ImmutableId", odata.maxpagesize=100'}
+        ids: list[str] = []
+
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            while url:
+                res = await client.get(url, headers=headers)
+                if res.status_code == 401:
+                    raise AccessTokenRejected()
+                if res.status_code == 410:
+                    logger.warning("Outlook delta link expired; a full resynchronisation is required.")
+                    return [], None, True
+                if res.status_code != 200:
+                    logger.error("Outlook delta failed: %s - %s", res.status_code, res.text)
+                    return [], None, False
+
+                data = res.json()
+                for item in data.get("value", []):
+                    # Deleted or moved out of the inbox since the last sync.
+                    if "@removed" in item:
+                        continue
+                    if item.get("id") and item["id"] not in ids:
+                        ids.append(item["id"])
+
+                if data.get("@odata.deltaLink"):
+                    return ids, data["@odata.deltaLink"], False
+                url = data.get("@odata.nextLink")
+
+        logger.error("Outlook delta ended without a delta link")
+        return ids, None, False
+
+    async def fetch_messages_by_id(
+        self, access_token: str, message_ids: list[str], mailbox: str = "inbox"
+    ) -> list[Any]:
+        """
+        Fetch and parse the named messages.
+
+        A 401 part way through raises rather than skipping the rest: the delta
+        link advances past whatever this returns, so a message dropped here would
+        never be fetched again.
+        """
+        messages = []
+        headers = graph_headers(access_token)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            for message_id in message_ids:
+                res = await client.get(
+                    f"{GRAPH}/me/messages/{message_id}?$select={self.MESSAGE_FIELDS}",
+                    headers=headers,
+                )
+                if res.status_code == 200:
+                    messages.append(self._parse_microsoft_message(res.json(), mailbox))
+                elif res.status_code == 401:
+                    raise AccessTokenRejected()
+                else:
+                    # Typically 404: deleted between the delta and this fetch.
+                    logger.warning(
+                        "Could not fetch Outlook message %s: %s", message_id, res.status_code
+                    )
+        return messages
+
     async def fetch_messages(
         self,
         user: Any,
@@ -158,9 +240,7 @@ class MicrosoftService:
             raise ValueError("Unable to fetch emails: Token or configuration missing.")
 
         folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
-        # `body` is required, not just `bodyPreview`: the preview is truncated to a few
-        # hundred characters, so analysing it means analysing an excerpt of the message.
-        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,body,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId,internetMessageHeaders,replyTo"
+        url = f"{GRAPH}/me/mailFolders/{folder_id}/messages?$top={max_results}&$select={self.MESSAGE_FIELDS}"
         
         async with httpx.AsyncClient() as client:
             res = await client.get(url, headers=graph_headers(access_token))
