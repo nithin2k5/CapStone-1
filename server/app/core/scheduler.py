@@ -15,6 +15,7 @@ no public URL for the webhook has to have something.
 """
 
 import asyncio
+import time
 
 from sqlalchemy import select
 
@@ -24,6 +25,7 @@ from app.database.database import AsyncSessionLocal
 from app.database.models import User
 from app.services.mailbox_sync import MailboxSyncService
 from app.services.outlook_sync import OutlookSyncService
+from app.services.retention_service import discard_delivered_before
 
 logger = get_logger("scheduler")
 
@@ -89,6 +91,30 @@ async def _sync_one(db, user, ensure_push, sync_user):
         await db.rollback()
 
 
+# The retention pass is idempotent and only finds work once a day has ended, so
+# it piggybacks on the sweep loop. Checked at most this often rather than on
+# every 30-second sweep, since each check scans the emails table.
+RETENTION_CHECK_SECONDS = 600
+_last_retention_check: float | None = None
+
+
+async def retention_job() -> int:
+    """Erase the content of mail delivered on earlier days, at most every ten minutes."""
+    global _last_retention_check
+    if not get_settings().discard_delivered_daily:
+        return 0
+    now = time.monotonic()
+    if _last_retention_check is not None and now - _last_retention_check < RETENTION_CHECK_SECONDS:
+        return 0
+    _last_retention_check = now
+    try:
+        async with AsyncSessionLocal() as db:
+            return await discard_delivered_before(db)
+    except Exception as e:
+        logger.error("Retention pass failed: %s", e, exc_info=True)
+        return 0
+
+
 async def run_scheduler():
     settings = get_settings()
     interval = settings.scheduler_interval_seconds
@@ -101,6 +127,7 @@ async def run_scheduler():
     )
     while True:
         await fetch_emails_job()
+        await retention_job()
         # Sleeping after the job makes the real cadence interval + sweep
         # duration. That is deliberate for a safety net — it cannot stack
         # overlapping sweeps on a slow provider — and is why the interval is

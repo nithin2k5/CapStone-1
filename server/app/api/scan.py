@@ -26,6 +26,11 @@ async def scan_email(
     email = await repo.get_by_id(email_id, current_user.id)
     if not email:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Email not found")
+    if email.discarded_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="This delivered email's content was discarded; it cannot be scanned again",
+        )
 
     result = await scan_service.scan_email(db, email)
     return ScanResultResponse.model_validate(result)

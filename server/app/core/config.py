@@ -122,6 +122,12 @@ class Settings(BaseSettings):
     scheduler_interval_seconds: int = Field(
         default=30, alias="SCHEDULER_INTERVAL_SECONDS"
     )
+    # Erase the content of mail delivered as safe once its day is over: each
+    # night just after midnight UTC, delivered messages that reached the gateway
+    # before that day lose their body, headers and scan detail. See
+    # app/services/retention_service.py for what is kept and why.
+    discard_delivered_daily: bool = Field(default=True, alias="DISCARD_DELIVERED_DAILY")
+
     # Raised from 10. With a cursor the sweep fetches what actually arrived, so
     # this is a ceiling on a burst rather than a window that silently drops mail.
     scheduler_max_results: int = Field(default=100, alias="SCHEDULER_MAX_RESULTS")

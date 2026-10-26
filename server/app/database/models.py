@@ -175,6 +175,12 @@ class Email(Base):
     remediated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # When the daily retention pass erased this delivered message's content.
+    # The row is kept, without body, headers or scan detail, because sender
+    # recognition and duplicate detection are built from it.
+    discarded_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     raw_headers: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
     body_text: Mapped[str | None] = mapped_column(Text(length=16777215), nullable=True)
     body_html: Mapped[str | None] = mapped_column(Text(length=16777215), nullable=True)

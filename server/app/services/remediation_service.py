@@ -43,6 +43,10 @@ class RemediationOutcome:
     # and reporting it as a success would be the same mistake as reporting an
     # unenforced block as a block.
     unenforced: int = 0
+    # Delivered on an earlier day, so its content has been erased and there is
+    # nothing left to rescan. Reported, because each is a message carrying a
+    # condemned payload that this pass could not reach.
+    discarded: int = 0
     email_ids: list[UUID] = field(default_factory=list)
 
 
@@ -95,6 +99,15 @@ class RemediationService:
         )
 
         for email in siblings:
+            if email.discarded_at is not None:
+                outcome.discarded += 1
+                logger.warning(
+                    "Delivered email %s carried a condemned payload, but its "
+                    "content was erased by the daily retention pass; it cannot "
+                    "be re-evaluated",
+                    email.id,
+                )
+                continue
             previous = email.status
             try:
                 # remediate=False: this rescan must not start a pass of its own.
@@ -138,10 +151,12 @@ class RemediationService:
                     )
 
         logger.info(
-            "Remediation finished: considered=%d rescanned=%d pulled=%d unenforced=%d",
+            "Remediation finished: considered=%d rescanned=%d pulled=%d "
+            "unenforced=%d discarded=%d",
             outcome.considered,
             outcome.rescanned,
             outcome.pulled,
             outcome.unenforced,
+            outcome.discarded,
         )
         return outcome

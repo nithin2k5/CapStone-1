@@ -48,6 +48,7 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
     "emails": {
         "enforced": "BOOLEAN NOT NULL DEFAULT 0",
         "remediated_at": "DATETIME NULL",
+        "discarded_at": "DATETIME NULL",
     },
     "users": {
         "gmail_history_id": "VARCHAR(64) NULL",

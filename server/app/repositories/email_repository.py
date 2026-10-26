@@ -39,8 +39,10 @@ class EmailRepository:
         page_size: int = 20,
         status: EmailStatus | None = None,
     ) -> tuple[list[Email], int]:
-        query = select(Email).where(Email.user_id == user_id)
-        count_query = select(func.count()).select_from(Email).where(Email.user_id == user_id)
+        # Delivered mail whose content has been erased has nothing left to show.
+        visible = (Email.user_id == user_id, Email.discarded_at.is_(None))
+        query = select(Email).where(*visible)
+        count_query = select(func.count()).select_from(Email).where(*visible)
 
         if status:
             query = query.where(Email.status == status)

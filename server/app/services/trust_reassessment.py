@@ -20,6 +20,7 @@ class TrustReassessmentService:
             "pulled": 0,
             "unenforced": 0,
             "failed": 0,
+            "discarded": 0,
             "truncated": False,
         }
         emails, outcome["truncated"] = await TrustRepository(db).invalidate_descendants(
@@ -32,6 +33,11 @@ class TrustReassessmentService:
             # Already condemned mail is not automatically released by a trust
             # change. It can still have descendants in the snapshot above.
             if email.status not in (EmailStatus.SAFE, EmailStatus.SCANNED):
+                continue
+            # Content erased by the daily retention pass: rescanning an empty
+            # body would produce a verdict about nothing.
+            if email.discarded_at is not None:
+                outcome["discarded"] += 1
                 continue
             email_id = email.id
             previous_score = email.risk_score
