@@ -8,6 +8,23 @@ from app.services.mailbox_tokens import AccessTokenRejected, GrantRevoked
 
 logger = get_logger("microsoft")
 
+GRAPH = "https://graph.microsoft.com/v1.0"
+
+
+def graph_headers(access_token: str) -> dict[str, str]:
+    """
+    Headers for every Graph mail call.
+
+    ImmutableId, because Graph otherwise gives a message a new id whenever it
+    changes folder. Quarantining an Outlook message moves it to Junk, so the id
+    stored at scan time would stop naming it, and the later release or trash
+    would act on nothing.
+    """
+    return {
+        "Authorization": f"Bearer {access_token}",
+        "Prefer": 'IdType="ImmutableId"',
+    }
+
 class MicrosoftService:
     """
     Microsoft OAuth integration service.
@@ -146,7 +163,7 @@ class MicrosoftService:
         url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top={max_results}&$select=id,subject,body,bodyPreview,from,toRecipients,receivedDateTime,internetMessageId,internetMessageHeaders,replyTo"
         
         async with httpx.AsyncClient() as client:
-            res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+            res = await client.get(url, headers=graph_headers(access_token))
             if res.status_code == 401:
                 raise AccessTokenRejected()
             if res.status_code != 200:
@@ -239,6 +256,10 @@ class MicrosoftService:
 
         return GmailMessage(message_id=msg_id, parsed=parsed, mailbox=mailbox)
 
+    # Gmail label changes, as the quarantine service expresses them, mapped to
+    # the Outlook folder that has the same effect.
+    LABEL_FOLDERS = {"TRASH": "deleteditems", "SPAM": "junkemail", "INBOX": "inbox"}
+
     async def modify_message_labels(
         self,
         access_token: str,
@@ -246,18 +267,63 @@ class MicrosoftService:
         add_labels: list[str],
         remove_labels: list[str]
     ) -> bool:
-        if "SPAM" in add_labels:
-            url = f"https://graph.microsoft.com/v1.0/me/messages/{message_id}/move"
-            headers = {"Authorization": f"Bearer {access_token}"}
-            data = {"destinationId": "junkemail"}
-            
-            async with httpx.AsyncClient() as client:
-                res = await client.post(url, headers=headers, json=data)
-                if res.status_code in [200, 201]:
-                    logger.info("Successfully moved Microsoft message %s to Junk", message_id)
-                    return True
-                if res.status_code == 401:
-                    raise AccessTokenRejected()
-                logger.error("Failed to move Microsoft message %s: %s - %s", message_id, res.status_code, res.text)
-                return False
-        return True
+        """
+        Move the message to the folder the label change stands for.
+
+        Only Junk used to be implemented. Trash and release returned True without
+        calling Graph, so a blocked Outlook message was recorded as removed while
+        it sat in the inbox, and a released one stayed in Junk.
+        """
+        folder = next(
+            (self.LABEL_FOLDERS[label] for label in add_labels if label in self.LABEL_FOLDERS),
+            None,
+        )
+        if folder is None:
+            logger.error(
+                "No Outlook folder corresponds to labels %s for message %s",
+                add_labels,
+                message_id,
+            )
+            return False
+
+        headers = graph_headers(access_token)
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            if folder == "inbox" and await self._already_in_inbox(client, headers, message_id):
+                # Every message judged safe is "moved" to the inbox. For Gmail
+                # that is an idempotent label; for Outlook it would be a real
+                # move on every safe message, so it is skipped when there is
+                # nothing to move.
+                return True
+
+            res = await client.post(
+                f"{GRAPH}/me/messages/{message_id}/move",
+                headers=headers,
+                json={"destinationId": folder},
+            )
+            if res.status_code in (200, 201):
+                logger.info("Moved Microsoft message %s to %s", message_id, folder)
+                return True
+            if res.status_code == 401:
+                raise AccessTokenRejected()
+            logger.error(
+                "Failed to move Microsoft message %s to %s: %s - %s",
+                message_id,
+                folder,
+                res.status_code,
+                res.text,
+            )
+            return False
+
+    async def _already_in_inbox(
+        self, client: httpx.AsyncClient, headers: dict[str, str], message_id: str
+    ) -> bool:
+        inbox = await client.get(f"{GRAPH}/me/mailFolders/inbox?$select=id", headers=headers)
+        message = await client.get(
+            f"{GRAPH}/me/messages/{message_id}?$select=parentFolderId", headers=headers
+        )
+        if 401 in (inbox.status_code, message.status_code):
+            raise AccessTokenRejected()
+        if inbox.status_code != 200 or message.status_code != 200:
+            # Unknown: attempt the move, which reports its own failure.
+            return False
+        return inbox.json().get("id") == message.json().get("parentFolderId")
