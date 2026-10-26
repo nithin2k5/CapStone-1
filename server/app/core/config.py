@@ -113,9 +113,14 @@ class Settings(BaseSettings):
     # what a dropped notification or a lapsed watch would otherwise lose. The
     # interval was hardcoded at 300s, which made the exposure window a constant
     # nobody could tune per deployment.
+    #
+    # 30s by default, because without push — which needs a public URL — this
+    # is how quickly new mail is noticed. A sweep of a quiet mailbox is one
+    # incremental request (Gmail history, Graph delta), so the shorter interval
+    # costs little; with push on it can be raised.
     scheduler_enabled: bool = Field(default=True, alias="SCHEDULER_ENABLED")
     scheduler_interval_seconds: int = Field(
-        default=300, alias="SCHEDULER_INTERVAL_SECONDS"
+        default=30, alias="SCHEDULER_INTERVAL_SECONDS"
     )
     # Raised from 10. With a cursor the sweep fetches what actually arrived, so
     # this is a ceiling on a burst rather than a window that silently drops mail.

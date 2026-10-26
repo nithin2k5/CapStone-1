@@ -68,8 +68,9 @@ internet ──► │ proxy (Caddy, HTTPS) ─┬─ /api/*  ─► api ──�
 
 ## Instant scanning (optional)
 
-The sweep checks every mailbox every `SCHEDULER_INTERVAL_SECONDS`. Push
-notifications cut that to seconds:
+The sweep checks every mailbox every `SCHEDULER_INTERVAL_SECONDS` (30 by
+default), and open pages of the web app refresh every 15 seconds. Push
+notifications have the server fetch new mail the moment it arrives instead:
 
 - **Outlook:** set `MICROSOFT_PUSH_ENABLED=true` and
   `MICROSOFT_NOTIFICATION_URL=https://<DOMAIN>/api/v1/microsoft/push`, then
