@@ -9,6 +9,7 @@ import { Mail, ShieldAlert, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { getDashboardStats, DashboardData, downloadReport } from "@/lib/api";
 import { ScanModal } from "@/components/dashboard/ScanModal";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardData | null>(null);
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   useEffect(() => {
     loadStats();
   }, []);
+  useLiveRefresh(loadStats);
 
   return (
     <div className="flex flex-col gap-8 pb-12">

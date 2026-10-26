@@ -4,8 +4,9 @@ import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/Badge";
 import { Search, Filter, ShieldCheck, ShieldAlert, AlertTriangle } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { getEmailQueue, fetchLiveGmailMessages, EmailItem, EmailListResponse } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 // Mock data removed in favor of dynamic backend fetching
 
@@ -19,12 +20,30 @@ type EmailRow = {
   analysis: string;
 };
 
+function toRow(item: EmailItem): EmailRow {
+  const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
+  return {
+    id: item.id,
+    sender: senderName,
+    subject: item.subject || "No Subject",
+    time: new Date(item.received_at || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "SAFE",
+    status: item.status === "pending" ? "BLOCKED" : item.status.toUpperCase(),
+    analysis: item.risk_score > 80 ? "Malicious attachment/link" : "Passed all checks"
+  };
+}
+
 export function EmailTable() {
   const [emailsState, setEmailsState] = useState<EmailRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const pageSize = 50;
+
+  const showPage = useCallback((data: EmailListResponse) => {
+    setTotal(data.total || 0);
+    setEmailsState(data.items.map(toRow));
+  }, []);
 
   useEffect(() => {
     async function loadEmails() {
@@ -34,26 +53,7 @@ export function EmailTable() {
         if (data.items.length === 0 && page === 1) {
           data = await fetchLiveGmailMessages("inbox", pageSize);
         }
-        
-        setTotal(data.total || 0);
-
-        if (data.items.length > 0) {
-          const formatted: EmailRow[] = data.items.map((item: EmailItem) => {
-            const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
-            return {
-              id: item.id,
-              sender: senderName,
-              subject: item.subject || "No Subject",
-              time: new Date(item.received_at || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "SAFE",
-              status: item.status === "pending" ? "BLOCKED" : item.status.toUpperCase(),
-              analysis: item.risk_score > 80 ? "Malicious attachment/link" : "Passed all checks"
-            };
-          });
-          setEmailsState(formatted);
-        } else {
-          setEmailsState([]);
-        }
+        showPage(data);
       } catch (err) {
         console.error("Failed to fetch emails", err);
         setEmailsState([]); // Fallback to empty on error
@@ -62,7 +62,16 @@ export function EmailTable() {
       }
     }
     loadEmails();
-  }, [page]);
+  }, [page, showPage]);
+
+  // Mail the server scanned since the page loaded. Quiet: no spinner, and no
+  // live mailbox fetch — the server already fetches on arrival.
+  const refreshQuietly = useCallback(() => {
+    getEmailQueue(page, pageSize)
+      .then(showPage)
+      .catch((err) => console.error("Failed to refresh emails", err));
+  }, [page, showPage]);
+  useLiveRefresh(refreshQuietly);
 
   return (
     <GlassCard className="flex flex-col relative z-10 w-full">
@@ -86,26 +95,7 @@ export function EmailTable() {
               setLoading(true);
               try {
                 await fetchLiveGmailMessages("inbox", pageSize);
-                const data = await getEmailQueue(page, pageSize);
-                
-                setTotal(data.total || 0);
-                if (data.items.length > 0) {
-                  const formatted: EmailRow[] = data.items.map((item: EmailItem) => {
-                    const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
-                    return {
-                      id: item.id,
-                      sender: senderName,
-                      subject: item.subject || "No Subject",
-                      time: new Date(item.received_at || item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "SAFE",
-                      status: item.status === "pending" ? "BLOCKED" : item.status.toUpperCase(),
-                      analysis: item.risk_score > 80 ? "Malicious attachment/link" : "Passed all checks"
-                    };
-                  });
-                  setEmailsState(formatted);
-                } else {
-                  setEmailsState([]);
-                }
+                showPage(await getEmailQueue(page, pageSize));
               } catch (err) {
                 console.error("Failed to sync emails", err);
               } finally {

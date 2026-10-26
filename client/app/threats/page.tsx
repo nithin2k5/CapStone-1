@@ -3,8 +3,9 @@
 import { motion } from "framer-motion";
 import { ThreatCard } from "@/components/security/ThreatCard";
 
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { getDashboardStats, RecentThreat } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 type ThreatRow = {
   id: string;
@@ -30,8 +31,7 @@ export default function ThreatsPage() {
   const [threats, setThreats] = useState<ThreatRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchThreats() {
+  const fetchThreats = useCallback(async () => {
       try {
         const stats = await getDashboardStats();
         if (stats?.recent_threats) {
@@ -50,9 +50,9 @@ export default function ThreatsPage() {
       } finally {
         setLoading(false);
       }
-    }
-    fetchThreats();
   }, []);
+
+  useLiveRefresh(fetchThreats, { immediate: true });
 
   return (
     <div className="flex flex-col gap-6">

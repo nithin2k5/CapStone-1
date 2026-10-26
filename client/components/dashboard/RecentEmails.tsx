@@ -5,8 +5,9 @@ import { Badge } from "@/components/ui/Badge";
 import { MoreVertical, ShieldAlert, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { getEmailQueue, fetchLiveGmailMessages, EmailItem } from "@/lib/api";
+import { useCallback, useEffect, useState } from "react";
+import { getEmailQueue, fetchLiveGmailMessages, EmailItem, EmailListResponse } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 // Mock data removed in favor of dynamic backend fetching
 
@@ -24,13 +25,7 @@ export function RecentEmails() {
   const [emails, setEmails] = useState<RecentRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadEmails() {
-      try {
-        let data = await getEmailQueue(1, 5);
-        if (data.items.length === 0) {
-          data = await fetchLiveGmailMessages("inbox", 5);
-        }
+  const show = useCallback((data: EmailListResponse) => {
         if (data.items.length > 0) {
           const formatted: RecentRow[] = data.items.map((item: EmailItem) => {
             const senderName = item.sender.includes("<") ? item.sender.split("<")[0].trim() : item.sender;
@@ -49,6 +44,16 @@ export function RecentEmails() {
         } else {
           setEmails([]);
         }
+  }, []);
+
+  useEffect(() => {
+    async function loadEmails() {
+      try {
+        let data = await getEmailQueue(1, 5);
+        if (data.items.length === 0) {
+          data = await fetchLiveGmailMessages("inbox", 5);
+        }
+        show(data);
       } catch (err) {
         console.error("Failed to fetch real emails", err);
         setEmails([]);
@@ -57,7 +62,14 @@ export function RecentEmails() {
       }
     }
     loadEmails();
-  }, []);
+  }, [show]);
+
+  const refreshQuietly = useCallback(() => {
+    getEmailQueue(1, 5)
+      .then(show)
+      .catch((err) => console.error("Failed to refresh recent emails", err));
+  }, [show]);
+  useLiveRefresh(refreshQuietly);
 
   return (
     <GlassCard className="col-span-1 lg:col-span-3 flex flex-col relative z-10">

@@ -8,8 +8,9 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 
-import { useEffect } from "react";
+import { useCallback } from "react";
 import { getEmailQueue, EmailItem } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
 
 /** A quarantined message as this table shows it, not as the API returns it. */
 type QuarantineRow = {
@@ -26,8 +27,7 @@ export default function QuarantinePage() {
   const [emails, setEmails] = useState<QuarantineRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadQuarantine() {
+  const loadQuarantine = useCallback(async () => {
       try {
         const data = await getEmailQueue(1, 50, "quarantined");
         if (data.items.length > 0) {
@@ -49,9 +49,9 @@ export default function QuarantinePage() {
       } finally {
         setLoading(false);
       }
-    }
-    loadQuarantine();
   }, []);
+
+  useLiveRefresh(loadQuarantine, { immediate: true });
 
   const toggleSelect = (id: string) => {
     setSelected(prev => 
