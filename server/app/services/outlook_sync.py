@@ -9,8 +9,10 @@ message is judged identically whichever provider delivered it.
 """
 
 import asyncio
+import secrets
 from collections import defaultdict
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -25,6 +27,13 @@ from app.services.microsoft_service import MicrosoftService
 from app.services.scan_service import ScanService
 
 logger = get_logger("outlook_sync")
+
+# Graph caps how long a mail subscription may live. Two days stays well inside
+# the cap, and renewing once less than a day remains gives the sweep many
+# chances to succeed before a subscription lapses — a lapsed one stops
+# notifying without saying so, the same failure as a lapsed Gmail watch.
+SUBSCRIPTION_LIFETIME = timedelta(days=2)
+RENEW_WITHIN = timedelta(days=1)
 
 # The sweep and a push notification can reach the same mailbox at once. Both
 # would read the same delta link and scan the same messages, so syncs of one
@@ -47,6 +56,64 @@ class OutlookSyncService:
         self.microsoft_service = microsoft_service or MicrosoftService()
         self.tokens = MailboxTokens(microsoft_service=self.microsoft_service)
         self._scanner = MailboxSyncService(scan_service=scan_service or ScanService())
+
+    async def ensure_subscription(self, db: AsyncSession, user: User) -> bool:
+        """Create or renew this mailbox's Graph subscription for new-mail notifications."""
+        settings = get_settings()
+        if not (settings.microsoft_push_enabled and settings.microsoft_notification_url):
+            return False
+        if not user.microsoft_access_token:
+            return False
+
+        now = datetime.now(timezone.utc)
+        expires_at = user.microsoft_subscription_expires_at
+        if expires_at is not None and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if user.microsoft_subscription_id and expires_at and expires_at - now > RENEW_WITHIN:
+            return True
+
+        new_expiry = now + SUBSCRIPTION_LIFETIME
+        try:
+            if user.microsoft_subscription_id:
+                subscription_id = user.microsoft_subscription_id
+                renewed = await self.tokens.microsoft(
+                    db,
+                    user,
+                    lambda token: self.microsoft_service.renew_subscription(
+                        token, subscription_id, new_expiry
+                    ),
+                )
+                if renewed:
+                    user.microsoft_subscription_expires_at = new_expiry
+                    db.add(user)
+                    return True
+                # Gone, or refused: create a replacement. A stale subscription
+                # that is still alive keeps notifying under its old id, which
+                # no longer matches a user, so its notifications are ignored.
+
+            client_state = secrets.token_urlsafe(32)
+            created = await self.tokens.microsoft(
+                db,
+                user,
+                lambda token: self.microsoft_service.create_subscription(
+                    token, settings.microsoft_notification_url, client_state, new_expiry
+                ),
+            )
+        except MailboxUnavailable as e:
+            logger.warning("Cannot maintain Outlook subscription for user=%s: %s", user.id, e)
+            return False
+
+        if not created or not created.get("id"):
+            return False
+
+        user.microsoft_subscription_id = created["id"]
+        user.microsoft_client_state = client_state
+        user.microsoft_subscription_expires_at = new_expiry
+        db.add(user)
+        logger.info(
+            "Outlook subscription active for user=%s until %s", user.id, new_expiry
+        )
+        return True
 
     async def sync_user(
         self, db: AsyncSession, user: User, reason: str = "poll"

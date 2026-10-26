@@ -70,7 +70,7 @@ async def fetch_emails_job():
                 # repaired the smaller the window it leaves.
                 await _sync_one(db, user, gmail.ensure_watch, gmail.sync_user)
             for user in outlook_users:
-                await _sync_one(db, user, None, outlook.sync_user)
+                await _sync_one(db, user, outlook.ensure_subscription, outlook.sync_user)
     except Exception as e:
         logger.error("Error in scheduled fetch_emails_job: %s", e, exc_info=True)
 

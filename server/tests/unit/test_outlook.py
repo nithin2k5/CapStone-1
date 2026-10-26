@@ -350,6 +350,9 @@ class TestSweepIncludesOutlook:
                 calls.append(("gmail", user))
 
         class _Outlook:
+            async def ensure_subscription(self, db, user):
+                calls.append(("outlook-subscription", user))
+
             async def sync_user(self, db, user, reason):
                 calls.append(("outlook", user))
 
@@ -369,6 +372,7 @@ class TestSweepIncludesOutlook:
 
         assert ("gmail", gmail_user) in calls
         assert ("outlook", outlook_user) in calls
+        assert ("outlook-subscription", outlook_user) in calls
 
     async def test_one_failing_mailbox_does_not_stop_the_others(self, monkeypatch):
         from app.core import scheduler
@@ -390,3 +394,278 @@ class TestSweepIncludesOutlook:
         await scheduler._sync_one(_RollbackDb(), second, None, working)
 
         assert synced == [second]
+
+
+# ----------------------------------------------------------------------
+# Push: subscription upkeep
+# ----------------------------------------------------------------------
+
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+from app.core.config import Settings  # noqa: E402
+
+
+class _Subscriptions(_FakeOutlook):
+    def __init__(self, renew_ok=True):
+        super().__init__()
+        self.renew_ok = renew_ok
+        self.created: list[dict] = []
+        self.renewed: list[str] = []
+
+    async def create_subscription(self, token, url, client_state, expires_at):
+        self._check(token)
+        self.created.append({"url": url, "state": client_state, "expires": expires_at})
+        return {"id": f"sub-{len(self.created)}"}
+
+    async def renew_subscription(self, token, subscription_id, expires_at):
+        self._check(token)
+        self.renewed.append(subscription_id)
+        return {"id": subscription_id} if self.renew_ok else None
+
+
+def _push_on(monkeypatch, enabled=True, url="https://gw.example/api/v1/microsoft/push"):
+    monkeypatch.setattr(
+        outlook_sync,
+        "get_settings",
+        lambda: Settings(MICROSOFT_PUSH_ENABLED=enabled, MICROSOFT_NOTIFICATION_URL=url),
+    )
+
+
+def _subscribed_user(expires_in):
+    user = _OutlookUser(delta_link="link-1")
+    user.microsoft_subscription_id = "sub-old"
+    user.microsoft_client_state = "state-old"
+    user.microsoft_subscription_expires_at = datetime.now(timezone.utc) + expires_in
+    return user
+
+
+def _fresh_user():
+    user = _OutlookUser()
+    user.microsoft_subscription_id = None
+    user.microsoft_client_state = None
+    user.microsoft_subscription_expires_at = None
+    return user
+
+
+@pytest.mark.asyncio
+class TestSubscriptionUpkeep:
+    async def test_nothing_is_subscribed_while_push_is_off(self, monkeypatch):
+        _push_on(monkeypatch, enabled=False)
+        graph = _Subscriptions()
+
+        assert await _outlook_sync(monkeypatch, graph).ensure_subscription(_Db(), _fresh_user()) is False
+        assert graph.created == []
+
+    async def test_a_mailbox_without_one_is_subscribed_with_a_secret(self, monkeypatch):
+        _push_on(monkeypatch)
+        graph = _Subscriptions()
+        user = _fresh_user()
+
+        assert await _outlook_sync(monkeypatch, graph).ensure_subscription(_Db(), user) is True
+
+        assert graph.created[0]["url"] == "https://gw.example/api/v1/microsoft/push"
+        assert user.microsoft_subscription_id == "sub-1"
+        # Long and random: it is the only thing proving a notification is genuine.
+        assert user.microsoft_client_state == graph.created[0]["state"]
+        assert len(user.microsoft_client_state) >= 32
+        assert user.microsoft_subscription_expires_at > datetime.now(timezone.utc)
+
+    async def test_a_live_subscription_is_left_alone(self, monkeypatch):
+        _push_on(monkeypatch)
+        graph = _Subscriptions()
+        user = _subscribed_user(timedelta(days=1, hours=12))
+
+        assert await _outlook_sync(monkeypatch, graph).ensure_subscription(_Db(), user) is True
+        assert graph.renewed == [] and graph.created == []
+
+    async def test_one_close_to_lapsing_is_renewed(self, monkeypatch):
+        _push_on(monkeypatch)
+        graph = _Subscriptions()
+        user = _subscribed_user(timedelta(hours=6))
+
+        assert await _outlook_sync(monkeypatch, graph).ensure_subscription(_Db(), user) is True
+        assert graph.renewed == ["sub-old"]
+        assert graph.created == []
+        # Same subscription, same secret.
+        assert user.microsoft_client_state == "state-old"
+        assert user.microsoft_subscription_expires_at > datetime.now(timezone.utc) + timedelta(days=1)
+
+    async def test_one_that_is_gone_is_replaced_with_a_new_secret(self, monkeypatch):
+        _push_on(monkeypatch)
+        graph = _Subscriptions(renew_ok=False)
+        user = _subscribed_user(timedelta(hours=-1))
+
+        assert await _outlook_sync(monkeypatch, graph).ensure_subscription(_Db(), user) is True
+        assert user.microsoft_subscription_id == "sub-1"
+        assert user.microsoft_client_state != "state-old"
+
+    async def test_a_revoked_grant_is_not_subscribed(self, monkeypatch):
+        _push_on(monkeypatch)
+        graph = _Subscriptions()
+        graph.valid = "never"
+        graph.renewal = GrantRevoked
+
+        assert await _outlook_sync(monkeypatch, graph).ensure_subscription(_Db(), _fresh_user()) is False
+
+
+@pytest.mark.asyncio
+class TestSubscriptionRequests:
+    async def test_create_subscribes_to_new_inbox_mail(self, monkeypatch):
+        import json
+
+        seen = _graph(monkeypatch, lambda request: httpx.Response(201, json={"id": "s1"}))
+        expires = datetime(2030, 1, 2, 3, 4, 5, tzinfo=timezone.utc)
+
+        result = await MicrosoftService().create_subscription("t", "https://gw/push", "secret", expires)
+
+        assert result == {"id": "s1"}
+        body = json.loads(seen[0].read())
+        assert body == {
+            "changeType": "created",
+            "notificationUrl": "https://gw/push",
+            "resource": "me/mailFolders('Inbox')/messages",
+            "expirationDateTime": "2030-01-02T03:04:05Z",
+            "clientState": "secret",
+        }
+
+    async def test_a_missing_subscription_is_reported_for_replacement(self, monkeypatch):
+        _graph(monkeypatch, lambda request: httpx.Response(404))
+        expires = datetime.now(timezone.utc)
+        assert await MicrosoftService().renew_subscription("t", "s1", expires) is None
+
+    async def test_subscription_calls_signal_an_expired_token(self, monkeypatch):
+        _graph(monkeypatch, lambda request: httpx.Response(401))
+        expires = datetime.now(timezone.utc)
+        with pytest.raises(AccessTokenRejected):
+            await MicrosoftService().create_subscription("t", "u", "s", expires)
+        with pytest.raises(AccessTokenRejected):
+            await MicrosoftService().renew_subscription("t", "s1", expires)
+
+
+# ----------------------------------------------------------------------
+# Push: the public endpoint
+# ----------------------------------------------------------------------
+
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+
+from app.api import microsoft_push  # noqa: E402
+from app.main import app  # noqa: E402
+
+PUSH = "/api/v1/microsoft/push"
+
+
+def _holder(subscription_id="sub-1", state="the-secret"):
+    user = _OutlookUser()
+    user.microsoft_subscription_id = subscription_id
+    user.microsoft_client_state = state
+    return user
+
+
+class _LookupDb:
+    """Answers a subscription-id lookup from a fixed set of users."""
+
+    def __init__(self, users):
+        self.users = users
+
+    async def execute(self, stmt):
+        wanted = stmt.compile().params["microsoft_subscription_id_1"]
+        match = next((u for u in self.users if u.microsoft_subscription_id == wanted), None)
+
+        class _Result:
+            def scalar_one_or_none(self):
+                return match
+
+        return _Result()
+
+
+def _endpoint(monkeypatch, users, enabled=True):
+    from app.api import microsoft_push as module
+
+    monkeypatch.setattr(
+        module, "get_settings", lambda: Settings(MICROSOFT_PUSH_ENABLED=enabled)
+    )
+
+    class _Session:
+        async def __aenter__(self):
+            return _LookupDb(users)
+
+        async def __aexit__(self, *exc):
+            return False
+
+    synced: list = []
+
+    async def record(user_id):
+        synced.append(user_id)
+
+    monkeypatch.setattr(module, "AsyncSessionLocal", _Session)
+    monkeypatch.setattr(module, "_sync_mailbox", record)
+    return synced
+
+
+async def _post(**kwargs):
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        return await client.post(PUSH, **kwargs)
+
+
+@pytest.mark.asyncio
+class TestPushEndpoint:
+    async def test_subscription_validation_echoes_the_token_as_text(self, monkeypatch):
+        _endpoint(monkeypatch, [])
+
+        res = await _post(params={"validationToken": "abc 123"})
+
+        assert res.status_code == 200
+        assert res.text == "abc 123"
+        assert res.headers["content-type"].startswith("text/plain")
+        assert res.headers["x-content-type-options"] == "nosniff"
+
+    async def test_an_oversized_validation_token_is_not_echoed(self, monkeypatch):
+        _endpoint(monkeypatch, [])
+        res = await _post(params={"validationToken": "x" * 5000})
+        assert res.status_code == 400
+
+    async def test_a_genuine_notification_syncs_that_mailbox(self, monkeypatch):
+        user = _holder()
+        synced = _endpoint(monkeypatch, [user])
+
+        res = await _post(
+            json={"value": [{"subscriptionId": "sub-1", "clientState": "the-secret"}]}
+        )
+
+        assert res.status_code == 202
+        assert synced == [user.id]
+
+    async def test_a_batch_for_one_mailbox_syncs_it_once(self, monkeypatch):
+        user = _holder()
+        synced = _endpoint(monkeypatch, [user])
+        one = {"subscriptionId": "sub-1", "clientState": "the-secret"}
+
+        await _post(json={"value": [one, one, one]})
+
+        assert synced == [user.id]
+
+    async def test_a_wrong_secret_is_acknowledged_but_ignored(self, monkeypatch):
+        """Anyone can post here; only Graph knows the clientState."""
+        synced = _endpoint(monkeypatch, [_holder()])
+
+        res = await _post(json={"value": [{"subscriptionId": "sub-1", "clientState": "guess"}]})
+
+        assert res.status_code == 202
+        assert synced == []
+
+    async def test_an_unknown_subscription_is_ignored(self, monkeypatch):
+        synced = _endpoint(monkeypatch, [_holder()])
+        await _post(json={"value": [{"subscriptionId": "sub-9", "clientState": "the-secret"}]})
+        assert synced == []
+
+    async def test_malformed_bodies_are_acknowledged_and_ignored(self, monkeypatch):
+        synced = _endpoint(monkeypatch, [_holder()])
+        for body in ({"content": b"not json"}, {"json": {"value": "x"}}, {"json": {"value": [1, None]}}):
+            res = await _post(**body)
+            assert res.status_code == 202
+        assert synced == []
+
+    async def test_notifications_are_ignored_while_push_is_off(self, monkeypatch):
+        synced = _endpoint(monkeypatch, [_holder()], enabled=False)
+        await _post(json={"value": [{"subscriptionId": "sub-1", "clientState": "the-secret"}]})
+        assert synced == []

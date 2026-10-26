@@ -55,6 +55,9 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "google_token_expires_at": "DATETIME NULL",
         "microsoft_token_expires_at": "DATETIME NULL",
         "microsoft_delta_link": "TEXT NULL",
+        "microsoft_subscription_id": "VARCHAR(128) NULL",
+        "microsoft_subscription_expires_at": "DATETIME NULL",
+        "microsoft_client_state": "TEXT NULL",
     },
 }
 

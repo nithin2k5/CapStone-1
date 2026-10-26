@@ -85,6 +85,18 @@ class User(Base):
     # Graph's equivalent of the Gmail history cursor: where the next Outlook
     # sync resumes. A URL, and long, so Text rather than String.
     microsoft_delta_link: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # The Graph subscription that pushes new-mail notifications, when it lapses,
+    # and the secret Graph echoes in each notification. The secret is what
+    # tells a real notification from anyone else posting to the public endpoint.
+    microsoft_subscription_id: Mapped[str | None] = mapped_column(
+        String(128), nullable=True, index=True
+    )
+    microsoft_subscription_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    microsoft_client_state: Mapped[str | None] = mapped_column(
+        EncryptedToken, nullable=True
+    )
     # Where this mailbox was last synchronised to. Incremental sync resumes from
     # here, which is what makes a restart resume rather than re-read the newest
     # handful of messages and lose everything behind them.

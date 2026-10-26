@@ -1,4 +1,5 @@
 import json
+from datetime import timezone
 from typing import Any
 import httpx
 
@@ -198,6 +199,65 @@ class MicrosoftService:
 
         logger.error("Outlook delta ended without a delta link")
         return ids, None, False
+
+    # ------------------------------------------------------------------
+    # Push notifications
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _graph_time(moment) -> str:
+        return moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    async def create_subscription(
+        self, access_token: str, notification_url: str, client_state: str, expires_at
+    ) -> dict[str, Any] | None:
+        """
+        Ask Graph to notify `notification_url` when mail arrives in the inbox.
+
+        Graph calls the URL with a validation token before answering, so the
+        endpoint must already be reachable when this runs.
+        """
+        body = {
+            "changeType": "created",
+            "notificationUrl": notification_url,
+            "resource": "me/mailFolders('Inbox')/messages",
+            "expirationDateTime": self._graph_time(expires_at),
+            "clientState": client_state,
+        }
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            res = await client.post(
+                f"{GRAPH}/subscriptions", headers=graph_headers(access_token), json=body
+            )
+            if res.status_code == 201:
+                return res.json()
+            if res.status_code == 401:
+                raise AccessTokenRejected()
+            logger.error(
+                "Outlook subscription creation failed: %s - %s", res.status_code, res.text
+            )
+            return None
+
+    async def renew_subscription(
+        self, access_token: str, subscription_id: str, expires_at
+    ) -> dict[str, Any] | None:
+        """Extend a subscription. None when it is gone and must be created again."""
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.patch(
+                f"{GRAPH}/subscriptions/{subscription_id}",
+                headers=graph_headers(access_token),
+                json={"expirationDateTime": self._graph_time(expires_at)},
+            )
+            if res.status_code == 200:
+                return res.json()
+            if res.status_code == 401:
+                raise AccessTokenRejected()
+            logger.warning(
+                "Outlook subscription %s could not be renewed: %s - %s",
+                subscription_id,
+                res.status_code,
+                res.text,
+            )
+            return None
 
     async def fetch_messages_by_id(
         self, access_token: str, message_ids: list[str], mailbox: str = "inbox"

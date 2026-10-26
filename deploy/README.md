@@ -66,6 +66,17 @@ internet ──► │ proxy (Caddy, HTTPS) ─┬─ /api/*  ─► api ──�
 6. **Connect your mailbox:** open `https://<DOMAIN>` and sign in with Google
    (or Microsoft). Scanning continues after you sign out or close the browser.
 
+## Instant scanning (optional)
+
+The sweep checks every mailbox every `SCHEDULER_INTERVAL_SECONDS`. Push
+notifications cut that to seconds:
+
+- **Outlook:** set `MICROSOFT_PUSH_ENABLED=true` and
+  `MICROSOFT_NOTIFICATION_URL=https://<DOMAIN>/api/v1/microsoft/push`, then
+  `docker compose up -d`. Subscriptions are created and renewed by the sweep.
+- **Gmail:** needs a Google Cloud Pub/Sub topic and push subscription; the steps
+  are in `server/.env.example` under "Gmail push notifications".
+
 ## Checking that it is running
 
 ```bash

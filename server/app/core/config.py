@@ -101,6 +101,14 @@ class Settings(BaseSettings):
     )
     gmail_push_audience: str = Field(default="", alias="GMAIL_PUSH_AUDIENCE")
 
+    # Outlook push notifications, through Microsoft Graph change-notification
+    # subscriptions. The counterpart of Gmail push: Graph calls
+    # POST {api_prefix}/microsoft/push when mail arrives, so the sweep becomes
+    # the safety net. The URL must be public HTTPS; Graph checks it when each
+    # subscription is created. Off without one.
+    microsoft_push_enabled: bool = Field(default=False, alias="MICROSOFT_PUSH_ENABLED")
+    microsoft_notification_url: str = Field(default="", alias="MICROSOFT_NOTIFICATION_URL")
+
     # The fallback sweep. It is a safety net, not the primary path: it catches
     # what a dropped notification or a lapsed watch would otherwise lose. The
     # interval was hardcoded at 300s, which made the exposure window a constant
