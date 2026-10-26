@@ -66,12 +66,18 @@ class _Provider:
 
 
 class MailboxTokens:
-    def __init__(self, gmail_service: Any = None):
+    def __init__(self, gmail_service: Any = None, microsoft_service: Any = None):
+        # Imported here: both services import this module for its exceptions.
         if gmail_service is None:
             from app.services.gmail_service import GmailService
 
             gmail_service = GmailService()
+        if microsoft_service is None:
+            from app.services.microsoft_service import MicrosoftService
+
+            microsoft_service = MicrosoftService()
         self._google = _Provider("google", gmail_service)
+        self._microsoft = _Provider("microsoft", microsoft_service)
 
     async def google(
         self,
@@ -81,6 +87,15 @@ class MailboxTokens:
     ) -> T:
         """Run `call` with a working Google access token for `user`."""
         return await self._call(db, user, self._google, call)
+
+    async def microsoft(
+        self,
+        db: AsyncSession | None,
+        user: Any,
+        call: Callable[[str], Awaitable[T]],
+    ) -> T:
+        """Run `call` with a working Microsoft Graph access token for `user`."""
+        return await self._call(db, user, self._microsoft, call)
 
     async def _call(
         self,

@@ -327,10 +327,12 @@ async def _process_microsoft_code(
             role=UserRole.USER,
             microsoft_access_token=access_token,
             microsoft_refresh_token=refresh_token,
+            microsoft_token_expires_at=expiry_from(tokens),
         )
         db.add(user)
     else:
         user.microsoft_access_token = access_token
+        user.microsoft_token_expires_at = expiry_from(tokens)
         if refresh_token:
             user.microsoft_refresh_token = refresh_token
         db.add(user)

@@ -4,6 +4,7 @@ import httpx
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.services.mailbox_tokens import AccessTokenRejected, GrantRevoked
 
 logger = get_logger("microsoft")
 
@@ -73,6 +74,39 @@ class MicrosoftService:
                 return {"error": res.text}
             return res.json()
 
+    async def refresh_access_token(self, refresh_token: str) -> dict[str, Any] | None:
+        """
+        Exchange a refresh token for a new access token.
+
+        Returns the token endpoint's response, or None on a transient failure.
+        Microsoft rotates refresh tokens, so the response usually carries a new
+        one as well; MailboxTokens stores it. Raises GrantRevoked when the
+        refresh token itself is refused.
+        """
+        if not self.is_configured():
+            return None
+
+        url = "https://login.microsoftonline.com/common/oauth2/v2.0/token"
+        data = {
+            "client_id": self.settings.microsoft_client_id,
+            "client_secret": self.settings.microsoft_client_secret,
+            "refresh_token": refresh_token,
+            "grant_type": "refresh_token",
+            "scope": " ".join(self.SCOPES),
+        }
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.post(url, data=data)
+            if res.status_code == 200:
+                return res.json()
+            logger.error(
+                "Failed to refresh Microsoft access token: %s - %s",
+                res.status_code,
+                res.text,
+            )
+            if res.status_code == 400 and "invalid_grant" in res.text:
+                raise GrantRevoked()
+            return None
+
     async def get_user_info(self, access_token: str) -> dict[str, Any]:
         """Fetch user profile from Microsoft Graph API."""
 
@@ -113,6 +147,8 @@ class MicrosoftService:
         
         async with httpx.AsyncClient() as client:
             res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+            if res.status_code == 401:
+                raise AccessTokenRejected()
             if res.status_code != 200:
                 logger.error("Failed to fetch Microsoft messages: %s", res.text)
                 return []
@@ -220,6 +256,8 @@ class MicrosoftService:
                 if res.status_code in [200, 201]:
                     logger.info("Successfully moved Microsoft message %s to Junk", message_id)
                     return True
+                if res.status_code == 401:
+                    raise AccessTokenRejected()
                 logger.error("Failed to move Microsoft message %s: %s - %s", message_id, res.status_code, res.text)
                 return False
         return True

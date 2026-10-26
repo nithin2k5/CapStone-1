@@ -31,7 +31,7 @@ class QuarantineService:
         self.risk_engine = risk_engine or RiskEngine()
         self.gmail_service = gmail_service or GmailService()
         self.microsoft_service = microsoft_service or MicrosoftService()
-        self.tokens = MailboxTokens(self.gmail_service)
+        self.tokens = MailboxTokens(self.gmail_service, self.microsoft_service)
 
     async def apply_quarantine(
         self,
@@ -112,7 +112,7 @@ class QuarantineService:
         try:
             if user.google_access_token:
                 return await self.tokens.google(db, user, modify(self.gmail_service))
-            return await modify(self.microsoft_service)(user.microsoft_access_token)
+            return await self.tokens.microsoft(db, user, modify(self.microsoft_service))
         except (MailboxUnavailable, AccessTokenRejected) as e:
             logger.error("Cannot %s for user %s: %s", action, user_id, e)
             return False

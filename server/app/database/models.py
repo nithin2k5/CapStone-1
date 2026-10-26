@@ -79,6 +79,9 @@ class User(Base):
     microsoft_refresh_token: Mapped[str | None] = mapped_column(
         EncryptedToken, nullable=True
     )
+    microsoft_token_expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Where this mailbox was last synchronised to. Incremental sync resumes from
     # here, which is what makes a restart resume rather than re-read the newest
     # handful of messages and lose everything behind them.

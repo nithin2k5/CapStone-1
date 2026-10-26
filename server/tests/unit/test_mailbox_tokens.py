@@ -392,3 +392,127 @@ class TestGmailClientSignalsExpiry:
             "access_token": "new",
             "expires_in": 3599,
         }
+
+
+# ----------------------------------------------------------------------
+# Outlook
+# ----------------------------------------------------------------------
+
+
+def _outlook_user():
+    user = _User()
+    user.google_access_token = None
+    user.google_refresh_token = None
+    user.microsoft_access_token = "old"
+    user.microsoft_refresh_token = "ms-refresh-1"
+    user.microsoft_token_expires_at = None
+    return user
+
+
+@pytest.mark.asyncio
+class TestOutlookRenewal:
+    async def test_an_outlook_quarantine_renews_an_expired_token(self):
+        outlook = _Google(
+            renewal={"access_token": "new", "expires_in": 3599, "refresh_token": "ms-refresh-2"},
+        )
+        outlook.valid = "new"
+        user = _outlook_user()
+        service = QuarantineService(gmail_service=_Google(), microsoft_service=outlook)
+
+        moved = await service.move_to_spam(_Db(user), user.id, "msg-1")
+
+        assert moved is True
+        assert outlook.label_tokens == ["old", "new"]
+        assert user.microsoft_access_token == "new"
+        assert user.microsoft_token_expires_at is not None
+        # Microsoft rotates refresh tokens; keeping the old one would eventually
+        # leave the grant unrenewable.
+        assert user.microsoft_refresh_token == "ms-refresh-2"
+
+    async def test_a_revoked_outlook_grant_is_cleared_and_not_enforced(self):
+        outlook = _Google(renewal=GrantRevoked)
+        outlook.valid = "never"
+        user = _outlook_user()
+        service = QuarantineService(gmail_service=_Google(), microsoft_service=outlook)
+
+        assert await service.move_to_spam(_Db(user), user.id, "msg-1") is False
+        assert user.microsoft_access_token is None
+        assert user.microsoft_refresh_token is None
+
+    async def test_outlook_renewal_does_not_touch_the_google_grant(self):
+        outlook = _Google(valid="new")
+        user = _outlook_user()
+        user.microsoft_token_expires_at = _past()
+
+        await MailboxTokens(_Google(), outlook).microsoft(
+            _Db(), user, lambda token: outlook.fetch_history(token, "1")
+        )
+
+        assert outlook.refreshes == ["ms-refresh-1"]
+        assert user.google_access_token is None
+
+
+def _respond_microsoft(monkeypatch, handler):
+    from app.services import microsoft_service as microsoft_module
+
+    real = httpx.AsyncClient
+    seen: list[httpx.Request] = []
+
+    def client(*args, **kwargs):
+        def recording(request):
+            seen.append(request)
+            return handler(request)
+
+        kwargs["transport"] = httpx.MockTransport(recording)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(microsoft_module.httpx, "AsyncClient", client)
+    return seen
+
+
+def _configured_microsoft(monkeypatch):
+    from app.services.microsoft_service import MicrosoftService
+
+    service = MicrosoftService()
+    monkeypatch.setattr(service, "is_configured", lambda: True)
+    return service
+
+
+@pytest.mark.asyncio
+class TestOutlookClientSignalsExpiry:
+    async def test_fetch_401_raises(self, monkeypatch):
+        _respond_microsoft(monkeypatch, lambda request: httpx.Response(401))
+        with pytest.raises(AccessTokenRejected):
+            await _configured_microsoft(monkeypatch).fetch_messages(None, "old")
+
+    async def test_junk_move_401_raises(self, monkeypatch):
+        _respond_microsoft(monkeypatch, lambda request: httpx.Response(401))
+        with pytest.raises(AccessTokenRejected):
+            await _configured_microsoft(monkeypatch).modify_message_labels(
+                "old", "m1", ["SPAM"], []
+            )
+
+    async def test_refresh_asks_for_the_same_scopes_including_offline_access(self, monkeypatch):
+        """Without offline_access in the request, no new refresh token comes back."""
+        seen = _respond_microsoft(
+            monkeypatch,
+            lambda request: httpx.Response(
+                200,
+                json={"access_token": "new", "expires_in": 3599, "refresh_token": "r2"},
+            ),
+        )
+
+        response = await _configured_microsoft(monkeypatch).refresh_access_token("r1")
+
+        assert response["access_token"] == "new"
+        body = seen[0].content.decode()
+        assert "grant_type=refresh_token" in body
+        assert "offline_access" in body
+
+    async def test_refused_refresh_token_raises_grant_revoked(self, monkeypatch):
+        _respond_microsoft(
+            monkeypatch,
+            lambda request: httpx.Response(400, text='{"error": "invalid_grant"}'),
+        )
+        with pytest.raises(GrantRevoked):
+            await _configured_microsoft(monkeypatch).refresh_access_token("r1")

@@ -74,15 +74,19 @@ async def fetch_emails(
 
     try:
         if current_user.microsoft_access_token and not current_user.google_access_token:
-            messages = await microsoft_service.fetch_messages(
+            messages = await MailboxTokens(gmail_service, microsoft_service).microsoft(
+                db,
                 current_user,
-                current_user.microsoft_access_token,
-                payload.mailbox,
-                payload.max_results,
-                db=db,
+                lambda token: microsoft_service.fetch_messages(
+                    current_user,
+                    token,
+                    payload.mailbox,
+                    payload.max_results,
+                    db=db,
+                ),
             )
         else:
-            messages = await MailboxTokens(gmail_service).google(
+            messages = await MailboxTokens(gmail_service, microsoft_service).google(
                 db,
                 current_user,
                 lambda token: gmail_service.fetch_messages(

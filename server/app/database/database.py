@@ -53,6 +53,7 @@ ADDED_COLUMNS: dict[str, dict[str, str]] = {
         "gmail_history_id": "VARCHAR(64) NULL",
         "gmail_watch_expires_at": "DATETIME NULL",
         "google_token_expires_at": "DATETIME NULL",
+        "microsoft_token_expires_at": "DATETIME NULL",
     },
 }
 
