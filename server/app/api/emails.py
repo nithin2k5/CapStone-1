@@ -16,6 +16,7 @@ from app.schemas.email import (
 )
 from app.services.gmail_service import GmailService
 from app.services.mailbox_tokens import MailboxTokens, MailboxUnavailable
+from app.services.retention_service import fetch_window_start
 from app.services.microsoft_service import MicrosoftService
 from app.services.scan_service import ScanService
 
@@ -88,6 +89,7 @@ async def fetch_emails(
                     payload.mailbox,
                     payload.max_results,
                     db=db,
+                    since=fetch_window_start(),
                 ),
             )
         else:
@@ -100,6 +102,7 @@ async def fetch_emails(
                     payload.mailbox,
                     payload.max_results,
                     db=db,
+                    since=fetch_window_start(),
                 ),
             )
     except (ValueError, MailboxUnavailable) as e:

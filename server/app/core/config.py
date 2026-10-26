@@ -127,6 +127,10 @@ class Settings(BaseSettings):
     # before that day lose their body, headers and scan detail. See
     # app/services/retention_service.py for what is kept and why.
     discard_delivered_daily: bool = Field(default=True, alias="DISCARD_DELIVERED_DAILY")
+    # Reads of the newest messages (first sync, resync, Sync Now) start at
+    # midnight today instead of taking the newest N whatever their age.
+    # Incremental sync is unaffected: it already reads only new arrivals.
+    fetch_today_only: bool = Field(default=True, alias="FETCH_TODAY_ONLY")
 
     # Raised from 10. With a cursor the sweep fetches what actually arrived, so
     # this is a ceiling on a burst rather than a window that silently drops mail.

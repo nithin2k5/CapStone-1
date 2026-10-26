@@ -295,15 +295,22 @@ class MicrosoftService:
         mailbox: str = "inbox",
         max_results: int = 20,
         db: Any = None,
+        since: Any = None,
     ) -> list[Any]:
+        """Fetch the newest messages in a folder, received at or after `since` if given."""
         if not access_token or not self.is_configured():
             raise ValueError("Unable to fetch emails: Token or configuration missing.")
 
         folder_id = "inbox" if mailbox.lower() == "inbox" else mailbox
-        url = f"{GRAPH}/me/mailFolders/{folder_id}/messages?$top={max_results}&$select={self.MESSAGE_FIELDS}"
-        
+        url = f"{GRAPH}/me/mailFolders/{folder_id}/messages"
+        params = {"$top": max_results, "$select": self.MESSAGE_FIELDS}
+        if since is not None:
+            params["$filter"] = f"receivedDateTime ge {self._graph_time(since)}"
+            # Graph requires a filtered property to lead any ordering.
+            params["$orderby"] = "receivedDateTime desc"
+
         async with httpx.AsyncClient() as client:
-            res = await client.get(url, headers=graph_headers(access_token))
+            res = await client.get(url, headers=graph_headers(access_token), params=params)
             if res.status_code == 401:
                 raise AccessTokenRejected()
             if res.status_code != 200:

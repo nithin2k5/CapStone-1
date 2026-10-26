@@ -28,6 +28,7 @@ from app.database.models import EmailStatus, User
 from app.repositories.email_repository import EmailRepository
 from app.services.gmail_service import GmailMessage, GmailService
 from app.services.mailbox_tokens import MailboxTokens, MailboxUnavailable
+from app.services.retention_service import fetch_window_start
 from app.services.scan_service import ScanService
 
 logger = get_logger("mailbox_sync")
@@ -193,6 +194,7 @@ class MailboxSyncService:
                     mailbox="inbox",
                     max_results=settings.scheduler_max_results,
                     db=db,
+                    since=fetch_window_start(),
                 ),
             )
         except ValueError as e:

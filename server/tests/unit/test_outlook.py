@@ -202,9 +202,10 @@ class _FakeOutlook:
             return [], None, True
         return list(self.delta_ids), "link-2", False
 
-    async def fetch_messages(self, user, token, mailbox, max_results, db=None):
+    async def fetch_messages(self, user, token, mailbox, max_results, db=None, since=None):
         self._check(token)
         self.newest_calls += 1
+        self.since = since
         return list(self.newest)
 
     async def fetch_messages_by_id(self, token, ids, mailbox="inbox"):

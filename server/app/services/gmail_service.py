@@ -400,9 +400,10 @@ class GmailService:
         mailbox: str = "inbox",
         max_results: int = 20,
         db: AsyncSession | None = None,
+        since: datetime | None = None,
     ) -> list[GmailMessage]:
         """
-        Fetch the newest messages in a mailbox.
+        Fetch the newest messages in a mailbox, received at or after `since` if given.
 
         Raises AccessTokenRejected when the token has expired; renewal is the
         caller's job, through MailboxTokens, so it happens the same way on every
@@ -415,7 +416,7 @@ class GmailService:
 
         if token and self.is_configured():
             try:
-                messages = await self._fetch_from_gmail_api(token, mailbox, max_results)
+                messages = await self._fetch_from_gmail_api(token, mailbox, max_results, since)
                 if messages is not None:
                     return messages
             except AccessTokenRejected:
@@ -433,14 +434,21 @@ class GmailService:
         access_token: str,
         mailbox: str,
         max_results: int,
+        since: datetime | None = None,
     ) -> list[GmailMessage] | None:
         """Fetch messages via live Gmail REST API using httpx."""
         headers = {"Authorization": f"Bearer {access_token}"}
         query = "in:inbox" if mailbox.lower() == "inbox" else (f"label:{mailbox}" if mailbox == "PendingScan" else f"in:{mailbox}")
-        list_url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages?maxResults={max_results}&q={query}"
+        if since is not None:
+            # Epoch seconds, not a date: Gmail reads a bare date as midnight
+            # Pacific time, whatever time zone the gateway runs in.
+            query += f" after:{int(since.timestamp())}"
+        list_url = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
 
         async with httpx.AsyncClient(timeout=15.0) as client:
-            res = await client.get(list_url, headers=headers)
+            res = await client.get(
+                list_url, headers=headers, params={"maxResults": max_results, "q": query}
+            )
             if res.status_code == 401:
                 raise AccessTokenRejected()
 

@@ -24,6 +24,7 @@ from app.services.gmail_service import GmailMessage
 from app.services.mailbox_sync import MailboxSyncService, SyncOutcome
 from app.services.mailbox_tokens import MailboxTokens, MailboxUnavailable
 from app.services.microsoft_service import MicrosoftService
+from app.services.retention_service import fetch_window_start
 from app.services.scan_service import ScanService
 
 logger = get_logger("outlook_sync")
@@ -184,7 +185,7 @@ class OutlookSyncService:
             db,
             user,
             lambda token: self.microsoft_service.fetch_messages(
-                user, token, "inbox", max_results, db=db
+                user, token, "inbox", max_results, db=db, since=fetch_window_start()
             ),
         )
         return link, messages

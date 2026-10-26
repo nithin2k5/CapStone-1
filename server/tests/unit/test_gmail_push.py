@@ -98,8 +98,9 @@ class _FakeGmail:
             return [], None, True
         return list(self._history), "5000", False
 
-    async def fetch_messages(self, user, token, mailbox, max_results, db):
+    async def fetch_messages(self, user, token, mailbox, max_results, db, since=None):
         self.newest_calls += 1
+        self.since = since
         return list(self._newest)
 
     async def current_history_id(self, token):

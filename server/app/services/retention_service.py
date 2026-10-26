@@ -29,12 +29,27 @@ from typing import Any
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.database.models import Email, EmailStatus, ScanResult
 
 logger = get_logger("retention")
 
 BATCH = 500
+
+
+def fetch_window_start() -> datetime | None:
+    """
+    Where a read of the newest messages should start: midnight today.
+
+    Mail from earlier days is erased by the retention pass once scanned, so
+    pulling it in on a first sync or a Sync Now would spend model calls on mail
+    nobody keeps. Local time on the gateway, the same clock the database stamps
+    arrival with in a normal install. None when FETCH_TODAY_ONLY is off.
+    """
+    if not get_settings().fetch_today_only:
+        return None
+    return datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 async def discard_delivered_before(db: AsyncSession, cutoff: Any = None) -> int:
