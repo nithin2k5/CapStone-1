@@ -7,6 +7,7 @@ import { Loader2 } from "lucide-react";
 import { AuthButton, AuthError } from "@/components/auth/AuthForm";
 import { isGoogleAuthConfigured } from "@/components/auth/GoogleAuthProvider";
 import { GoogleIcon } from "@/components/ui/GoogleIcon";
+import { BASE_URL } from "@/lib/api";
 import { setAuthSession, getJwtExpiration } from "@/lib/auth";
 
 type GoogleSignInButtonProps = {
@@ -29,7 +30,7 @@ export default function GoogleSignInButton({
   const login = useGoogleLogin({
     onSuccess: async (codeResponse) => {
       try {
-        const apiRes = await fetch("http://localhost:8000/api/v1/auth/google", {
+        const apiRes = await fetch(`${BASE_URL}/auth/google`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_URL } from "@/lib/api";
 import { getAuthSession, setAuthSession, clearAuthSession, getJwtExpiration } from "@/lib/auth";
 import { Button } from "@/components/ui/Button";
 
@@ -46,7 +47,7 @@ export function SessionExtendModal() {
     }
 
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/refresh", {
+      const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh_token: session.refreshToken }),

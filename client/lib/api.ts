@@ -1,6 +1,8 @@
 import { getAuthSession } from "@/lib/auth";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+// Exported for the sign-in calls that run before a session exists. A relative
+// value such as "/api/v1" serves the API from the page's own origin.
+export const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   const session = getAuthSession();

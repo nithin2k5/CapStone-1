@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { BASE_URL } from "@/lib/api";
 import { setAuthSession, getJwtExpiration } from "@/lib/auth";
 
 export function MicrosoftCallbackHandler() {
@@ -24,7 +25,7 @@ export function MicrosoftCallbackHandler() {
         try {
           const redirectUri = process.env.NEXT_PUBLIC_MICROSOFT_REDIRECT_URI || window.location.origin;
           
-          const res = await fetch("http://localhost:8000/api/v1/auth/microsoft", {
+          const res = await fetch(`${BASE_URL}/auth/microsoft`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

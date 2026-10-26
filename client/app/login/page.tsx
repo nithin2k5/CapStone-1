@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BASE_URL } from "@/lib/api";
 import { setAuthSession } from "@/lib/auth";
 import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
@@ -26,7 +27,7 @@ export default function LoginPage() {
     setError("");
     
     try {
-      const res = await fetch("http://localhost:8000/api/v1/auth/login", {
+      const res = await fetch(`${BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
