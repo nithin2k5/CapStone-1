@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Lock, Mail } from "lucide-react";
 import { loginWithPassword } from "@/lib/api";
 import { getJwtExpiration, setAuthSession } from "@/lib/auth";
-import AuthLayout from "@/components/auth/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import MicrosoftSignInButton from "@/components/auth/MicrosoftSignInButton";
 import {
@@ -47,7 +46,7 @@ export default function LoginPage() {
   };
 
   return (
-    <AuthLayout>
+    <>
       <AuthHeading eyebrow="sign in" title="Welcome back">
         Connect your mailbox, or sign in with the email and password you registered.
       </AuthHeading>
@@ -111,6 +110,6 @@ export default function LoginPage() {
           Create an account
         </Link>
       </p>
-    </AuthLayout>
+    </>
   );
 }

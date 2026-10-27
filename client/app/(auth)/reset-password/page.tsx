@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Lock, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import AuthLayout from "@/components/auth/AuthLayout";
 import { AuthInput, AuthButton, AuthError, AuthHeading, AuthNotice } from "@/components/auth/AuthForm";
 import { resetPassword } from "@/lib/api";
 
@@ -114,7 +113,7 @@ function ResetPasswordForm() {
 
 export default function ResetPasswordPage() {
   return (
-    <AuthLayout>
+    <>
       <Link
         href="/login"
         className="mb-8 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-accent"
@@ -128,6 +127,6 @@ export default function ResetPasswordPage() {
       >
         <ResetPasswordForm />
       </Suspense>
-    </AuthLayout>
+    </>
   );
 }

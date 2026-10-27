@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
 import { AuthShowcase } from "@/components/auth/AuthShowcase";
+import { AuthTransition } from "@/components/auth/AuthTransition";
 
 /**
  * Shell for every signed-out page. The pitch and a sample scan sit beside the
@@ -89,7 +90,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             transition={{ duration: 0.5, delay: 0.05 }}
             className="mx-auto w-full max-w-[440px] sm:rounded-3xl sm:border sm:border-border sm:bg-card/80 sm:p-9 sm:shadow-[var(--glow-2)] sm:backdrop-blur-xl"
           >
-            {children}
+            <AuthTransition>{children}</AuthTransition>
           </motion.div>
         </main>
 

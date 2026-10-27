@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
 import { loginWithPassword, registerAccount } from "@/lib/api";
 import { getJwtExpiration, setAuthSession } from "@/lib/auth";
-import AuthLayout from "@/components/auth/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import MicrosoftSignInButton from "@/components/auth/MicrosoftSignInButton";
 import {
@@ -83,7 +82,7 @@ export default function SignupPage() {
   };
 
   return (
-    <AuthLayout>
+    <>
       <AuthHeading eyebrow="get started" title="Create your account">
         Connect Gmail or Outlook to start scanning, or register with email and connect a
         mailbox later.
@@ -183,6 +182,6 @@ export default function SignupPage() {
           Sign in
         </Link>
       </p>
-    </AuthLayout>
+    </>
   );
 }
