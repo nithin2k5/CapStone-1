@@ -1,106 +1,239 @@
 "use client";
 
 import { GlassCard } from "@/components/ui/GlassCard";
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import { motion } from "framer-motion";
+import { useCallback, useState } from "react";
+import { getDashboardStats, DashboardData, RiskDistribution } from "@/lib/api";
+import { useLiveRefresh } from "@/lib/useLiveRefresh";
+import { Activity, PieChart as PieIcon, BarChart3, Globe } from "lucide-react";
 
-const detectionData = [
-  { day: "Mon", phish: 12, malware: 2, spam: 40 },
-  { day: "Tue", phish: 8, malware: 1, spam: 35 },
-  { day: "Wed", phish: 15, malware: 4, spam: 42 },
-  { day: "Thu", phish: 22, malware: 7, spam: 55 },
-  { day: "Fri", phish: 18, malware: 3, spam: 38 },
-  { day: "Sat", phish: 5, malware: 0, spam: 20 },
-  { day: "Sun", phish: 4, malware: 0, spam: 15 },
+const tooltipStyle = {
+  contentStyle: {
+    backgroundColor: "var(--card)",
+    borderColor: "var(--border)",
+    borderRadius: 12,
+    fontSize: 12,
+  },
+  labelStyle: { color: "var(--muted-foreground)", marginBottom: 4 },
+  itemStyle: { color: "var(--foreground)" },
+  cursor: { fill: "var(--accent-subtle)" },
+};
+
+const levels: { key: keyof RiskDistribution; label: string; color: string }[] = [
+  { key: "safe", label: "Safe", color: "var(--success)" },
+  { key: "low", label: "Low", color: "var(--accent)" },
+  { key: "medium", label: "Medium", color: "var(--warning)" },
+  { key: "high", label: "High", color: "color-mix(in srgb, var(--danger) 70%, var(--warning))" },
+  { key: "critical", label: "Critical", color: "var(--danger)" },
 ];
 
-export default function AnalyticsPage() {
+function pct(n: number, d: number) {
+  return d > 0 ? (n / d) * 100 : 0;
+}
+
+function Title({ icon: Icon, children }: { icon: typeof Activity; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-heading font-bold text-foreground mb-2">Security Analytics</h1>
-          <p className="text-sm text-muted-foreground">Deep dive into threat distribution and system performance.</p>
-        </div>
+    <h3 className="flex items-center gap-2 font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+      <Icon className="h-3.5 w-3.5 text-accent" />
+      {children}
+    </h3>
+  );
+}
+
+export default function AnalyticsPage() {
+  const [stats, setStats] = useState<DashboardData | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setStats(await getDashboardStats());
+    } catch (err) {
+      console.error("Failed to load analytics", err);
+    }
+  }, []);
+  useLiveRefresh(load, { immediate: true });
+
+  const scanned = stats?.scanned_emails ?? 0;
+  const rates = [
+    { label: "Pass rate", value: pct(stats?.safe_emails ?? 0, scanned), note: "Cleared every analyser", color: "var(--success)" },
+    { label: "Block rate", value: pct(stats?.blocked_emails ?? 0, scanned), note: "Judged malicious", color: "var(--danger)" },
+    { label: "Quarantine rate", value: pct(stats?.quarantined_emails ?? 0, scanned), note: "Held for review", color: "var(--warning)" },
+    { label: "Coverage", value: pct(scanned, stats?.total_emails ?? 0), note: `${scanned.toLocaleString()} of ${(stats?.total_emails ?? 0).toLocaleString()} emails scanned`, color: "var(--accent)" },
+  ];
+
+  const monthly = (stats?.monthly_statistics ?? []).map((m) => ({
+    month: m.month,
+    safe: m.safe,
+    blocked: m.blocked,
+    other: Math.max(0, m.total - m.safe - m.blocked),
+  }));
+
+  const pie = levels
+    .map((l) => ({ name: l.label, value: stats?.risk_distribution?.[l.key] ?? 0, color: l.color }))
+    .filter((d) => d.value > 0);
+  const pieTotal = pie.reduce((s, d) => s + d.value, 0);
+
+  const domains = (stats?.top_domains ?? []).slice(0, 8);
+  const maxDomain = Math.max(1, ...domains.map((d) => d.count));
+
+  return (
+    <div className="flex flex-col gap-6 pb-12">
+      <div>
+        <span className="eyebrow">
+          <span className="h-px w-6 bg-accent" />
+          analytics
+        </span>
+        <h2 className="display mt-3 text-[1.7rem] text-foreground">Security analytics</h2>
+        <p className="mt-1.5 max-w-2xl text-[14px] text-muted-foreground">
+          How the gateway&rsquo;s verdicts break down over everything it has scanned.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <GlassCard className="p-6">
-          <div className="text-sm font-medium text-muted-foreground mb-2">Threat Detection Rate</div>
-          <div className="text-3xl font-heading font-bold text-emerald-400">99.8%</div>
-          <div className="text-xs text-muted-foreground mt-2">Based on known signatures</div>
-        </GlassCard>
-        <GlassCard className="p-6">
-          <div className="text-sm font-medium text-muted-foreground mb-2">False Positive Rate</div>
-          <div className="text-3xl font-heading font-bold text-violet-400">0.02%</div>
-          <div className="text-xs text-muted-foreground mt-2">Manually released items</div>
-        </GlassCard>
-        <GlassCard className="p-6">
-          <div className="text-sm font-medium text-muted-foreground mb-2">Average Scan Time</div>
-          <div className="text-3xl font-heading font-bold text-purple-400">42ms</div>
-          <div className="text-xs text-muted-foreground mt-2">Per email message</div>
-        </GlassCard>
-        <GlassCard className="p-6">
-          <div className="text-sm font-medium text-muted-foreground mb-2">Active Policies</div>
-          <div className="text-3xl font-heading font-bold text-purple-400">128</div>
-          <div className="text-xs text-muted-foreground mt-2">Custom routing rules</div>
-        </GlassCard>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <GlassCard className="p-6 h-[400px] flex flex-col">
-          <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mb-6">Threat Distribution (7D)</h3>
-          <div className="flex-1 relative min-h-0">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={detectionData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                <XAxis dataKey="day" stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} dy={10} />
-                <YAxis stroke="rgba(255,255,255,0.2)" fontSize={12} tickLine={false} axisLine={false} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'rgba(10,10,10,0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                  itemStyle={{ fontSize: '13px' }}
+      {/* Rates, computed from the counts rather than quoted */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {rates.map((r, i) => (
+          <motion.div
+            key={r.label}
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+          >
+            <GlassCard className="overflow-hidden p-5">
+              <div className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+                {r.label}
+              </div>
+              <div className="display mt-2 text-[2rem] leading-none" style={{ color: r.color }}>
+                {stats ? `${r.value.toFixed(1)}%` : "—"}
+              </div>
+              <div className="mt-3 h-1 overflow-hidden rounded-full bg-secondary">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: r.color }}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${r.value}%` }}
+                  transition={{ duration: 0.9 }}
                 />
-                <Bar dataKey="phish" name="Phishing" stackId="a" fill="#f87171" radius={[0, 0, 4, 4]} />
-                <Bar dataKey="malware" name="Malware" stackId="a" fill="#8b5cf6" />
-                <Bar dataKey="spam" name="Spam" stackId="a" fill="#e879f9" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </GlassCard>
+              </div>
+              <div className="mt-2 text-[12px] text-muted-foreground">{r.note}</div>
+            </GlassCard>
+          </motion.div>
+        ))}
+      </div>
 
-        <GlassCard className="p-6 h-[400px] flex flex-col">
-          <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mb-6">Top Targeted Users</h3>
-          <div className="flex-1 overflow-y-auto pr-2">
-            <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
+        {/* Monthly volume */}
+        <GlassCard className="flex h-[400px] flex-col p-6 lg:col-span-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <Title icon={BarChart3}>monthly verdicts</Title>
+            <div className="flex gap-4">
               {[
-                { email: "ceo@company.com", count: 42, role: "Executive" },
-                { email: "cfo@company.com", count: 38, role: "Executive" },
-                { email: "admin@company.com", count: 25, role: "IT Admin" },
-                { email: "hr@company.com", count: 19, role: "HR" },
-                { email: "sales-lead@company.com", count: 12, role: "Sales" },
-              ].map((user, i) => (
-                <div key={user.email} className="flex items-center justify-between p-4 rounded-xl bg-foreground/5 border border-border">
-                  <div>
-                    <div className="font-medium text-foreground text-sm">{user.email}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{user.role}</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="h-2 w-24 bg-foreground/10 rounded-full overflow-hidden">
-                      <motion.div 
-                        initial={{ width: 0 }}
-                        animate={{ width: `${(user.count / 42) * 100}%` }}
-                        transition={{ duration: 1, delay: i * 0.1 }}
-                        className="h-full bg-red-500" 
-                      />
-                    </div>
-                    <span className="text-sm font-bold text-red-400 w-6 text-right">{user.count}</span>
-                  </div>
-                </div>
+                { l: "Safe", c: "var(--success)" },
+                { l: "Blocked", c: "var(--danger)" },
+                { l: "Other", c: "var(--accent)" },
+              ].map((x) => (
+                <span key={x.l} className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-wider text-muted-foreground">
+                  <span className="h-2 w-2 rounded-sm" style={{ background: x.c }} />
+                  {x.l}
+                </span>
               ))}
             </div>
           </div>
+          <div className="mt-6 min-h-0 flex-1">
+            {monthly.length === 0 ? (
+              <div className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
+                No monthly data yet.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthly} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 6" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="month" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+                  <YAxis stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                  <Tooltip {...tooltipStyle} />
+                  <Bar dataKey="safe" name="Safe" stackId="a" fill="var(--success)" />
+                  <Bar dataKey="blocked" name="Blocked" stackId="a" fill="var(--danger)" />
+                  <Bar dataKey="other" name="Other" stackId="a" fill="var(--accent)" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </GlassCard>
+
+        {/* Risk donut */}
+        <GlassCard className="flex h-[400px] flex-col p-6 lg:col-span-2">
+          <Title icon={PieIcon}>risk levels</Title>
+          <div className="relative mt-2 min-h-0 flex-1">
+            {pieTotal === 0 ? (
+              <div className="flex h-full items-center justify-center text-[13px] text-muted-foreground">
+                No scanned mail yet.
+              </div>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={pie} dataKey="value" nameKey="name" innerRadius="62%" outerRadius="86%" paddingAngle={2} stroke="var(--card)" strokeWidth={2}>
+                      {pie.map((d) => (
+                        <Cell key={d.name} fill={d.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip {...tooltipStyle} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="display text-[1.8rem] leading-none text-foreground">{pieTotal.toLocaleString()}</span>
+                  <span className="mt-1 font-mono text-[9.5px] uppercase tracking-[0.18em] text-muted-foreground">scored</span>
+                </div>
+              </>
+            )}
+          </div>
+          <div className="mt-3 grid grid-cols-5 gap-1">
+            {levels.map((l) => (
+              <div key={l.key} className="text-center">
+                <span className="mx-auto block h-1.5 w-6 rounded-full" style={{ background: l.color }} />
+                <span className="mt-1 block font-mono text-[9.5px] uppercase tracking-wider text-muted-foreground">{l.label}</span>
+              </div>
+            ))}
+          </div>
         </GlassCard>
       </div>
+
+      <GlassCard className="p-6">
+        <Title icon={Globe}>sender domains by volume</Title>
+        {domains.length === 0 ? (
+          <p className="mt-4 text-[13px] text-muted-foreground">No mail scanned yet.</p>
+        ) : (
+          <div className="mt-5 grid gap-x-10 gap-y-4 md:grid-cols-2">
+            {domains.map((d, i) => (
+              <div key={d.domain}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <span className="truncate font-mono text-[12.5px] text-foreground">{d.domain}</span>
+                  <span className="font-mono text-[12px] text-accent">{d.count}</span>
+                </div>
+                <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ background: "linear-gradient(90deg, var(--accent-solid), var(--accent-2))" }}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(d.count / maxDomain) * 100}%` }}
+                    transition={{ duration: 0.8, delay: i * 0.04 }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </GlassCard>
     </div>
   );
 }
