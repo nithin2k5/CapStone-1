@@ -18,8 +18,8 @@ export function SmoothScroll() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const lenis = new Lenis({
-      lerp: 0.085,
-      wheelMultiplier: 0.9,
+      lerp: 0.055,
+      wheelMultiplier: 0.8,
       smoothWheel: true,
       autoRaf: true,
       allowNestedScroll: true,
