@@ -277,7 +277,7 @@ export function AccessPanel() {
   const variants = {
     enter: (d: number) => ({ opacity: 0, x: d * slide }),
     center: { opacity: 1, x: 0 },
-    exit: (d: number) => ({ opacity: 0, x: -d * slide }),
+    exit: (d: number) => ({ opacity: 0, x: -d * slide, pointerEvents: "none" as const }),
   };
   const transition = { duration: reduce ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] as const };
 
@@ -313,7 +313,11 @@ export function AccessPanel() {
         ))}
       </div>
 
-      <AnimatePresence mode="wait" custom={dir} initial={false}>
+      {/* Both forms share one grid cell while they cross-fade, so the panel
+          is never empty mid-switch and the card resizes once rather than
+          collapsing and regrowing. */}
+      <div className="grid">
+      <AnimatePresence custom={dir} initial={false}>
         <motion.div
           key={mode}
           custom={dir}
@@ -322,6 +326,7 @@ export function AccessPanel() {
           animate="center"
           exit="exit"
           transition={transition}
+          className="[grid-area:1/1]"
         >
           <div className="mb-7">
             <span className="eyebrow">
@@ -353,6 +358,7 @@ export function AccessPanel() {
           </p>
         </motion.div>
       </AnimatePresence>
+      </div>
     </div>
   );
 }

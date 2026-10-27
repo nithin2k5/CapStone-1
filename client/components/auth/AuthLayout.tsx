@@ -10,8 +10,10 @@ import { AuthTransition } from "@/components/auth/AuthTransition";
 /**
  * Shell for every signed-out page. The pitch and a sample scan sit beside the
  * form in one centred container, so the two stay together on wide screens
- * instead of drifting to opposite edges. Below `lg` the pitch drops away and
- * the form takes the full width.
+ * instead of drifting to opposite edges. Both are pinned to the top rather
+ * than centred, so when the card changes height it grows downward instead of
+ * re-centring and dragging everything up and down. Below `lg` the pitch drops
+ * away and the form takes the full width.
  */
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -53,12 +55,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </Link>
         </header>
 
-        <main className="relative z-10 mx-auto grid w-full max-w-[1160px] flex-1 items-center gap-14 px-5 pb-10 sm:px-8 lg:grid-cols-[minmax(0,1fr)_440px] xl:gap-20">
+        <main className="relative z-10 mx-auto grid w-full max-w-[1160px] flex-1 items-start gap-14 px-5 pb-10 pt-4 sm:px-8 lg:grid-cols-[minmax(0,1fr)_440px] lg:pt-[6vh] xl:gap-20">
           <motion.section
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="hidden lg:block"
+            className="hidden lg:sticky lg:top-[6vh] lg:block lg:pt-6"
           >
             <span className="eyebrow">
               <span className="h-px w-6 bg-accent" />
