@@ -23,6 +23,7 @@ import { AppLayout } from "@/components/layout/AppLayout";
 import { MicrosoftCallbackHandler } from "@/components/auth/MicrosoftCallbackHandler";
 import { Suspense } from "react";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { SmoothScroll } from "@/components/SmoothScroll";
 
 export const metadata: Metadata = {
   title: "Secure Email Gateway | Phishing Prevention",
@@ -42,6 +43,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-background text-foreground font-sans overflow-x-hidden selection:bg-accent-solid selection:text-accent-contrast">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <SmoothScroll />
           <Suspense fallback={null}>
             <MicrosoftCallbackHandler />
           </Suspense>
