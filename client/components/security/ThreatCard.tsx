@@ -20,7 +20,7 @@ export function ThreatCard({ severity, type, source, time, actionTaken }: Threat
       hover 
       className={cn(
         "p-5 relative overflow-hidden group border",
-        isCritical ? "border-red-500/30" : isHigh ? "border-amber-500/30" : "border-border"
+        isCritical ? "border-[var(--danger)]/30" : isHigh ? "border-[var(--warning)]/30" : "border-border"
       )}
     >
       <div 
@@ -28,7 +28,7 @@ export function ThreatCard({ severity, type, source, time, actionTaken }: Threat
           "absolute top-0 left-0 w-1 h-full",
           isCritical ? "bg-red-500 shadow-[0_0_15px_rgba(248,113,113,0.6)]" : 
           isHigh ? "bg-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.6)]" : 
-          "bg-purple-500"
+          "bg-accent-solid"
         )} 
       />
       
@@ -47,10 +47,10 @@ export function ThreatCard({ severity, type, source, time, actionTaken }: Threat
           </div>
         </div>
         
-        <h3 className="text-lg font-heading font-semibold text-foreground mb-2">{type}</h3>
+        <h3 className="text-lg font-display font-semibold text-foreground mb-2">{type}</h3>
         
         <div className="space-y-1.5 mb-4">
-          <div className="text-sm text-gray-300 truncate" title={source}>
+          <div className="text-sm text-foreground/90 truncate" title={source}>
             {source}
           </div>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">

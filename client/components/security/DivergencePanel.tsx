@@ -36,7 +36,7 @@ export function DivergencePanel({ perceptual, probe }: DivergencePanelProps) {
       <div className="p-6 border-b border-border">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-heading font-bold text-foreground tracking-wide">
+            <h3 className="text-base font-display font-bold text-foreground tracking-wide">
               Rendered vs analysed
             </h3>
             <p className="text-xs text-muted-foreground mt-1 max-w-xl">
@@ -57,7 +57,7 @@ export function DivergencePanel({ perceptual, probe }: DivergencePanelProps) {
             <Eye className="w-3.5 h-3.5" />
             What the recipient saw
           </div>
-          <p className="text-sm text-gray-300 whitespace-pre-wrap break-words leading-relaxed font-mono">
+          <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words leading-relaxed font-mono">
             {evidence?.visible_excerpt?.trim() || "No rendered text."}
           </p>
         </section>
@@ -79,9 +79,9 @@ export function DivergencePanel({ perceptual, probe }: DivergencePanelProps) {
             {segments.map((segment, i) => (
               <div
                 key={i}
-                className="rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-3"
+                className="rounded-xl border border-[var(--warning)]/30 bg-amber-500/[0.04] p-3"
               >
-                <p className="text-sm text-amber-100/90 whitespace-pre-wrap break-words leading-relaxed font-mono">
+                <p className="text-sm text-foreground/90 whitespace-pre-wrap break-words leading-relaxed font-mono">
                   {segment.text}
                   {segment.truncated && (
                     <span className="text-muted-foreground"> …</span>
@@ -91,7 +91,7 @@ export function DivergencePanel({ perceptual, probe }: DivergencePanelProps) {
                   {segment.channels.map((channel) => (
                     <span
                       key={channel}
-                      className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[10px] font-semibold tracking-wider uppercase text-amber-300"
+                      className="px-2 py-0.5 rounded-md bg-[var(--warning)]/10 border border-[var(--warning)]/30 text-[10px] font-semibold tracking-wider uppercase text-[var(--warning)]"
                     >
                       {channel.replace(/-/g, " ")}
                     </span>
@@ -112,9 +112,9 @@ export function DivergencePanel({ perceptual, probe }: DivergencePanelProps) {
       {perceptual.imperative_hidden && (
         <div className="px-6 py-4 border-t border-border bg-red-500/[0.04]">
           <div className="flex items-start gap-2.5">
-            <Info className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+            <Info className="w-4 h-4 text-[var(--danger)] mt-0.5 shrink-0" />
             <div>
-              <p className="text-sm text-red-300 font-semibold">
+              <p className="text-sm text-[var(--danger)] font-semibold">
                 The concealed text addresses the analyser, not the reader
               </p>
               <p className="text-xs text-muted-foreground mt-1">
@@ -181,8 +181,8 @@ function ProbeMeasurement({ probe }: { probe?: ProbeFindings }) {
           <div className="ml-auto text-right">
             <div
               className={cn(
-                "text-2xl font-heading font-bold",
-                towardSafe ? "text-red-400" : "text-amber-400"
+                "text-2xl font-display font-bold",
+                towardSafe ? "text-[var(--danger)]" : "text-[var(--warning)]"
               )}
             >
               {towardSafe ? "−" : "+"}
@@ -217,8 +217,8 @@ function Verdict({
     <div>
       <div
         className={cn(
-          "text-xl font-heading font-bold",
-          tone === "danger" ? "text-red-400" : "text-foreground"
+          "text-xl font-display font-bold",
+          tone === "danger" ? "text-[var(--danger)]" : "text-foreground"
         )}
       >
         {value.toFixed(0)}

@@ -12,7 +12,7 @@ export function AccessibilityPanel({ result }: { result?: AccessibilityFindings 
       {result.ran && <div className="grid gap-4 lg:grid-cols-3">
         {[["Visible text (estimated)", result.visible_excerpt], ["Screen-reader text (estimated)", result.accessible_excerpt], ["Classifier ingestion", result.machine_excerpt]].map(([label, text]) => (
           <div key={label} className="min-w-0"><h3 className="text-sm font-medium mb-2">{label}</h3>
-            <pre className="text-xs whitespace-pre-wrap break-words rounded-lg bg-black/10 p-3 max-h-60 overflow-auto">{text || "No text"}</pre>
+            <pre className="text-xs whitespace-pre-wrap break-words rounded-lg bg-secondary/60 p-3 max-h-60 overflow-auto">{text || "No text"}</pre>
           </div>
         ))}
       </div>}

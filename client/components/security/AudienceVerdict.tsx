@@ -65,7 +65,7 @@ export function AudienceVerdict({ audience }: { audience?: AudienceFindings }) {
   const aimedAtUs = audience.label === "analyser";
 
   return (
-    <GlassCard className={aimedAtUs ? "p-6 border-red-500/30" : "p-6"}>
+    <GlassCard className={aimedAtUs ? "p-6 border-[var(--danger)]/30" : "p-6"}>
       <div className="flex items-start justify-between gap-3">
         <Header />
         <Badge variant={verdict.variant}>
@@ -77,13 +77,13 @@ export function AudienceVerdict({ audience }: { audience?: AudienceFindings }) {
         <div
           className={
             aimedAtUs
-              ? "w-9 h-9 rounded-xl bg-red-500/10 border border-red-500/25 flex items-center justify-center shrink-0"
+              ? "w-9 h-9 rounded-xl bg-[var(--danger)]/10 border border-[var(--danger)]/30 flex items-center justify-center shrink-0"
               : "w-9 h-9 rounded-xl bg-foreground/[0.04] border border-border flex items-center justify-center shrink-0"
           }
         >
           <Icon
             className={
-              aimedAtUs ? "w-4 h-4 text-red-400" : "w-4 h-4 text-muted-foreground"
+              aimedAtUs ? "w-4 h-4 text-[var(--danger)]" : "w-4 h-4 text-muted-foreground"
             }
           />
         </div>
@@ -91,7 +91,7 @@ export function AudienceVerdict({ audience }: { audience?: AudienceFindings }) {
           <p
             className={
               aimedAtUs
-                ? "text-sm font-semibold text-red-300"
+                ? "text-sm font-semibold text-[var(--danger)]"
                 : "text-sm font-semibold text-foreground"
             }
           >
@@ -108,7 +108,7 @@ export function AudienceVerdict({ audience }: { audience?: AudienceFindings }) {
            text, and labelled as a quotation, so nobody reads it as the system
            speaking. */
         <blockquote className="mt-4 pl-3 border-l-2 border-border">
-          <p className="text-xs text-gray-300 leading-relaxed break-words">
+          <p className="text-xs text-foreground/90 leading-relaxed break-words">
             {audience.reason}
           </p>
           <footer className="text-[10px] tracking-wider uppercase text-muted-foreground mt-1.5">
@@ -123,7 +123,7 @@ export function AudienceVerdict({ audience }: { audience?: AudienceFindings }) {
 function Header() {
   return (
     <div>
-      <h3 className="text-base font-heading font-bold text-foreground tracking-wide">
+      <h3 className="text-base font-display font-bold text-foreground tracking-wide">
         Who the hidden text was for
       </h3>
       <p className="text-xs text-muted-foreground mt-1">

@@ -361,6 +361,10 @@ export async function getScanResult(emailId: string): Promise<ScanResult> {
   return fetchWithAuth(`/scan/result/${emailId}`);
 }
 
+export async function rescanEmail(emailId: string): Promise<ScanResult> {
+  return fetchWithAuth(`/scan/email/${emailId}`, { method: "POST" });
+}
+
 export interface UserSettings {
   notif_critical: boolean;
   notif_daily: boolean;

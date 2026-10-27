@@ -13,7 +13,7 @@ export function SenderTrustPanel({ findings }: { findings?: ScanFindings | null 
       <p className="text-sm text-muted-foreground">{!trust.recorded ? trust.skipped_reason : trust.supporting_email_ids.length
         ? `This sender assessment used ${trust.supporting_email_ids.length} earlier message(s).`
         : "No earlier message supplied positive sender evidence for this assessment."}</p>
-      {trust.history_truncated && <p className="text-sm text-amber-500">History was limited to the latest 2,000 eligible earlier messages.</p>}
+      {trust.history_truncated && <p className="text-sm text-[var(--warning)]">History was limited to the latest 2,000 eligible earlier messages.</p>}
       {trust.supporting_email_ids.length > 0 && <details className="text-sm">
         <summary className="cursor-pointer">Inspect supporting messages</summary>
         <ul className="mt-2 space-y-1 max-h-48 overflow-auto">

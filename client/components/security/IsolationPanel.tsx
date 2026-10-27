@@ -11,7 +11,7 @@ export function IsolationPanel({ result }: { result?: IsolationFindings }) {
           ? `A ${result.fragment.length}-character fragment reproduced ${result.direction}, reduced from ${result.original_chars} concealed characters.`
           : "The candidate did not reproduce its effect during final confirmation."}
       </p>
-      {result.fragment && <pre className="whitespace-pre-wrap break-words rounded-lg bg-black/10 p-4 text-sm">{result.fragment}</pre>}
+      {result.fragment && <pre className="whitespace-pre-wrap break-words rounded-lg bg-secondary/60 p-4 text-sm">{result.fragment}</pre>}
       {result.ran && <p className="text-sm">Fresh controls: {result.control_scores.join(", ")} · Fragment scores: {result.fragment_scores.join(", ")} / 100</p>}
       <p className="text-xs text-muted-foreground">{result.calls} model calls. {result.budget_exhausted ? "Search budget reached. " : ""}This is a candidate subset, not a guarantee of the smallest possible payload.</p>
       {result.source_sha256 && <details className="text-xs text-muted-foreground">

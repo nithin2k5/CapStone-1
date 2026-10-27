@@ -17,14 +17,14 @@ export function StabilityPanel({ result }: { result?: StabilityFindings }) {
           <span className="text-muted-foreground"> · Observed spread: {result.noise_range} points · {result.calls} model calls</span>
         </p>
       )}
-      {result.inconclusive && <p className="text-sm text-amber-500">The unchanged input was too noisy to attribute a change to concealed text.</p>}
+      {result.inconclusive && <p className="text-sm text-[var(--warning)]">The unchanged input was too noisy to attribute a change to concealed text.</p>}
       {result.variants.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <caption className="sr-only">Repeated scores for concealed-content variants</caption>
             <thead><tr><th className="py-2">Variant</th><th>Repeated scores</th><th>Effect</th></tr></thead>
             <tbody>{result.variants.map((variant) => (
-              <tr key={variant.name} className="border-t border-white/10">
+              <tr key={variant.name} className="border-t border-border">
                 <td className="py-2">{variant.name.replaceAll("_", " ")}</td>
                 <td>{variant.scores.join(", ")}</td>
                 <td>{variant.reproducible ? variant.direction : "Not reproduced"}</td>

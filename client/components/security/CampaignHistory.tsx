@@ -56,7 +56,7 @@ export function CampaignHistory({ campaign }: { campaign?: CampaignFindings }) {
   const firstSeen = campaign.first_seen ? new Date(campaign.first_seen) : null;
 
   return (
-    <GlassCard className="p-6 border-red-500/30">
+    <GlassCard className="p-6 border-[var(--danger)]/30">
       <div className="flex items-start justify-between gap-3">
         <Header />
         <Badge variant="blocked">Seen before</Badge>
@@ -75,7 +75,7 @@ export function CampaignHistory({ campaign }: { campaign?: CampaignFindings }) {
         />
         {firstSeen && (
           <div>
-            <div className="text-xl font-heading font-bold text-foreground">
+            <div className="text-xl font-display font-bold text-foreground">
               {firstSeen.toLocaleDateString()}
             </div>
             <div className="text-[10px] tracking-wider uppercase text-muted-foreground mt-0.5">
@@ -86,10 +86,10 @@ export function CampaignHistory({ campaign }: { campaign?: CampaignFindings }) {
       </div>
 
       {campaign.crosses_domains && (
-        <div className="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-red-500/[0.04] border border-red-500/20">
-          <Network className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
+        <div className="flex items-start gap-2.5 mt-4 p-3 rounded-xl bg-red-500/[0.04] border border-[var(--danger)]/30">
+          <Network className="w-4 h-4 text-[var(--danger)] mt-0.5 shrink-0" />
           <p className="text-xs text-muted-foreground leading-relaxed">
-            <span className="text-red-300 font-semibold">
+            <span className="text-[var(--danger)] font-semibold">
               The same hidden text, sent from different domains.
             </span>{" "}
             Rotating the sender resets every reputation signal the gateway holds.
@@ -105,7 +105,7 @@ export function CampaignHistory({ campaign }: { campaign?: CampaignFindings }) {
           <div className="text-[10px] tracking-wider uppercase text-muted-foreground mb-1.5">
             The fragment that matched
           </div>
-          <p className="text-xs text-amber-100/90 font-mono whitespace-pre-wrap break-words leading-relaxed rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-3">
+          <p className="text-xs text-foreground/90 font-mono whitespace-pre-wrap break-words leading-relaxed rounded-xl border border-[var(--warning)]/30 bg-amber-500/[0.04] p-3">
             {campaign.sample}
           </p>
         </div>
@@ -128,8 +128,8 @@ function Figure({
       <div
         className={
           tone === "danger"
-            ? "text-xl font-heading font-bold text-red-400"
-            : "text-xl font-heading font-bold text-foreground"
+            ? "text-xl font-display font-bold text-[var(--danger)]"
+            : "text-xl font-display font-bold text-foreground"
         }
       >
         {value}
@@ -144,7 +144,7 @@ function Figure({
 function Header() {
   return (
     <div>
-      <h3 className="text-base font-heading font-bold text-foreground tracking-wide">
+      <h3 className="text-base font-display font-bold text-foreground tracking-wide">
         <History className="w-4 h-4 inline-block mr-2 -mt-0.5 text-muted-foreground" />
         Has this payload been here before?
       </h3>
