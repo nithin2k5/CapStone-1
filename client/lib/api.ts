@@ -388,6 +388,10 @@ export async function updateSettings(settings: Partial<UserSettings>): Promise<U
   });
 }
 
+export async function regenerateApiKey(): Promise<UserSettings> {
+  return fetchWithAuth("/settings/regenerate-key", { method: "POST" });
+}
+
 export async function downloadReport(): Promise<void> {
   const session = getAuthSession();
   
