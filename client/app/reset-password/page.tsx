@@ -5,7 +5,7 @@ import { Lock, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { AuthInput, AuthButton, AuthError } from "@/components/auth/AuthForm";
+import { AuthInput, AuthButton, AuthError, AuthHeading, AuthNotice } from "@/components/auth/AuthForm";
 import { resetPassword } from "@/lib/api";
 
 const MIN_LENGTH = 8;
@@ -48,13 +48,10 @@ function ResetPasswordForm() {
   if (!token) {
     return (
       <>
-        <h1 className="font-heading text-3xl font-bold text-foreground mb-2">
-          Link incomplete
-        </h1>
-        <p className="text-muted-foreground mb-6">
+        <AuthHeading eyebrow="account recovery" title="Link incomplete">
           This address carries no reset token. Open the link from the email exactly
           as it was sent, or request a new one.
-        </p>
+        </AuthHeading>
         <Link href="/forgot-password">
           <AuthButton variant="secondary">Request a new link</AuthButton>
         </Link>
@@ -64,54 +61,43 @@ function ResetPasswordForm() {
 
   if (done) {
     return (
-      <div className="text-center py-4">
-        <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
-        </div>
-        <h1 className="font-heading text-2xl font-bold text-foreground mb-2">
-          Password updated
-        </h1>
-        <p className="text-muted-foreground mb-6">
+      <>
+        <AuthNotice icon={<CheckCircle2 />} title="Password updated">
           The link is now spent. Taking you to sign in.
-        </p>
-        <Link href="/login">
-          <AuthButton variant="secondary">Go to Sign In</AuthButton>
+        </AuthNotice>
+        <Link href="/login" className="mt-8 block">
+          <AuthButton variant="secondary">Go to sign in</AuthButton>
         </Link>
-      </div>
+      </>
     );
   }
 
   return (
     <>
-      <div className="mb-8">
-        <h1 className="font-heading text-3xl font-bold text-foreground mb-2">
-          Choose a new password
-        </h1>
-        <p className="text-muted-foreground">
-          At least {MIN_LENGTH} characters. This link works once.
-        </p>
-      </div>
+      <AuthHeading eyebrow="account recovery" title="Choose a new password">
+        At least {MIN_LENGTH} characters. This link works once.
+      </AuthHeading>
 
       {error && <AuthError message={error} />}
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <AuthInput
-          label="New Password"
+          label="New password"
           id="new-password"
           type="password"
           placeholder="••••••••"
-          icon={<Lock className="w-5 h-5" />}
+          icon={<Lock />}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           autoComplete="new-password"
           required
         />
         <AuthInput
-          label="Confirm Password"
+          label="Confirm password"
           id="confirm-password"
           type="password"
           placeholder="••••••••"
-          icon={<Lock className="w-5 h-5" />}
+          icon={<Lock />}
           value={confirm}
           onChange={(e) => setConfirm(e.target.value)}
           autoComplete="new-password"
@@ -119,7 +105,7 @@ function ResetPasswordForm() {
         />
 
         <AuthButton type="submit" disabled={isLoading}>
-          {isLoading ? "Updating..." : "Update Password"}
+          {isLoading ? "Updating…" : "Update password"}
         </AuthButton>
       </form>
     </>
@@ -131,9 +117,9 @@ export default function ResetPasswordPage() {
     <AuthLayout>
       <Link
         href="/login"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        className="mb-8 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-accent"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="h-3.5 w-3.5" />
         Back to sign in
       </Link>
 

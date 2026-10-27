@@ -69,6 +69,23 @@ export interface MessageResponse {
   message: string;
 }
 
+export interface TokenResponse {
+  access_token: string;
+  refresh_token: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+}
+
+export async function loginWithPassword(email: string, password: string): Promise<TokenResponse> {
+  return postPublic<TokenResponse>("/auth/login", { email, password });
+}
+
+/** Creates the account only; the caller signs in afterwards for a session. */
+export async function registerAccount(name: string, email: string, password: string): Promise<UserProfile> {
+  return postPublic<UserProfile>("/auth/register", { name, email, password });
+}
+
 /**
  * Ask for a reset link. Resolves the same way for an address with no account —
  * the API answers identically by design, so the UI must not imply otherwise.

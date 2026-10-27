@@ -12,7 +12,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
     pathname === "/" || 
     pathname === "/login" || 
     pathname === "/signup" || 
-    pathname === "/forgot-password";
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password";
 
   if (isPublicPage) {
     return <main className="min-h-screen bg-background flex flex-col">{children}</main>;

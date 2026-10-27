@@ -1,198 +1,188 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { ShieldCheck, Mail, Lock, User, Building2, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { setAuthSession } from "@/lib/auth";
-import GoogleAuthProvider from "@/components/auth/GoogleAuthProvider";
+import { ArrowRight, Loader2, Lock, Mail, User } from "lucide-react";
+import { loginWithPassword, registerAccount } from "@/lib/api";
+import { getJwtExpiration, setAuthSession } from "@/lib/auth";
+import AuthLayout from "@/components/auth/AuthLayout";
 import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import MicrosoftSignInButton from "@/components/auth/MicrosoftSignInButton";
-import { AuthDivider } from "@/components/auth/AuthForm";
+import {
+  AuthButton,
+  AuthDivider,
+  AuthError,
+  AuthHeading,
+  AuthInput,
+} from "@/components/auth/AuthForm";
+
+// Mirrors UserRegister on the server, so the form refuses what the API would.
+const MIN_PASSWORD = 8;
+const MIN_NAME = 2;
+
+const STRENGTH = [
+  { label: "too short", color: "var(--danger)" },
+  { label: "weak", color: "var(--danger)" },
+  { label: "fair", color: "var(--warning)" },
+  { label: "good", color: "var(--accent)" },
+  { label: "strong", color: "var(--success)" },
+];
+
+/** 0 when below the minimum, then one point per character class beyond it. */
+function strength(pw: string) {
+  if (pw.length < MIN_PASSWORD) return 0;
+  const classes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((r) => r.test(pw)).length;
+  return Math.min(4, Math.max(1, classes - (pw.length >= 12 ? 0 : 1)));
+}
 
 export default function SignupPage() {
   const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [exists, setExists] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const score = strength(password);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-    
-    const form = new FormData(e.currentTarget);
-    const firstName = form.get("firstName") as string;
-    const lastName = form.get("lastName") as string;
-    const email = form.get("email") as string;
+    setError("");
+    setExists(false);
 
-    setTimeout(() => {
+    if (name.trim().length < MIN_NAME) {
+      setError(`Name must be at least ${MIN_NAME} characters`);
+      return;
+    }
+    if (password.length < MIN_PASSWORD) {
+      setError(`Password must be at least ${MIN_PASSWORD} characters`);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await registerAccount(name.trim(), email, password);
+      const data = await loginWithPassword(email, password);
       setAuthSession({
         provider: "email",
-        email: email || "user@company.com",
-        name: `${firstName} ${lastName}`.trim() || "New User",
+        email: data.user_email || email,
+        name: data.user_name || name.trim(),
+        accessToken: data.access_token,
+        refreshToken: data.refresh_token,
+        expiresAt: getJwtExpiration(data.access_token),
       });
       router.push("/dashboard");
-    }, 1000);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not create the account";
+      setExists(/already registered/i.test(message));
+      setError(message);
+      setIsLoading(false);
+    }
   };
 
   return (
-    <GoogleAuthProvider>
-      <div className="min-h-screen bg-black flex relative overflow-hidden">
-        {/* Background glow effects */}
-        <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
-        
-        {/* Subtle grid background */}
-        <div 
-          className="absolute inset-0 pointer-events-none opacity-[0.03]" 
-          style={{ backgroundImage: "linear-gradient(rgba(255, 255, 255, 1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 1) 1px, transparent 1px)", backgroundSize: "32px 32px" }}
-        />
+    <AuthLayout>
+      <AuthHeading eyebrow="get started" title="Create your account">
+        Connect Gmail or Outlook to start scanning, or register with email and connect a
+        mailbox later.
+      </AuthHeading>
 
-        <div className="w-full flex flex-col md:flex-row max-w-[1400px] mx-auto relative z-10">
-          
-          {/* Left column (Branding) */}
-          <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-border bg-black/40 backdrop-blur-md">
-            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-8 neon-glow-blue">
-                <ShieldCheck className="w-8 h-8 text-violet-400" />
-              </div>
-              
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-foreground leading-tight tracking-wide mb-6">
-                SECURE<br />
-                EMAIL<br />
-                GATEWAY
-              </h1>
-              
-              <p className="text-lg text-muted-foreground max-w-md">
-                Join thousands of organizations securing their email infrastructure with AI-powered protection.
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Right column (Signup Form) */}
-          <div className="flex-1 p-8 md:p-16 lg:p-16 flex flex-col justify-center overflow-y-auto">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }} className="max-w-md w-full mx-auto my-8">
-              
-              <h2 className="text-2xl font-heading font-semibold text-foreground mb-8 text-center md:text-left">
-                Create account
-              </h2>
-
-              <div className="space-y-3">
-                <GoogleSignInButton label="Sign up with Google" />
-                <MicrosoftSignInButton label="Sign up with Microsoft" />
-              </div>
-              
-              <AuthDivider />
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">First Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                      <input 
-                        name="firstName"
-                        type="text" 
-                        required
-                        placeholder="John" 
-                        className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Last Name</label>
-                    <input 
-                      name="lastName"
-                      type="text" 
-                      required
-                      placeholder="Doe" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Work Email</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input 
-                      name="email"
-                      type="email" 
-                      required
-                      placeholder="john@company.com" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Organization</label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input 
-                      name="organization"
-                      type="text" 
-                      required
-                      placeholder="Acme Corp" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground ml-1 uppercase tracking-wider">Password</label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <input 
-                      name="password"
-                      type="password" 
-                      required
-                      placeholder="••••••••••••" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
-                    />
-                  </div>
-                </div>
-
-                <label className="flex items-start gap-3 cursor-pointer pt-2">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 mt-0.5 rounded border-border bg-black text-foreground focus:ring-white/20"
-                    required
-                  />
-                  <span className="text-sm text-muted-foreground leading-relaxed">
-                    I agree to the{" "}
-                    <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
-                      Terms of Service
-                    </Link>{" "}
-                    and{" "}
-                    <Link href="/privacy" className="text-muted-foreground hover:text-foreground">
-                      Privacy Policy
-                    </Link>
-                  </span>
-                </label>
-
-                <div className="pt-2">
-                  <Button className="w-full h-12 text-base flex items-center justify-center gap-2" isLoading={isLoading}>
-                    Create Account
-                    {!isLoading && <ArrowRight className="w-4 h-4" />}
-                  </Button>
-                </div>
-              </form>
-
-              <div className="mt-8 flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">
-                  Already have an account?{" "}
-                  <Link href="/login" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
-                    Sign in
-                  </Link>
-                </p>
-              </div>
-              
-            </motion.div>
-          </div>
-
-        </div>
+      <div className="space-y-3">
+        <GoogleSignInButton label="Sign up with Google" />
+        <MicrosoftSignInButton label="Sign up with Microsoft" />
       </div>
-    </GoogleAuthProvider>
+
+      <AuthDivider />
+
+      {error && (
+        <AuthError
+          message={exists ? "An account with this email already exists. Sign in instead." : error}
+        />
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthInput
+          label="Full name"
+          id="name"
+          autoComplete="name"
+          placeholder="Ada Lovelace"
+          icon={<User />}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+        />
+        <AuthInput
+          label="Email"
+          id="email"
+          type="email"
+          autoComplete="email"
+          placeholder="you@company.com"
+          icon={<Mail />}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
+        <div>
+          <AuthInput
+            label="Password"
+            id="password"
+            type="password"
+            autoComplete="new-password"
+            placeholder={`At least ${MIN_PASSWORD} characters`}
+            icon={<Lock />}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          {password && (
+            <div className="mt-2.5 flex items-center gap-3">
+              <div className="flex flex-1 gap-1">
+                {[1, 2, 3, 4].map((i) => (
+                  <span
+                    key={i}
+                    className="h-1 flex-1 rounded-full bg-secondary transition-colors duration-300"
+                    style={score >= i ? { background: STRENGTH[score].color } : undefined}
+                  />
+                ))}
+              </div>
+              <span
+                className="w-16 text-right font-mono text-[10.5px] uppercase tracking-wider"
+                style={{ color: STRENGTH[score].color }}
+              >
+                {STRENGTH[score].label}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <AuthButton type="submit" disabled={isLoading} className="group !mt-7">
+          {isLoading ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <>
+              Create account
+              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+            </>
+          )}
+        </AuthButton>
+
+        <p className="text-center text-[12.5px] leading-relaxed text-muted-foreground">
+          By creating an account you agree to the{" "}
+          <Link href="/privacy" className="text-foreground underline-offset-4 hover:underline">
+            privacy policy
+          </Link>
+          .
+        </p>
+      </form>
+
+      <p className="mt-8 text-center text-[14px] text-muted-foreground">
+        Already have an account?{" "}
+        <Link href="/login" className="font-semibold text-accent transition-colors hover:text-accent-hover">
+          Sign in
+        </Link>
+      </p>
+    </AuthLayout>
   );
 }

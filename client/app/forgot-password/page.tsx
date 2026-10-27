@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { AuthInput, AuthButton, AuthError } from "@/components/auth/AuthForm";
+import { AuthInput, AuthButton, AuthError, AuthHeading, AuthNotice } from "@/components/auth/AuthForm";
 import { requestPasswordReset } from "@/lib/api";
 
 export default function ForgotPasswordPage() {
@@ -32,53 +32,47 @@ export default function ForgotPasswordPage() {
     <AuthLayout>
       <Link
         href="/login"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+        className="mb-8 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-accent"
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft className="h-3.5 w-3.5" />
         Back to sign in
       </Link>
 
       {submitted ? (
-        <div className="text-center py-4">
-          <div className="w-16 h-16 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center mx-auto mb-6">
-            <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
-          </div>
-          <h1 className="font-heading text-2xl font-bold text-foreground mb-2">Check your email</h1>
+        <>
           {/* The API answers the same way whether or not the address is
               registered, so this cannot promise a message was sent. */}
-          <p className="text-muted-foreground mb-6">
+          <AuthNotice icon={<CheckCircle2 />} title="Check your email">
             If <span className="text-foreground">{email}</span> has an account, reset
             instructions are on their way. The link expires in 30 minutes and can be
             used once.
-          </p>
-          <Link href="/login">
-            <AuthButton variant="secondary">Return to Sign In</AuthButton>
+          </AuthNotice>
+          <Link href="/login" className="mt-8 block">
+            <AuthButton variant="secondary">Return to sign in</AuthButton>
           </Link>
-        </div>
+        </>
       ) : (
         <>
-          <div className="mb-8">
-            <h1 className="font-heading text-3xl font-bold text-foreground mb-2">Reset password</h1>
-            <p className="text-muted-foreground">
-              Enter your email and we&apos;ll send you reset instructions.
-            </p>
-          </div>
+          <AuthHeading eyebrow="account recovery" title="Reset your password">
+            Enter the email you registered with and we&apos;ll send a one-time reset link.
+          </AuthHeading>
 
           {error && <AuthError message={error} />}
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <AuthInput
-              label="Email Address"
+              label="Email"
               type="email"
-              placeholder="admin@company.com"
-              icon={<Mail className="w-5 h-5" />}
+              placeholder="you@company.com"
+              autoComplete="email"
+              icon={<Mail />}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
 
             <AuthButton type="submit" disabled={isLoading}>
-              {isLoading ? "Sending..." : "Send Reset Link"}
+              {isLoading ? "Sending…" : "Send reset link"}
             </AuthButton>
           </form>
         </>
