@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Mail, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
+import AuthLayout from "@/components/auth/AuthLayout";
 import { AuthInput, AuthButton, AuthError, AuthHeading, AuthNotice } from "@/components/auth/AuthForm";
 import { requestPasswordReset } from "@/lib/api";
 
@@ -28,7 +29,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <>
+    <AuthLayout>
       <Link
         href="/login"
         className="mb-8 inline-flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-accent"
@@ -76,6 +77,6 @@ export default function ForgotPasswordPage() {
           </form>
         </>
       )}
-    </>
+    </AuthLayout>
   );
 }
