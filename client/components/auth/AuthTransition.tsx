@@ -4,36 +4,21 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 
-// Left-to-right order of the pages, so moving forward (sign in → sign up)
-// slides the new form in from the right and moving back from the left.
-const ORDER: Record<string, number> = {
-  "/login": 0,
-  "/forgot-password": 1,
-  "/reset-password": 2,
-  "/signup": 3,
-};
-
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+// Sign in and sign up are one panel that switches in place, so they share a
+// key; remounting it here would cut off the panel's own animation.
+function group(pathname: string) {
+  return pathname === "/login" || pathname === "/signup" ? "access" : pathname;
+}
+
 /**
- * Animates the card when the route changes: the new form slides in from the
- * direction of travel while the card eases to its new height. The App Router
- * swaps the page out immediately, so there is no exit to animate; the height
- * tween is what keeps the swap from jumping.
+ * Eases the card to the height of whatever it holds, so a taller form grows
+ * the card instead of snapping it, and fades in a page reached by navigation.
  */
 export function AuthTransition({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const key = group(usePathname());
   const reduce = useReducedMotion();
-  const [route, setRoute] = useState({ path: pathname, dir: 0 });
-
-  // Derived during render rather than in an effect, so the first frame of the
-  // new page already knows which way to slide.
-  if (route.path !== pathname) {
-    const from = ORDER[route.path] ?? 0;
-    const to = ORDER[pathname] ?? 0;
-    setRoute({ path: pathname, dir: to >= from ? 1 : -1 });
-  }
-
   const inner = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState<number | "auto">("auto");
 
@@ -45,23 +30,21 @@ export function AuthTransition({ children }: { children: React.ReactNode }) {
     return () => observer.disconnect();
   }, []);
 
-  const offset = reduce ? 0 : route.dir * 48;
-
   return (
     <motion.div
       animate={{ height }}
       initial={false}
-      transition={{ duration: reduce ? 0 : 0.45, ease: EASE }}
+      transition={{ duration: reduce ? 0 : 0.35, ease: EASE }}
       // Overflow is clipped only so the height tween can shrink the card; the
       // padding gives input focus rings room inside the clip.
       className="-m-1.5 overflow-hidden"
     >
       <div ref={inner} className="p-1.5">
         <motion.div
-          key={pathname}
-          initial={route.dir === 0 ? false : { opacity: 0, x: offset, filter: "blur(6px)" }}
-          animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-          transition={{ duration: reduce ? 0 : 0.5, ease: EASE }}
+          key={key}
+          initial={{ opacity: 0, y: reduce ? 0 : 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: reduce ? 0 : 0.35, ease: EASE }}
         >
           {children}
         </motion.div>
