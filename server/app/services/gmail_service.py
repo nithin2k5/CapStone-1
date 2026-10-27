@@ -32,6 +32,18 @@ class GmailMessage:
     mailbox: str = "inbox"
 
 
+class GmailScopeMissing(ValueError):
+    """The grant is valid but does not cover Gmail; only re-consent fixes it."""
+
+    MESSAGE = (
+        "Google did not grant Gmail access. Sign out, sign in with Google again "
+        "and tick the box that allows access to your Gmail."
+    )
+
+    def __init__(self) -> None:
+        super().__init__(self.MESSAGE)
+
+
 def _decode_base64url(data: str) -> str:
     if not data:
         return ""
@@ -65,6 +77,20 @@ class GmailService:
 
     def __init__(self) -> None:
         self.settings = get_settings()
+
+    @classmethod
+    def grants_mailbox_access(cls, granted_scope: str | None) -> bool:
+        """
+        Whether a token response's `scope` covers gmail.modify.
+
+        Google's consent screen lets the user untick Gmail and still sign in,
+        which yields a token that can read the profile and nothing else. An
+        absent `scope` field is given the benefit of the doubt, since Google
+        only omits it when nothing changed from the scopes requested.
+        """
+        if granted_scope is None:
+            return True
+        return cls.SCOPES[0] in granted_scope.split()
 
     def is_configured(self) -> bool:
         return bool(
@@ -419,7 +445,7 @@ class GmailService:
                 messages = await self._fetch_from_gmail_api(token, mailbox, max_results, since)
                 if messages is not None:
                     return messages
-            except AccessTokenRejected:
+            except (AccessTokenRejected, GmailScopeMissing):
                 raise
             except Exception as e:
                 logger.error("Error fetching live Gmail API messages: %s", e)
@@ -451,6 +477,8 @@ class GmailService:
             )
             if res.status_code == 401:
                 raise AccessTokenRejected()
+            if res.status_code == 403 and "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in res.text:
+                raise GmailScopeMissing()
 
             if res.status_code != 200:
                 logger.error(

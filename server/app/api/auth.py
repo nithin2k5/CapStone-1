@@ -212,7 +212,7 @@ async def google_login(state: str = "default_state"):
 async def _process_google_code(
     code: str, redirect_uri: str | None, db: AsyncSession
 ) -> TokenResponse:
-    from app.services.gmail_service import GmailService
+    from app.services.gmail_service import GmailScopeMissing, GmailService
 
     service = GmailService()
     tokens = await service.exchange_code(code, redirect_uri=redirect_uri)
@@ -221,6 +221,16 @@ async def _process_google_code(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=f"Failed to exchange OAuth code: {tokens.get('error', 'unknown error')}",
+        )
+
+    # Refused rather than stored: an account without Gmail access signs in to
+    # a dashboard that can neither fetch nor quarantine anything, and the
+    # failure would only surface later as an unrelated-looking fetch error.
+    if not GmailService.grants_mailbox_access(tokens.get("scope")):
+        logger.warning("Google sign-in refused: grant lacks gmail.modify")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=GmailScopeMissing.MESSAGE,
         )
 
     access_token = tokens["access_token"]

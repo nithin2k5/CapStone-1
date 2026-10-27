@@ -76,8 +76,10 @@ export default function GoogleSignInButton({
       setError("Google sign-in was cancelled or failed.");
     },
     flow: "auth-code",
+    // Must match GmailService.SCOPES on the server: quarantining a message
+    // relabels it, which readonly access cannot do.
     scope:
-      "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+      "https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
   });
 
   const handleDemoGoogleSignIn = () => {
