@@ -1,68 +1,109 @@
 "use client";
 
-import { Search, Bell, Shield, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/Badge";
+import { Menu, Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useAuthSession } from "@/lib/useAuthSession";
 
-export function Header() {
+const titles: Record<string, string> = {
+  dashboard: "Overview",
+  emails: "Emails",
+  threats: "Threats",
+  quarantine: "Quarantine",
+  analytics: "Analytics",
+  settings: "Settings",
+  docs: "Docs",
+  privacy: "Privacy",
+};
+
+function initials(name: string | undefined, email: string | undefined) {
+  const source = (name || email || "").trim();
+  if (!source) return "··";
+  const parts = source.split(/[\s@._-]+/).filter(Boolean);
+  return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "··";
+}
+
+export function Header({ onOpenDrawer }: { onOpenDrawer: () => void }) {
   const pathname = usePathname();
-  const isSecure = true; // Replace with actual global state later
+  const session = useAuthSession();
 
-  // Generate breadcrumbs from pathname
-  const pathParts = pathname.split("/").filter(Boolean);
-  const title = pathParts.length > 0 
-    ? pathParts[0].charAt(0).toUpperCase() + pathParts[0].slice(1)
-    : "Overview";
+  const parts = pathname.split("/").filter(Boolean);
+  const section = parts[0] ?? "dashboard";
+  const title = titles[section] ?? section.charAt(0).toUpperCase() + section.slice(1);
 
   return (
-    <header className="h-20 border-b border-black/5 dark:border-border bg-white/40 dark:bg-black/40 backdrop-blur-3xl sticky top-0 z-30 px-8 flex items-center justify-between transition-colors duration-300">
-      <div>
-        <h1 className="text-xl font-heading font-bold text-black dark:text-foreground tracking-wide">
-          {title}
-        </h1>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-xs text-muted-foreground font-medium tracking-wider">SECURE GATEWAY</span>
-          <span className="text-muted-foreground dark:text-gray-700 text-xs">/</span>
-          <span className="text-xs text-violet-500 dark:text-violet-400 font-medium tracking-wider uppercase">{title}</span>
+    <header className="sticky top-0 z-30 flex h-[68px] items-center justify-between gap-4 border-b border-border bg-background/70 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <div className="flex min-w-0 items-center gap-3">
+        <button
+          type="button"
+          onClick={onOpenDrawer}
+          aria-label="Open menu"
+          className="rounded-lg p-2 text-foreground lg:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+            <span>gateway</span>
+            <span className="text-border-strong">/</span>
+            <span className="text-accent">{section}</span>
+            {parts[1] && (
+              <>
+                <span className="text-border-strong">/</span>
+                <span className="max-w-[120px] truncate">{parts[1]}</span>
+              </>
+            )}
+          </div>
+          <h1 className="display mt-0.5 truncate text-[19px] text-foreground">{title}</h1>
         </div>
       </div>
 
-      <div className="flex items-center gap-6">
-        <div className="relative group hidden md:block">
-          <Search className="w-4 h-4 text-muted-foreground dark:text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 group-focus-within:text-violet-500 dark:group-focus-within:text-violet-400 transition-colors" />
-          <input
-            type="text"
-            placeholder="Search emails, threats..."
-            className="w-64 h-10 bg-black/5 dark:bg-foreground/5 border border-black/10 dark:border-border rounded-full pl-10 pr-4 text-sm text-black dark:text-foreground placeholder:text-muted-foreground dark:placeholder:text-gray-600 focus:outline-none focus:border-violet-500/50 focus:bg-black/10 dark:focus:bg-white/[0.08] transition-all"
+      <div className="flex items-center gap-1.5 sm:gap-3">
+        <span
+          className="pill hidden md:inline-flex"
+          style={{
+            borderColor: "color-mix(in srgb, var(--accent) 30%, var(--border))",
+            background: "var(--accent-subtle)",
+            color: "var(--accent)",
+          }}
+        >
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-pulse-ring absolute inline-flex h-full w-full rounded-full bg-accent" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-accent" />
+          </span>
+          monitoring
+        </span>
+
+        <ThemeToggle />
+
+        <button
+          type="button"
+          aria-label="Notifications"
+          className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <Bell className="h-[18px] w-[18px]" />
+          <span
+            className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-accent"
+            style={{ boxShadow: "0 0 8px var(--accent)" }}
           />
-        </div>
+        </button>
 
-        <div className="flex items-center gap-4 border-l border-black/10 dark:border-border pl-6">
-          <ThemeToggle />
-          
-          <button className="relative p-2 rounded-full hover:bg-black/5 dark:hover:bg-foreground/5 text-gray-600 dark:text-muted-foreground hover:text-black dark:hover:text-foreground transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.8)]" />
-          </button>
-
-          {isSecure ? (
-            <Badge variant="safe" className="hidden sm:flex gap-1.5 px-3 py-1">
-              <Shield className="w-3 h-3" />
-              SYSTEM SECURE
-            </Badge>
-          ) : (
-            <Badge variant="blocked" className="hidden sm:flex gap-1.5 px-3 py-1">
-              <AlertTriangle className="w-3 h-3" />
-              THREAT DETECTED
-            </Badge>
-          )}
-
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-violet-500 to-purple-500 p-[1px]">
-            <div className="w-full h-full rounded-full bg-white dark:bg-black flex items-center justify-center">
-              <span className="text-xs font-bold text-black dark:text-foreground">AD</span>
-            </div>
-          </div>
+        <div
+          className="ml-1 flex items-center gap-2.5 rounded-xl border border-border bg-card/60 py-1 pl-1 pr-1 sm:pr-3"
+          title={session?.email}
+        >
+          <span
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-[11px] font-bold text-accent-contrast"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--accent-solid), var(--accent-2))",
+            }}
+          >
+            {initials(session?.name, session?.email)}
+          </span>
+          <span className="hidden max-w-[140px] truncate text-[12.5px] font-medium text-foreground sm:block">
+            {session?.name || session?.email || "Analyst"}
+          </span>
         </div>
       </div>
     </header>

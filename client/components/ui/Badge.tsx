@@ -6,19 +6,20 @@ interface BadgeProps {
   className?: string;
 }
 
-export function Badge({ children, variant = "neutral", className }: BadgeProps) {
-  const variants = {
-    safe: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_10px_rgba(52,211,153,0.1)]",
-    suspicious: "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_10px_rgba(251,191,36,0.1)]",
-    blocked: "bg-red-500/10 text-red-400 border-red-500/20 shadow-[0_0_10px_rgba(248,113,113,0.1)]",
-    info: "bg-purple-500/10 text-purple-400 border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.1)]",
-    neutral: "bg-foreground/5 text-gray-300 border-border",
-  };
+// Verdict colours come from the semantic tokens so they hold in both themes.
+const variants = {
+  safe: "border-[color-mix(in_srgb,var(--success)_30%,var(--border))] bg-[color-mix(in_srgb,var(--success)_10%,transparent)] text-[var(--success)]",
+  suspicious: "border-[color-mix(in_srgb,var(--warning)_30%,var(--border))] bg-[color-mix(in_srgb,var(--warning)_10%,transparent)] text-[var(--warning)]",
+  blocked: "border-[color-mix(in_srgb,var(--danger)_30%,var(--border))] bg-[color-mix(in_srgb,var(--danger)_10%,transparent)] text-[var(--danger)]",
+  info: "border-[color-mix(in_srgb,var(--accent)_30%,var(--border))] bg-accent-subtle text-accent",
+  neutral: "border-border bg-secondary text-muted-foreground",
+};
 
+export function Badge({ children, variant = "neutral", className }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold border backdrop-blur-sm",
+        "inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 font-mono text-[11px] font-semibold uppercase tracking-wider",
         variants[variant],
         className
       )}
