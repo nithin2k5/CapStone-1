@@ -2,14 +2,13 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { Badge } from "@/components/ui/Badge";
-import { MoreVertical, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, ChevronRight, ShieldAlert, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useCallback, useEffect, useState } from "react";
 import { getEmailQueue, fetchLiveGmailMessages, EmailItem, EmailListResponse } from "@/lib/api";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
-
-// Mock data removed in favor of dynamic backend fetching
 
 type RecentRow = {
   id: string;
@@ -24,6 +23,7 @@ type RecentRow = {
 export function RecentEmails() {
   const [emails, setEmails] = useState<RecentRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const show = useCallback((data: EmailListResponse) => {
         if (data.items.length > 0) {
@@ -72,57 +72,73 @@ export function RecentEmails() {
   useLiveRefresh(refreshQuietly);
 
   return (
-    <GlassCard className="col-span-1 lg:col-span-3 flex flex-col relative z-10">
-      <div className="p-6 border-b border-border flex items-center justify-between">
+    <GlassCard className="relative z-10 flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between border-b border-border px-6 py-5">
         <div>
-          <h3 className="text-base font-heading font-bold text-foreground tracking-wide">Recent Emails</h3>
-          <p className="text-xs text-muted-foreground mt-1">Latest inbound traffic analyzed by the gateway.</p>
+          <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+            recent emails
+          </h3>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Latest inbound mail analysed by the gateway.
+          </p>
         </div>
-        <Link href="/emails" className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors">
-          View All Traffic &rarr;
+        <Link
+          href="/emails"
+          className="inline-flex items-center gap-1 text-[12px] font-medium text-accent transition-colors hover:text-accent-hover"
+        >
+          All emails <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
       </div>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-muted-foreground uppercase bg-black/20 border-b border-border">
+        <table className="w-full min-w-[720px] text-left text-sm">
+          <thead className="border-b border-border bg-secondary/60 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
             <tr>
-              <th className="px-6 py-4 font-medium tracking-wider">Sender</th>
-              <th className="px-6 py-4 font-medium tracking-wider">Subject</th>
-              <th className="px-6 py-4 font-medium tracking-wider">Received</th>
-              <th className="px-6 py-4 font-medium tracking-wider">Threat Level</th>
-              <th className="px-6 py-4 font-medium tracking-wider">Status</th>
-              <th className="px-6 py-4 font-medium tracking-wider text-right">Actions</th>
+              <th className="px-6 py-3 font-medium">Sender</th>
+              <th className="px-6 py-3 font-medium">Subject</th>
+              <th className="px-6 py-3 font-medium">Received</th>
+              <th className="px-6 py-3 font-medium">Threat level</th>
+              <th className="px-6 py-3 font-medium">Status</th>
+              <th className="w-10 px-6 py-3" />
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/5">
+          <tbody className="divide-y divide-border">
+            {loading &&
+              [0, 1, 2].map((i) => (
+                <tr key={i}>
+                  <td colSpan={6} className="px-6 py-4">
+                    <div className="h-5 animate-pulse rounded bg-secondary" />
+                  </td>
+                </tr>
+              ))}
             {emails.length === 0 && !loading && (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-muted-foreground">
+                <td colSpan={6} className="px-6 py-10 text-center text-muted-foreground">
                   No emails found.
                 </td>
               </tr>
             )}
             {emails.map((email, i) => (
-              <motion.tr 
-                initial={{ opacity: 0, y: 10 }}
+              <motion.tr
+                initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                key={email.id} 
-                className="hover:bg-white/[0.02] transition-colors group cursor-pointer"
+                transition={{ delay: i * 0.06 }}
+                key={email.id}
+                onClick={() => router.push(`/emails/${email.id}`)}
+                className="group cursor-pointer transition-colors hover:bg-accent-subtle"
               >
-                <td className="px-6 py-4">
+                <td className="px-6 py-3.5">
                   <div className="font-medium text-foreground">{email.sender}</div>
-                  <div className="text-xs text-muted-foreground">{email.email}</div>
+                  <div className="font-mono text-[11px] text-muted-foreground">{email.email}</div>
                 </td>
-                <td className="px-6 py-4 text-gray-300">
+                <td className="max-w-[260px] truncate px-6 py-3.5 text-foreground/90">
                   {email.subject}
                 </td>
-                <td className="px-6 py-4 text-muted-foreground text-xs">
+                <td className="px-6 py-3.5 font-mono text-[12px] text-muted-foreground">
                   {email.time}
                 </td>
-                <td className="px-6 py-4">
-                  <Badge 
+                <td className="px-6 py-3.5">
+                  <Badge
                     variant={
                       email.level === "SAFE" ? "safe" :
                       email.level === "CRITICAL" ? "blocked" :
@@ -132,22 +148,20 @@ export function RecentEmails() {
                     {email.level}
                   </Badge>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-6 py-3.5">
                   <div className="flex items-center gap-2">
-                    {email.status === "DELIVERED" ? (
-                      <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    {email.status === "SAFE" ? (
+                      <ShieldCheck className="h-4 w-4 text-[var(--success)]" />
                     ) : (
-                      <ShieldAlert className="w-4 h-4 text-red-400" />
+                      <ShieldAlert className="h-4 w-4 text-[var(--danger)]" />
                     )}
-                    <span className="text-xs font-semibold tracking-wider text-muted-foreground">
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
                       {email.status}
                     </span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <button className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-foreground/10 opacity-0 group-hover:opacity-100 transition-all">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
+                <td className="px-6 py-3.5 text-right">
+                  <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-all group-hover:translate-x-0.5 group-hover:text-accent group-hover:opacity-100" />
                 </td>
               </motion.tr>
             ))}

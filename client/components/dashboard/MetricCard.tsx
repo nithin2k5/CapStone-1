@@ -1,73 +1,84 @@
 import { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
-import { cn } from "@/lib/utils";
+
+type Tone = "accent" | "success" | "warning" | "danger";
 
 interface MetricCardProps {
   title: string;
-  value: string | number;
-  trend: string;
-  trendUp: boolean;
+  value: number | null;
+  /** Share of all scanned mail, 0–1; drawn as a bar under the figure. */
+  share?: number;
   icon: LucideIcon;
   description: string;
-  color?: "purple" | "blue" | "emerald" | "amber" | "red";
+  tone?: Tone;
 }
+
+const toneVar: Record<Tone, string> = {
+  accent: "var(--accent)",
+  success: "var(--success)",
+  warning: "var(--warning)",
+  danger: "var(--danger)",
+};
 
 export function MetricCard({
   title,
   value,
-  trend,
-  trendUp,
+  share,
   icon: Icon,
   description,
-  color = "purple",
+  tone = "accent",
 }: MetricCardProps) {
-  const colorStyles = {
-    purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-    blue: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-    emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-    amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
-    red: "text-red-400 bg-red-500/10 border-red-500/20",
-  };
+  const color = toneVar[tone];
 
   return (
-    <GlassCard hover className="p-6 relative overflow-hidden group">
-      {/* Subtle background glow based on color */}
-      <div 
-        className={cn(
-          "absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-20 transition-opacity group-hover:opacity-40",
-          color === "purple" && "bg-purple-500",
-          color === "blue" && "bg-purple-500",
-          color === "emerald" && "bg-emerald-500",
-          color === "amber" && "bg-amber-500",
-          color === "red" && "bg-red-500"
-        )} 
+    <GlassCard hover className="group overflow-hidden p-5">
+      <div
+        className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full opacity-15 blur-3xl transition-opacity duration-300 group-hover:opacity-30"
+        style={{ background: color }}
       />
 
-      <div className="flex justify-between items-start mb-4 relative z-10">
-        <div className="flex items-center gap-3">
-          <div className={cn("p-2.5 rounded-xl border", colorStyles[color])}>
-            <Icon className="w-5 h-5" />
-          </div>
-          <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase">{title}</h3>
-        </div>
+      <div className="relative flex items-start justify-between">
+        <span className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+          {title}
+        </span>
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-xl border"
+          style={{
+            color,
+            borderColor: `color-mix(in srgb, ${color} 30%, var(--border))`,
+            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+          }}
+        >
+          <Icon className="h-[18px] w-[18px]" />
+        </span>
       </div>
 
-      <div className="relative z-10">
-        <div className="text-3xl font-heading font-bold text-foreground mb-2">{value}</div>
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "text-xs font-semibold px-2 py-0.5 rounded-full border",
-              trendUp
-                ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
-                : color === "red" 
-                  ? "text-red-400 bg-red-500/10 border-red-500/20" 
-                  : "text-amber-400 bg-amber-500/10 border-amber-500/20"
-            )}
-          >
-            {trendUp ? "↑" : "↓"} {trend}
-          </span>
-          <span className="text-xs text-muted-foreground">{description}</span>
+      <div className="display relative mt-3 text-[2.1rem] leading-none text-foreground">
+        {value === null ? (
+          <span className="inline-block h-8 w-20 animate-pulse rounded-md bg-secondary align-middle" />
+        ) : (
+          value.toLocaleString()
+        )}
+      </div>
+
+      <div className="relative mt-4">
+        <div className="h-1.5 overflow-hidden rounded-full bg-secondary">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ background: color, boxShadow: `0 0 10px ${color}` }}
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.round((share ?? 0) * 100)}%` }}
+            transition={{ duration: 0.9, ease: [0.22, 1, 0.36, 1] }}
+          />
+        </div>
+        <div className="mt-2 flex items-center justify-between text-[12px]">
+          <span className="text-muted-foreground">{description}</span>
+          {share !== undefined && (
+            <span className="font-mono" style={{ color }}>
+              {Math.round(share * 100)}%
+            </span>
+          )}
         </div>
       </div>
     </GlassCard>

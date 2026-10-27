@@ -91,22 +91,22 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-background/70 backdrop-blur-sm"
           />
           
           <motion.div 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-3xl glass-card border border-white/[0.08] rounded-2xl overflow-hidden flex flex-col max-h-[85vh] bg-card"
+            className="relative w-full max-w-3xl glass-card border border-border rounded-2xl overflow-hidden flex flex-col max-h-[85vh] bg-card"
           >
-            <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02]">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-secondary/40">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-violet-500/20 rounded-lg border border-violet-500/30">
-                  <Mail className="w-5 h-5 text-violet-400" />
+                <div className="p-2 bg-accent-subtle rounded-lg border border-accent/30">
+                  <Mail className="w-5 h-5 text-accent" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-heading font-semibold text-foreground">Live Inbox Scan</h2>
+                  <h2 className="text-lg font-display font-semibold text-foreground">Live Inbox Scan</h2>
                   <p className="text-xs text-muted-foreground">Evaluating threats in memory</p>
                 </div>
               </div>
@@ -122,8 +122,8 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
               {scanning ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-full" />
-                    <Loader2 className="w-16 h-16 text-violet-400 animate-spin relative z-10" />
+                    <div className="absolute inset-0 bg-accent-subtle blur-xl rounded-full" />
+                    <Loader2 className="w-16 h-16 text-accent animate-spin relative z-10" />
                   </div>
                   <h3 className="text-xl font-medium text-foreground mb-2">Analyzing Inbox</h3>
                   <p className="text-sm text-muted-foreground max-w-sm animate-pulse">
@@ -131,15 +131,15 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                   </p>
                 </div>
               ) : error ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center text-red-400">
+                <div className="flex flex-col items-center justify-center py-12 text-center text-[var(--danger)]">
                   <AlertTriangle className="w-12 h-12 mb-4" />
                   <p>{error}</p>
                 </div>
               ) : results ? (
                 <div className="space-y-6">
-                  <div className="flex items-center gap-4 p-4 rounded-xl border border-white/[0.06] bg-white/[0.02]">
+                  <div className="flex items-center gap-4 p-4 rounded-xl border border-border bg-secondary/40">
                     <div className="flex-1 flex items-center gap-3">
-                      <div className="p-2.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                      <div className="p-2.5 rounded-lg bg-[var(--success)]/10 text-[var(--success)]">
                         <CheckCircle2 className="w-5 h-5" />
                       </div>
                       <div>
@@ -147,9 +147,9 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                         <p className="text-2xl font-bold text-foreground">{safeCount}</p>
                       </div>
                     </div>
-                    <div className="w-px h-12 bg-white/[0.06]" />
+                    <div className="w-px h-12 bg-border" />
                     <div className="flex-1 flex items-center gap-3 pl-4">
-                      <div className="p-2.5 rounded-lg bg-red-500/20 text-red-400">
+                      <div className="p-2.5 rounded-lg bg-[var(--danger)]/10 text-[var(--danger)]">
                         <ShieldAlert className="w-5 h-5" />
                       </div>
                       <div>
@@ -169,13 +169,13 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: i * 0.1 }}
-                          className="p-4 rounded-xl border border-white/[0.04] bg-white/[0.01] flex items-center gap-4 hover:bg-white/[0.03] transition-colors"
+                          className="p-4 rounded-xl border border-border bg-secondary/40 flex items-center gap-4 hover:bg-secondary transition-colors"
                         >
                           <div className={cn(
                             "p-2 rounded-full border",
                             email.status === "blocked" 
-                              ? "bg-red-500/10 border-red-500/20 text-red-400" 
-                              : "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                              ? "bg-[var(--danger)]/10 border-[var(--danger)]/30 text-[var(--danger)]" 
+                              : "bg-[var(--success)]/10 border-[var(--success)]/30 text-[var(--success)]"
                           )}>
                             {email.status === "blocked" ? <ShieldAlert className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                           </div>
@@ -195,9 +195,9 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
                               <p className="text-xs text-muted-foreground mb-1">Risk Score</p>
                               <p className={cn(
                                 "text-sm font-bold",
-                                email.risk_score >= 80 ? "text-red-400" :
-                                email.risk_score >= 50 ? "text-amber-400" :
-                                "text-emerald-400"
+                                email.risk_score >= 80 ? "text-[var(--danger)]" :
+                                email.risk_score >= 50 ? "text-[var(--warning)]" :
+                                "text-[var(--success)]"
                               )}>
                                 {email.risk_score.toFixed(0)}/100
                               </p>
@@ -215,10 +215,10 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
             </div>
 
             {!scanning && results && (
-              <div className="p-6 border-t border-white/[0.06] bg-white/[0.02] flex justify-end">
+              <div className="p-6 border-t border-border bg-secondary/40 flex justify-end">
                 <button 
                   onClick={onClose}
-                  className="px-6 py-2 bg-violet-500 text-foreground font-medium rounded-xl hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/20"
+                  className="px-6 py-2 bg-accent-solid text-foreground font-medium rounded-xl hover:bg-accent-solid transition-colors shadow-lg shadow-violet-500/20"
                 >
                   Done
                 </button>

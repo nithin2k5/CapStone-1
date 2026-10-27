@@ -2,112 +2,78 @@
 
 import { GlassCard } from "@/components/ui/GlassCard";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { useState } from "react";
 import type { DashboardData } from "@/lib/api";
-import { cn } from "@/lib/utils";
-
-const fallbackData = [
-  { time: "00:00", clean: 0, threats: 0 },
-];
 
 type MonthlyPoint = DashboardData["monthly_statistics"][number];
 
 export function ThreatOverview({ data }: { data?: MonthlyPoint[] }) {
-  const [range, setRange] = useState<"24H" | "7D" | "30D">("30D");
+  const chartData =
+    data && data.length > 0
+      ? data.map((d) => ({ time: d.month, clean: d.safe, threats: d.blocked }))
+      : [{ time: "—", clean: 0, threats: 0 }];
 
-  const chartData = data && data.length > 0 ? data.map(d => ({
-    time: d.month,
-    clean: d.safe,
-    threats: d.blocked
-  })) : fallbackData;
+  const legend = [
+    { label: "Safe", color: "var(--success)" },
+    { label: "Blocked", color: "var(--danger)" },
+  ];
 
   return (
-    <GlassCard className="p-6 col-span-1 lg:col-span-2 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl" />
-      
-      <div className="flex justify-between items-center mb-6 relative z-10">
+    <GlassCard className="flex h-full flex-col overflow-hidden p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase mb-1">
-            Threat Activity
+          <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+            threat activity
           </h3>
-          <p className="text-xs text-muted-foreground">Volume of scanned and blocked emails over time.</p>
+          <p className="mt-1 text-[13px] text-muted-foreground">
+            Safe and blocked mail per month.
+          </p>
         </div>
-
-        <div className="flex items-center gap-1 bg-foreground/5 p-1 rounded-lg border border-border">
-          {(["24H", "7D", "30D"] as const).map((r) => (
-            <button
-              key={r}
-              onClick={() => setRange(r)}
-              className={cn(
-                "px-3 py-1 text-xs font-semibold rounded-md transition-all",
-                range === r 
-                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" 
-                  : "text-muted-foreground hover:text-gray-300 hover:bg-foreground/5 border border-transparent"
-              )}
-            >
-              {r}
-            </button>
+        <div className="flex items-center gap-4">
+          {legend.map((l) => (
+            <span key={l.label} className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
+              <span className="h-2 w-2 rounded-full" style={{ background: l.color, boxShadow: `0 0 8px ${l.color}` }} />
+              {l.label}
+            </span>
           ))}
         </div>
       </div>
 
-      <div className="h-[250px] w-full relative z-10">
+      <div className="mt-6 h-[260px] w-full flex-1">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 10, right: 4, left: -20, bottom: 0 }}>
             <defs>
-              <linearGradient id="colorClean" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#34d399" stopOpacity={0.15}/>
-                <stop offset="95%" stopColor="#34d399" stopOpacity={0}/>
+              <linearGradient id="fillClean" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--success)" stopOpacity={0.22} />
+                <stop offset="95%" stopColor="var(--success)" stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="colorThreats" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#f87171" stopOpacity={0.25}/>
-                <stop offset="95%" stopColor="#f87171" stopOpacity={0}/>
+              <linearGradient id="fillThreats" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--danger)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--danger)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-            <XAxis 
-              dataKey="time" 
-              stroke="rgba(255,255,255,0.2)" 
-              fontSize={12} 
+            <CartesianGrid strokeDasharray="3 6" stroke="var(--border)" vertical={false} />
+            <XAxis dataKey="time" stroke="var(--muted-foreground)" fontSize={11} tickLine={false} axisLine={false} dy={10} />
+            <YAxis
+              stroke="var(--muted-foreground)"
+              fontSize={11}
               tickLine={false}
               axisLine={false}
-              dy={10}
+              allowDecimals={false}
+              tickFormatter={(v) => (v >= 1000 ? `${(v / 1000).toFixed(1)}k` : v)}
             />
-            <YAxis 
-              stroke="rgba(255,255,255,0.2)" 
-              fontSize={12} 
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => value >= 1000 ? `${(value/1000).toFixed(1)}k` : value}
-            />
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: 'rgba(10,10,10,0.9)', 
-                borderColor: 'rgba(255,255,255,0.1)',
-                borderRadius: '8px',
-                backdropFilter: 'blur(10px)'
+            <Tooltip
+              cursor={{ stroke: "var(--accent)", strokeOpacity: 0.4 }}
+              contentStyle={{
+                backgroundColor: "var(--card)",
+                borderColor: "var(--border)",
+                borderRadius: 12,
+                fontSize: 12,
               }}
-              itemStyle={{ fontSize: '13px' }}
-              labelStyle={{ color: '#9ca3af', marginBottom: '4px', fontSize: '12px' }}
+              labelStyle={{ color: "var(--muted-foreground)", marginBottom: 4 }}
+              itemStyle={{ color: "var(--foreground)" }}
             />
-            <Area 
-              type="monotone" 
-              dataKey="clean" 
-              name="Safe Emails"
-              stroke="#34d399" 
-              strokeWidth={2}
-              fillOpacity={1} 
-              fill="url(#colorClean)" 
-            />
-            <Area 
-              type="monotone" 
-              dataKey="threats" 
-              name="Threats Blocked"
-              stroke="#f87171" 
-              strokeWidth={2}
-              fillOpacity={1} 
-              fill="url(#colorThreats)" 
-            />
+            <Area type="monotone" dataKey="clean" name="Safe" stroke="var(--success)" strokeWidth={2} fill="url(#fillClean)" />
+            <Area type="monotone" dataKey="threats" name="Blocked" stroke="var(--danger)" strokeWidth={2} fill="url(#fillThreats)" />
           </AreaChart>
         </ResponsiveContainer>
       </div>

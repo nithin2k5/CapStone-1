@@ -3,89 +3,99 @@
 import { motion } from "framer-motion";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { ShieldCheck, ShieldAlert, AlertTriangle } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface SecurityScoreProps {
-  score: number;
+  /** Percentage of scanned mail that passed analysis; null while loading. */
+  score: number | null;
 }
 
 export function SecurityScore({ score }: SecurityScoreProps) {
-  let status = "SECURE";
-  let colorClass = "text-emerald-400";
-  let bgGlow = "bg-emerald-500";
-  let Icon = ShieldCheck;
+  const value = score ?? 0;
 
-  if (score < 70) {
+  let status = "SECURE";
+  let color = "var(--success)";
+  let Icon = ShieldCheck;
+  if (value < 70) {
     status = "CRITICAL";
-    colorClass = "text-red-400";
-    bgGlow = "bg-red-500";
+    color = "var(--danger)";
     Icon = AlertTriangle;
-  } else if (score < 90) {
-    status = "WARNING";
-    colorClass = "text-amber-400";
-    bgGlow = "bg-amber-500";
+  } else if (value < 90) {
+    status = "ELEVATED";
+    color = "var(--warning)";
     Icon = ShieldAlert;
   }
 
-  const radius = 60;
+  const radius = 78;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+  const offset = circumference - (value / 100) * circumference;
 
   return (
-    <GlassCard className="p-8 flex flex-col items-center justify-center relative overflow-hidden">
-      <div className={cn("absolute inset-0 opacity-10 blur-3xl", bgGlow)} />
+    <GlassCard className="flex h-full flex-col overflow-hidden p-6">
+      <div className="flex items-center justify-between">
+        <h3 className="font-mono text-[10.5px] uppercase tracking-[0.18em] text-muted-foreground">
+          protection score
+        </h3>
+        <span
+          className="pill"
+          style={{
+            color,
+            borderColor: `color-mix(in srgb, ${color} 30%, var(--border))`,
+            background: `color-mix(in srgb, ${color} 10%, transparent)`,
+          }}
+        >
+          <Icon className="h-3 w-3" />
+          {score === null ? "…" : status}
+        </span>
+      </div>
 
-      <h3 className="text-sm font-medium text-muted-foreground tracking-wide uppercase mb-6 relative z-10">
-        Protection Score
-      </h3>
-
-      <div className="relative w-48 h-48 flex items-center justify-center mb-4 z-10">
-        {/* Background track */}
-        <svg className="absolute inset-0 w-full h-full transform -rotate-90">
+      <div className="relative mx-auto my-6 flex h-52 w-52 items-center justify-center">
+        {/* Radar sweep behind the dial */}
+        <span
+          className="animate-radar absolute inset-4 rounded-full opacity-50"
+          style={{
+            background:
+              "conic-gradient(from 0deg, transparent 0 80%, color-mix(in srgb, var(--accent) 25%, transparent))",
+          }}
+        />
+        <svg viewBox="0 0 200 200" className="absolute inset-0 h-full w-full -rotate-90">
+          {/* Tick ring */}
           <circle
-            cx="96"
-            cy="96"
-            r={radius}
-            stroke="currentColor"
-            strokeWidth="8"
-            fill="transparent"
-            className="text-foreground/5"
+            cx="100"
+            cy="100"
+            r="94"
+            fill="none"
+            stroke="var(--border)"
+            strokeWidth="1"
+            strokeDasharray="2 6"
           />
-          {/* Animated progress circle */}
+          <circle cx="100" cy="100" r={radius} fill="none" stroke="var(--secondary)" strokeWidth="10" />
           <motion.circle
-            cx="96"
-            cy="96"
+            cx="100"
+            cy="100"
             r={radius}
-            stroke="currentColor"
-            strokeWidth="8"
-            fill="transparent"
+            fill="none"
+            stroke={color}
+            strokeWidth="10"
             strokeLinecap="round"
-            className={colorClass}
+            strokeDasharray={circumference}
             initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-            style={{ strokeDasharray: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.4, ease: "easeOut" }}
+            style={{ filter: `drop-shadow(0 0 6px ${color})` }}
           />
         </svg>
-
-        <div className="flex flex-col items-center justify-center text-center">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-            className="text-5xl font-heading font-bold text-foreground mb-1"
-          >
-            {score.toFixed(1)}
-          </motion.div>
-          <div className={cn("text-xs font-bold tracking-widest flex items-center gap-1.5", colorClass)}>
-            <Icon className="w-3 h-3" />
-            {status}
+        <div className="relative text-center">
+          <div className="display text-[3rem] leading-none text-foreground">
+            {score === null ? "—" : value.toFixed(1)}
+          </div>
+          <div className="mt-1 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">
+            % mail passed
           </div>
         </div>
       </div>
 
-      <p className="text-sm text-muted-foreground text-center relative z-10">
-        Based on real-time threat intelligence and policy configurations.
+      <p className="mt-auto text-center text-[12.5px] leading-relaxed text-muted-foreground">
+        Share of scanned mail that cleared every analyser.
       </p>
     </GlassCard>
   );
