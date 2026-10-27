@@ -28,7 +28,7 @@ export function ThreatCard({ severity, type, source, time, actionTaken }: Threat
           "absolute top-0 left-0 w-1 h-full",
           isCritical ? "bg-red-500 shadow-[0_0_15px_rgba(248,113,113,0.6)]" : 
           isHigh ? "bg-amber-500 shadow-[0_0_15px_rgba(251,191,36,0.6)]" : 
-          "bg-blue-500"
+          "bg-purple-500"
         )} 
       />
       

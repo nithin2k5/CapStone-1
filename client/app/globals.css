@@ -4,10 +4,11 @@
 
 /* ---------------------------------------------------------------------------
    Design system
-   Two accents, used for different jobs, never interchangeably:
-     accent    (emerald) - the gateway acting: verdicts, CTAs, confirmations
-     accent-2  (cyan)    - data and instrumentation: metrics, telemetry, links
-   Everything else is a neutral or a semantic (success / warning / danger).
+   Two purple accents, used for different jobs, never interchangeably:
+     accent    (violet)  - the gateway acting: verdicts, CTAs, confirmations
+     accent-2  (magenta) - data and instrumentation: metrics, telemetry, links
+   Everything else is a neutral or a semantic (success / warning / danger);
+   semantics stay green / amber / red so verdicts read at a glance.
    Glow is a scale, not an ad-hoc shadow: --glow-1..3, tuned per theme.
 --------------------------------------------------------------------------- */
 
@@ -23,6 +24,7 @@
 
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
+  --color-accent-solid: var(--accent-solid);
   --color-accent-contrast: var(--accent-contrast);
   --color-accent-subtle: var(--accent-subtle);
 
@@ -40,56 +42,58 @@
 
 @layer base {
   :root {
-    --background: #ffffff;
-    --foreground: #0b1220;
-    --secondary: #f4f6f9;
+    --background: #fcfbff;
+    --foreground: #150b26;
+    --secondary: #f5f1fc;
     --card: #ffffff;
-    --elevated: #fbfcfd;
-    --border: #e3e8ef;
-    --border-strong: #cbd4e1;
-    --muted-foreground: #58657a;
+    --elevated: #faf8fe;
+    --border: #e8e1f4;
+    --border-strong: #d4c8e8;
+    --muted-foreground: #5f5677;
 
-    --accent: #047857;
-    --accent-hover: #065f46;
+    --accent: #7e22ce;
+    --accent-hover: #6b21a8;
+    --accent-solid: #7e22ce;
     --accent-contrast: #ffffff;
-    --accent-subtle: rgba(4, 120, 87, 0.09);
+    --accent-subtle: rgba(126, 34, 206, 0.08);
 
-    --accent-2: #0e7490;
-    --accent-2-subtle: rgba(14, 116, 144, 0.09);
+    --accent-2: #a21caf;
+    --accent-2-subtle: rgba(162, 28, 175, 0.08);
 
     --success: #047857;
     --warning: #b45309;
     --danger: #be123c;
 
     /* Glow is restrained in light: coloured elevation, not neon */
-    --glow-1: 0 1px 2px rgba(11, 18, 32, 0.05), 0 2px 8px -2px rgba(11, 18, 32, 0.06);
-    --glow-2: 0 2px 4px rgba(11, 18, 32, 0.05), 0 12px 28px -10px rgba(11, 18, 32, 0.14);
-    --glow-3: 0 4px 8px rgba(11, 18, 32, 0.06), 0 28px 56px -18px rgba(11, 18, 32, 0.2);
-    --glow-accent: 0 8px 28px -10px rgba(4, 120, 87, 0.35);
-    --glow-accent-2: 0 8px 28px -10px rgba(14, 116, 144, 0.32);
+    --glow-1: 0 1px 2px rgba(21, 11, 38, 0.05), 0 2px 8px -2px rgba(21, 11, 38, 0.06);
+    --glow-2: 0 2px 4px rgba(21, 11, 38, 0.05), 0 12px 28px -10px rgba(21, 11, 38, 0.14);
+    --glow-3: 0 4px 8px rgba(21, 11, 38, 0.06), 0 28px 56px -18px rgba(21, 11, 38, 0.2);
+    --glow-accent: 0 8px 28px -10px rgba(126, 34, 206, 0.4);
+    --glow-accent-2: 0 8px 28px -10px rgba(162, 28, 175, 0.35);
     --glow-danger: 0 8px 28px -10px rgba(190, 18, 60, 0.3);
 
-    --grid-line: rgba(11, 18, 32, 0.055);
-    --scan-opacity: 0.1;
+    --grid-line: rgba(76, 29, 149, 0.07);
+    --scan-opacity: 0.14;
   }
 
   .dark {
-    --background: #050608;
-    --foreground: #e8ecf1;
-    --secondary: #0e1116;
-    --card: #0a0d11;
-    --elevated: #11151b;
-    --border: #1e242d;
-    --border-strong: #2d3642;
-    --muted-foreground: #8b98a9;
+    --background: #07040e;
+    --foreground: #ede8f7;
+    --secondary: #0f0a1a;
+    --card: #0c0815;
+    --elevated: #130d20;
+    --border: #221a35;
+    --border-strong: #35294f;
+    --muted-foreground: #9b91b4;
 
-    --accent: #10b981;
-    --accent-hover: #34d399;
-    --accent-contrast: #022c20;
-    --accent-subtle: rgba(16, 185, 129, 0.12);
+    --accent: #b57bff;
+    --accent-hover: #cfa6ff;
+    --accent-solid: #8b3dff;
+    --accent-contrast: #ffffff;
+    --accent-subtle: rgba(168, 99, 255, 0.12);
 
-    --accent-2: #22d3ee;
-    --accent-2-subtle: rgba(34, 211, 238, 0.12);
+    --accent-2: #e879f9;
+    --accent-2-subtle: rgba(232, 121, 249, 0.12);
 
     --success: #34d399;
     --warning: #fbbf24;
@@ -99,12 +103,12 @@
     --glow-1: 0 1px 2px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.02);
     --glow-2: 0 8px 24px -8px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03);
     --glow-3: 0 24px 64px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04);
-    --glow-accent: 0 0 0 1px rgba(16, 185, 129, 0.25), 0 0 32px -6px rgba(16, 185, 129, 0.35);
-    --glow-accent-2: 0 0 0 1px rgba(34, 211, 238, 0.25), 0 0 32px -6px rgba(34, 211, 238, 0.32);
+    --glow-accent: 0 0 0 1px rgba(168, 99, 255, 0.3), 0 0 36px -6px rgba(168, 99, 255, 0.45);
+    --glow-accent-2: 0 0 0 1px rgba(232, 121, 249, 0.28), 0 0 32px -6px rgba(232, 121, 249, 0.35);
     --glow-danger: 0 0 0 1px rgba(251, 113, 133, 0.28), 0 0 32px -6px rgba(251, 113, 133, 0.3);
 
-    --grid-line: rgba(232, 236, 241, 0.045);
-    --scan-opacity: 0.28;
+    --grid-line: rgba(181, 123, 255, 0.06);
+    --scan-opacity: 0.35;
   }
 
   * {
@@ -202,14 +206,15 @@
 
   .btn-primary {
     @apply relative inline-flex items-center justify-center gap-2 rounded-xl font-semibold
-           bg-accent text-accent-contrast border border-transparent;
+           text-accent-contrast border border-transparent;
+    background: linear-gradient(135deg, var(--accent-solid), color-mix(in srgb, var(--accent-solid) 70%, var(--accent-2)));
     box-shadow: var(--glow-accent);
     transition: background-color 0.18s ease, box-shadow 0.25s ease,
       transform 0.18s ease;
   }
 
   .btn-primary:hover {
-    background-color: var(--accent-hover);
+    filter: brightness(1.12);
     transform: translateY(-2px);
     box-shadow: var(--glow-2), var(--glow-accent);
   }
@@ -321,7 +326,7 @@
     border-bottom: 1px solid var(--accent-2);
   }
   .neon-glow-hover:hover {
-    @apply bg-accent text-accent-contrast;
+    @apply bg-accent-solid text-accent-contrast;
   }
   .scanlines {
     position: relative;
@@ -403,6 +408,135 @@ body {
   animation: caret 1.1s step-end infinite;
 }
 
+/* ---- Cyber motifs (home page) ------------------------------------------ */
+
+@keyframes radar {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -40;
+  }
+}
+
+@keyframes float-y {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes glitch {
+  0%, 92%, 100% {
+    transform: translate(0);
+    clip-path: inset(0 0 0 0);
+  }
+  93% {
+    transform: translate(-2px, 1px);
+    clip-path: inset(10% 0 55% 0);
+  }
+  95% {
+    transform: translate(2px, -1px);
+    clip-path: inset(60% 0 8% 0);
+  }
+  97% {
+    transform: translate(-1px, 0);
+    clip-path: inset(30% 0 40% 0);
+  }
+}
+
+@keyframes beam {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.animate-radar {
+  animation: radar 6s linear infinite;
+}
+.animate-dash {
+  animation: dash-flow 1.6s linear infinite;
+}
+.animate-float {
+  animation: float-y 6s ease-in-out infinite;
+}
+.animate-beam {
+  animation: beam 3.2s cubic-bezier(0.6, 0, 0.4, 1) infinite;
+}
+
+/* Glitch: a duplicate layer in accent-2 that tears briefly every few seconds */
+.glitch {
+  position: relative;
+  display: inline-block;
+}
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--accent-2);
+  opacity: 0.7;
+  animation: glitch 5s steps(1) infinite;
+  pointer-events: none;
+}
+
+/* CRT scanlines: an absolutely positioned layer laid over a surface */
+.scan-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    color-mix(in srgb, var(--accent) 5%, transparent) 2px 3px
+  );
+  border-radius: inherit;
+}
+
+/* Hexagonal mesh */
+.hex-bg {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cpath d='M28 66L0 50V16L28 0l28 16v34L28 66zm0 32L0 82V66l28 16 28-16v16L28 98z' fill='none' stroke='%23a863ff' stroke-opacity='0.09' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: 56px 98px;
+}
+
+/* Corner brackets: a targeting-reticle frame around a block */
+.brackets {
+  position: relative;
+}
+.brackets::before,
+.brackets::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border-color: var(--accent);
+  opacity: 0.8;
+  z-index: 2;
+  pointer-events: none;
+}
+.brackets::before {
+  top: 7px;
+  left: 7px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+  border-top-left-radius: 4px;
+}
+.brackets::after {
+  bottom: 7px;
+  right: 7px;
+  border-bottom: 2px solid;
+  border-right: 2px solid;
+  border-bottom-right-radius: 4px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -411,7 +545,12 @@ body {
   }
   .animate-marquee,
   .animate-sweep,
-  .animate-caret {
+  .animate-caret,
+  .animate-radar,
+  .animate-dash,
+  .animate-float,
+  .animate-beam,
+  .glitch::after {
     animation: none !important;
   }
 }

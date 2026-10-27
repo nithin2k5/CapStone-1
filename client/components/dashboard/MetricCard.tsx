@@ -23,7 +23,7 @@ export function MetricCard({
 }: MetricCardProps) {
   const colorStyles = {
     purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-    blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+    blue: "text-purple-400 bg-purple-500/10 border-purple-500/20",
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
     red: "text-red-400 bg-red-500/10 border-red-500/20",
@@ -36,7 +36,7 @@ export function MetricCard({
         className={cn(
           "absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-20 transition-opacity group-hover:opacity-40",
           color === "purple" && "bg-purple-500",
-          color === "blue" && "bg-blue-500",
+          color === "blue" && "bg-purple-500",
           color === "emerald" && "bg-emerald-500",
           color === "amber" && "bg-amber-500",
           color === "red" && "bg-red-500"

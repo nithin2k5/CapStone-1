@@ -23,7 +23,7 @@ export function ThreatOverview({ data }: { data?: MonthlyPoint[] }) {
 
   return (
     <GlassCard className="p-6 col-span-1 lg:col-span-2 relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
+      <div className="absolute top-0 right-0 w-64 h-64 bg-violet-500/10 rounded-full blur-3xl" />
       
       <div className="flex justify-between items-center mb-6 relative z-10">
         <div>
@@ -41,7 +41,7 @@ export function ThreatOverview({ data }: { data?: MonthlyPoint[] }) {
               className={cn(
                 "px-3 py-1 text-xs font-semibold rounded-md transition-all",
                 range === r 
-                  ? "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30" 
+                  ? "bg-violet-500/20 text-violet-300 border border-violet-500/30" 
                   : "text-muted-foreground hover:text-gray-300 hover:bg-foreground/5 border border-transparent"
               )}
             >

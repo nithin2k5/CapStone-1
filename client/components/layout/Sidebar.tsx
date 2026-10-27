@@ -60,14 +60,14 @@ export function Sidebar() {
           className={cn(
             "flex items-center gap-3 px-4 py-3 rounded-xl transition-all relative group",
             isActive
-              ? "bg-black/[0.04] dark:bg-white/[0.04] text-black dark:text-foreground border border-indigo-500/30 neon-glow-blue shadow-[0_0_15px_rgba(59,130,246,0.1)]"
+              ? "bg-black/[0.04] dark:bg-white/[0.04] text-black dark:text-foreground border border-violet-500/30 neon-glow-blue shadow-[0_0_15px_rgba(168,85,247,0.1)]"
               : "text-gray-600 dark:text-muted-foreground hover:text-black dark:hover:text-foreground hover:bg-black/[0.03] dark:hover:bg-white/[0.03]"
           )}
         >
           {isActive && (
             <motion.div 
               layoutId="active-indicator"
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-r-full"
+              className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-violet-500 rounded-r-full"
             />
           )}
           <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -86,8 +86,8 @@ export function Sidebar() {
     >
       <div className="p-6 h-20 flex items-center justify-between border-b border-black/5 dark:border-border">
         <Link href="/" className="flex items-center gap-3 group overflow-hidden">
-          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30">
-            <ShieldCheck className="w-5 h-5 text-indigo-500 dark:text-indigo-400" />
+          <div className="flex-shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30">
+            <ShieldCheck className="w-5 h-5 text-violet-500 dark:text-violet-400" />
           </div>
           {!collapsed && (
             <span className="font-heading font-bold text-base tracking-widest text-black dark:text-foreground whitespace-nowrap">

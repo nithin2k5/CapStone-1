@@ -72,7 +72,7 @@ export default function QuarantinePage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-heading font-bold text-foreground mb-2 flex items-center gap-2">
-            <Box className="w-6 h-6 text-indigo-400" />
+            <Box className="w-6 h-6 text-violet-400" />
             Quarantine Vault
           </h1>
           <p className="text-sm text-muted-foreground">Manage suspended emails awaiting manual review.</p>
@@ -88,7 +88,7 @@ export default function QuarantinePage() {
               <input 
                 type="text" 
                 placeholder="Search quarantine..." 
-                className="pl-9 pr-4 py-2 bg-foreground/5 border border-border rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-foreground w-full lg:w-64"
+                className="pl-9 pr-4 py-2 bg-foreground/5 border border-border rounded-xl text-sm focus:outline-none focus:border-violet-500/50 text-foreground w-full lg:w-64"
               />
             </div>
             <button className="px-4 py-2 bg-foreground/5 hover:bg-foreground/10 border border-border rounded-xl flex items-center gap-2 text-sm text-gray-300 transition-colors">
@@ -124,7 +124,7 @@ export default function QuarantinePage() {
                 <th className="px-6 py-4 w-12">
                   <input 
                     type="checkbox" 
-                    className="rounded border-border bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
+                    className="rounded border-border bg-black/50 checked:bg-violet-500 focus:ring-violet-500/50"
                     checked={selected.length === emails.length && emails.length > 0}
                     onChange={selectAll}
                   />
@@ -155,7 +155,7 @@ export default function QuarantinePage() {
                   <td className="px-6 py-4">
                     <input 
                       type="checkbox" 
-                      className="rounded border-border bg-black/50 checked:bg-indigo-500 focus:ring-indigo-500/50"
+                      className="rounded border-border bg-black/50 checked:bg-violet-500 focus:ring-violet-500/50"
                       checked={selected.includes(email.id)}
                       onChange={() => toggleSelect(email.id)}
                     />
@@ -186,7 +186,7 @@ export default function QuarantinePage() {
                   <td className="px-6 py-4 text-right">
                     <Link 
                       href={`/emails/${email.id}`}
-                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-foreground bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] opacity-0 group-hover:opacity-100"
+                      className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-foreground bg-violet-500/20 hover:bg-violet-500/40 border border-violet-500/30 transition-all shadow-[0_0_10px_rgba(139,92,246,0.1)] hover:shadow-[0_0_15px_rgba(139,92,246,0.3)] opacity-0 group-hover:opacity-100"
                     >
                       Analysis
                     </Link>

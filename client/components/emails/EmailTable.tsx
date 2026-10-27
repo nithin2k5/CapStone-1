@@ -87,7 +87,7 @@ export function EmailTable() {
             <input 
               type="text" 
               placeholder="Search emails..." 
-              className="pl-9 pr-4 py-2 bg-foreground/5 border border-border rounded-xl text-sm focus:outline-none focus:border-indigo-500/50 text-foreground w-64"
+              className="pl-9 pr-4 py-2 bg-foreground/5 border border-border rounded-xl text-sm focus:outline-none focus:border-violet-500/50 text-foreground w-64"
             />
           </div>
           <button 
@@ -103,7 +103,7 @@ export function EmailTable() {
               }
             }}
             disabled={loading}
-            className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 border border-indigo-500/30 rounded-xl flex items-center gap-2 text-sm text-indigo-300 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-violet-500/20 hover:bg-violet-500/30 border border-violet-500/30 rounded-xl flex items-center gap-2 text-sm text-violet-300 transition-colors disabled:opacity-50"
           >
             <ShieldCheck className="w-4 h-4" />
             {loading ? "Syncing..." : "Sync Now"}
@@ -175,7 +175,7 @@ export function EmailTable() {
                 <td className="px-6 py-4 text-right">
                   <Link 
                     href={`/emails/${email.id}`}
-                    className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-foreground bg-indigo-500/20 hover:bg-indigo-500/40 border border-indigo-500/30 transition-all shadow-[0_0_10px_rgba(99,102,241,0.1)] hover:shadow-[0_0_15px_rgba(99,102,241,0.3)]"
+                    className="inline-flex items-center justify-center px-4 py-2 text-xs font-medium rounded-lg text-foreground bg-violet-500/20 hover:bg-violet-500/40 border border-violet-500/30 transition-all shadow-[0_0_10px_rgba(139,92,246,0.1)] hover:shadow-[0_0_15px_rgba(139,92,246,0.3)]"
                   >
                     Analysis
                   </Link>

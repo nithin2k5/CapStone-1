@@ -1,6 +1,7 @@
 import AnimatedBackground from "@/components/ui/AnimatedBackground";
 import Navbar from "@/components/sections/Navbar";
 import Hero from "@/components/sections/Hero";
+import ChannelTicker from "@/components/sections/ChannelTicker";
 import Stats from "@/components/sections/Stats";
 import Features from "@/components/sections/Features";
 import Architecture from "@/components/sections/Architecture";
@@ -20,6 +21,7 @@ export default function Home() {
 
       <div>
         <Hero />
+        <ChannelTicker />
         <Stats />
         <Features />
         <Architecture />

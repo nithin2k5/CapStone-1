@@ -48,7 +48,7 @@ function Node({
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
       transition={{ duration: 0.4, delay, ease }}
-      className="panel flex items-center gap-4 px-5 py-4"
+      className="panel brackets flex items-center gap-4 px-5 py-4"
     >
       <span className={`chip h-10 w-10 shrink-0 ${tone === "accent-2" ? "chip-2" : ""}`}>
         <Icon className="h-[18px] w-[18px]" />
@@ -63,17 +63,33 @@ function Node({
   );
 }
 
-/** Vertical connector between stages. */
+/** Vertical connector between stages: a dashed rail with a packet riding it. */
 function Flow({ label }: { label?: string }) {
   return (
-    <div aria-hidden className="relative flex flex-col items-center py-3">
-      <span className="rule-fade-y h-8 w-px" />
+    <div aria-hidden className="relative flex flex-col items-center py-2">
+      <svg width="12" height="44" viewBox="0 0 12 44" className="overflow-visible">
+        <line
+          x1="6"
+          y1="0"
+          x2="6"
+          y2="44"
+          stroke="var(--accent)"
+          strokeOpacity="0.55"
+          strokeWidth="1.5"
+          strokeDasharray="4 6"
+          className="animate-dash"
+        />
+        <circle r="3" cx="6" fill="var(--accent-2)" style={{ filter: "drop-shadow(0 0 4px var(--accent-2))" }}>
+          <animate attributeName="cy" from="0" to="44" dur="1.8s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0;1;1;0" dur="1.8s" repeatCount="indefinite" />
+        </circle>
+      </svg>
       {label && (
-        <span className="mt-1 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+        <span className="mt-1 rounded-full border border-border bg-card px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
           {label}
         </span>
       )}
-      <ArrowDown className="mt-1 h-3.5 w-3.5 text-muted-foreground" />
+      <ArrowDown className="mt-1 h-3.5 w-3.5 text-accent" />
     </div>
   );
 }
@@ -84,7 +100,12 @@ export default function Architecture() {
       id="architecture"
       className="relative border-y border-border bg-secondary/40 py-24 sm:py-32"
     >
-      <div className="dot-bg pointer-events-none absolute inset-0 opacity-60" />
+      <div className="hex-bg pointer-events-none absolute inset-0 opacity-70" />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute left-1/2 top-1/3 h-[480px] w-[min(720px,90vw)] -translate-x-1/2 rounded-full blur-[150px] opacity-[0.08] dark:opacity-[0.16]"
+        style={{ background: "var(--accent-solid)" }}
+      />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
@@ -118,15 +139,15 @@ export default function Architecture() {
             <span className="rule-fade-y absolute left-1/2 top-0 h-5 w-px -translate-x-1/2" />
             <span
               className="absolute left-1/4 right-1/4 top-5 h-px"
-              style={{ background: "var(--border-strong)" }}
+              style={{ background: "linear-gradient(90deg, var(--accent), var(--accent-2))", opacity: 0.6 }}
             />
             <span
               className="absolute left-1/4 top-5 h-5 w-px"
-              style={{ background: "var(--border-strong)" }}
+              style={{ background: "var(--accent)", opacity: 0.6 }}
             />
             <span
               className="absolute right-1/4 top-5 h-5 w-px"
-              style={{ background: "var(--border-strong)" }}
+              style={{ background: "var(--accent-2)", opacity: 0.6 }}
             />
           </div>
 

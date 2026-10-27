@@ -56,7 +56,32 @@ export default function ResearchTimeline() {
           description="How the system arrived at the perceptual layer, and what remains unsolved in it."
         />
 
-        <ol className="relative mx-auto mt-16 max-w-3xl">
+        {/* Progress meter */}
+        <div className="mx-auto mt-12 max-w-3xl">
+          <div className="flex items-baseline justify-between font-mono text-[11px] uppercase tracking-[0.16em]">
+            <span className="text-muted-foreground">research progress</span>
+            <span className="text-accent">
+              {phases.filter((p) => p.status === "complete").length} / {phases.length} phases
+            </span>
+          </div>
+          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-secondary">
+            <motion.div
+              className="h-full rounded-full"
+              style={{
+                background: "linear-gradient(90deg, var(--accent-solid), var(--accent-2))",
+                boxShadow: "0 0 14px var(--accent)",
+              }}
+              initial={{ width: 0 }}
+              whileInView={{
+                width: `${(phases.filter((p) => p.status === "complete").length / phases.length) * 100}%`,
+              }}
+              viewport={{ once: true }}
+              transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </div>
+        </div>
+
+        <ol className="relative mx-auto mt-12 max-w-3xl">
           {phases.map((phase, i) => {
             const done = phase.status === "complete";
             const last = i === phases.length - 1;

@@ -40,7 +40,7 @@ export default function SignupPage() {
       <div className="min-h-screen bg-black flex relative overflow-hidden">
         {/* Background glow effects */}
         <div className="absolute top-1/2 left-1/4 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute top-1/2 right-1/4 translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] pointer-events-none" />
         
         {/* Subtle grid background */}
         <div 
@@ -53,8 +53,8 @@ export default function SignupPage() {
           {/* Left column (Branding) */}
           <div className="flex-1 p-8 md:p-16 lg:p-24 flex flex-col justify-center border-r border-border bg-black/40 backdrop-blur-md">
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }}>
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center mb-8 neon-glow-blue">
-                <ShieldCheck className="w-8 h-8 text-indigo-400" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 flex items-center justify-center mb-8 neon-glow-blue">
+                <ShieldCheck className="w-8 h-8 text-violet-400" />
               </div>
               
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-bold text-foreground leading-tight tracking-wide mb-6">
@@ -95,7 +95,7 @@ export default function SignupPage() {
                         type="text" 
                         required
                         placeholder="John" 
-                        className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                        className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
                       />
                     </div>
                   </div>
@@ -106,7 +106,7 @@ export default function SignupPage() {
                       type="text" 
                       required
                       placeholder="Doe" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
@@ -120,7 +120,7 @@ export default function SignupPage() {
                       type="email" 
                       required
                       placeholder="john@company.com" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
@@ -134,7 +134,7 @@ export default function SignupPage() {
                       type="text" 
                       required
                       placeholder="Acme Corp" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
@@ -148,7 +148,7 @@ export default function SignupPage() {
                       type="password" 
                       required
                       placeholder="••••••••••••" 
-                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-indigo-500/50 focus:bg-white/[0.08] transition-all"
+                      className="w-full h-12 bg-foreground/5 border border-border rounded-xl pl-10 pr-4 text-foreground focus:outline-none focus:border-violet-500/50 focus:bg-white/[0.08] transition-all"
                     />
                   </div>
                 </div>
@@ -182,7 +182,7 @@ export default function SignupPage() {
               <div className="mt-8 flex items-center justify-center">
                 <p className="text-sm text-muted-foreground">
                   Already have an account?{" "}
-                  <Link href="/login" className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors">
+                  <Link href="/login" className="text-violet-400 hover:text-violet-300 font-semibold transition-colors">
                     Sign in
                   </Link>
                 </p>

@@ -19,14 +19,14 @@ export function Toast({ id, title, message, type = "info", onClose }: ToastProps
     success: <CheckCircle2 className="w-5 h-5 text-emerald-400" />,
     error: <XCircle className="w-5 h-5 text-red-400" />,
     warning: <AlertTriangle className="w-5 h-5 text-amber-400" />,
-    info: <Info className="w-5 h-5 text-blue-400" />,
+    info: <Info className="w-5 h-5 text-purple-400" />,
   };
 
   const borders = {
     success: "border-emerald-500/30 shadow-[0_4px_12px_rgba(52,211,153,0.15)]",
     error: "border-red-500/30 shadow-[0_4px_12px_rgba(248,113,113,0.15)]",
     warning: "border-amber-500/30 shadow-[0_4px_12px_rgba(251,191,36,0.15)]",
-    info: "border-blue-500/30 shadow-[0_4px_12px_rgba(59,130,246,0.15)]",
+    info: "border-purple-500/30 shadow-[0_4px_12px_rgba(168,85,247,0.15)]",
   };
 
   return (

@@ -32,12 +32,12 @@ export default function AnalyticsPage() {
         </GlassCard>
         <GlassCard className="p-6">
           <div className="text-sm font-medium text-muted-foreground mb-2">False Positive Rate</div>
-          <div className="text-3xl font-heading font-bold text-indigo-400">0.02%</div>
+          <div className="text-3xl font-heading font-bold text-violet-400">0.02%</div>
           <div className="text-xs text-muted-foreground mt-2">Manually released items</div>
         </GlassCard>
         <GlassCard className="p-6">
           <div className="text-sm font-medium text-muted-foreground mb-2">Average Scan Time</div>
-          <div className="text-3xl font-heading font-bold text-blue-400">42ms</div>
+          <div className="text-3xl font-heading font-bold text-purple-400">42ms</div>
           <div className="text-xs text-muted-foreground mt-2">Per email message</div>
         </GlassCard>
         <GlassCard className="p-6">
@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
                 />
                 <Bar dataKey="phish" name="Phishing" stackId="a" fill="#f87171" radius={[0, 0, 4, 4]} />
                 <Bar dataKey="malware" name="Malware" stackId="a" fill="#8b5cf6" />
-                <Bar dataKey="spam" name="Spam" stackId="a" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="spam" name="Spam" stackId="a" fill="#e879f9" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

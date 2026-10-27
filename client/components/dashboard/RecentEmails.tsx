@@ -78,7 +78,7 @@ export function RecentEmails() {
           <h3 className="text-base font-heading font-bold text-foreground tracking-wide">Recent Emails</h3>
           <p className="text-xs text-muted-foreground mt-1">Latest inbound traffic analyzed by the gateway.</p>
         </div>
-        <Link href="/emails" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+        <Link href="/emails" className="text-xs font-semibold text-violet-400 hover:text-violet-300 transition-colors">
           View All Traffic &rarr;
         </Link>
       </div>

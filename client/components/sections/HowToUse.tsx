@@ -65,7 +65,7 @@ export default function HowToUse() {
       id="how-to-use"
       className="relative border-y border-border bg-secondary/40 py-24 sm:py-32"
     >
-      <div className="dot-bg pointer-events-none absolute inset-0 opacity-50" />
+      <div className="grid-bg pointer-events-none absolute inset-0 opacity-60" />
 
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
@@ -78,7 +78,7 @@ export default function HowToUse() {
           description="Six steps from signing up to a mailbox that screens itself."
         />
 
-        <ol className="mt-16 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <ol className="relative mt-16 grid gap-x-6 gap-y-10 md:grid-cols-2 lg:grid-cols-3">
           {steps.map((step, i) => (
             <motion.li
               key={step.title}
@@ -86,27 +86,45 @@ export default function HowToUse() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
               transition={{ duration: 0.45, delay: (i % 3) * 0.1, ease: [0.22, 1, 0.36, 1] }}
-              className="panel-lift accent-rule group relative flex flex-col overflow-hidden p-7"
+              className="group relative flex flex-col"
             >
-              {/* Oversized step numeral */}
-              <span className="display pointer-events-none absolute right-5 top-3 select-none text-[4.5rem] leading-none text-foreground/[0.045] transition-colors duration-300 group-hover:text-accent/15">
-                {i + 1}
-              </span>
+              {/* Step rail: numbered node and a beam running to the next one */}
+              <div className="mb-5 flex items-center gap-3">
+                <span
+                  className="glow-accent relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border font-mono text-[13px] font-bold text-accent"
+                  style={{
+                    borderColor: "color-mix(in srgb, var(--accent) 45%, var(--border))",
+                    background: "var(--accent-subtle)",
+                  }}
+                >
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <span className="relative h-px flex-1 overflow-hidden bg-border">
+                  <span
+                    className="animate-beam absolute inset-y-0 left-0 w-1/4"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, transparent, var(--accent), transparent)",
+                      animationDelay: `${i * 0.4}s`,
+                    }}
+                  />
+                </span>
+              </div>
 
-              <span className="chip relative h-12 w-12">
-                <step.icon className="h-5 w-5" />
-              </span>
-
-              <h3 className="display relative mt-6 text-[17px] text-foreground">
-                {step.title}
-              </h3>
-              <p className="relative mt-3 flex-1 text-[14px] leading-relaxed text-muted-foreground">
-                {step.description}
-              </p>
-
-              <span className="token relative mt-6 self-start">
-                {step.location}
-              </span>
+              <div className="panel-lift accent-rule relative flex flex-1 flex-col overflow-hidden p-6">
+                <div className="flex items-center gap-3">
+                  <span className="chip h-10 w-10 shrink-0">
+                    <step.icon className="h-[18px] w-[18px]" />
+                  </span>
+                  <h3 className="display text-[16.5px] text-foreground">
+                    {step.title}
+                  </h3>
+                </div>
+                <p className="mt-4 flex-1 text-[14px] leading-relaxed text-muted-foreground">
+                  {step.description}
+                </p>
+                <span className="token mt-5 self-start">{step.location}</span>
+              </div>
             </motion.li>
           ))}
         </ol>

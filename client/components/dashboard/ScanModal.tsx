@@ -98,12 +98,12 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="relative w-full max-w-3xl glass-card border border-white/[0.08] rounded-2xl overflow-hidden flex flex-col max-h-[85vh] bg-[#0A0A0B]"
+            className="relative w-full max-w-3xl glass-card border border-white/[0.08] rounded-2xl overflow-hidden flex flex-col max-h-[85vh] bg-card"
           >
             <div className="px-6 py-4 border-b border-white/[0.06] flex items-center justify-between bg-white/[0.02]">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-indigo-500/20 rounded-lg border border-indigo-500/30">
-                  <Mail className="w-5 h-5 text-indigo-400" />
+                <div className="p-2 bg-violet-500/20 rounded-lg border border-violet-500/30">
+                  <Mail className="w-5 h-5 text-violet-400" />
                 </div>
                 <div>
                   <h2 className="text-lg font-heading font-semibold text-foreground">Live Inbox Scan</h2>
@@ -122,8 +122,8 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
               {scanning ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
                   <div className="relative mb-8">
-                    <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full" />
-                    <Loader2 className="w-16 h-16 text-indigo-400 animate-spin relative z-10" />
+                    <div className="absolute inset-0 bg-violet-500/20 blur-xl rounded-full" />
+                    <Loader2 className="w-16 h-16 text-violet-400 animate-spin relative z-10" />
                   </div>
                   <h3 className="text-xl font-medium text-foreground mb-2">Analyzing Inbox</h3>
                   <p className="text-sm text-muted-foreground max-w-sm animate-pulse">
@@ -218,7 +218,7 @@ export function ScanModal({ isOpen, onClose }: ScanModalProps) {
               <div className="p-6 border-t border-white/[0.06] bg-white/[0.02] flex justify-end">
                 <button 
                   onClick={onClose}
-                  className="px-6 py-2 bg-indigo-500 text-foreground font-medium rounded-xl hover:bg-indigo-600 transition-colors shadow-lg shadow-indigo-500/20"
+                  className="px-6 py-2 bg-violet-500 text-foreground font-medium rounded-xl hover:bg-violet-600 transition-colors shadow-lg shadow-violet-500/20"
                 >
                   Done
                 </button>

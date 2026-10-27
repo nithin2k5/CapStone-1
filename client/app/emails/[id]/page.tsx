@@ -136,7 +136,7 @@ export default function EmailDetailPage() {
           
           <GlassCard className="p-6">
             <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mb-4 flex items-center gap-2 border-b border-border pb-4">
-              <ShieldAlert className="w-4 h-4 text-indigo-400" />
+              <ShieldAlert className="w-4 h-4 text-violet-400" />
               Security Analysis
             </h3>
             
@@ -164,7 +164,7 @@ export default function EmailDetailPage() {
             </div>
 
             <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mt-8 mb-4 flex items-center gap-2 border-b border-border pb-4">
-              <ShieldAlert className="w-4 h-4 text-indigo-400" />
+              <ShieldAlert className="w-4 h-4 text-violet-400" />
               Threat Scan
             </h3>
 
@@ -186,7 +186,7 @@ export default function EmailDetailPage() {
             {scanResult && (
               <>
                 <h3 className="text-sm font-semibold text-foreground tracking-wide uppercase mt-8 mb-2 flex items-center gap-2 border-b border-border pb-4">
-                  <ShieldAlert className="w-4 h-4 text-indigo-400" />
+                  <ShieldAlert className="w-4 h-4 text-violet-400" />
                   Per-analyser findings
                 </h3>
                 {/* Each bar is what that analyser found on its own. The engine

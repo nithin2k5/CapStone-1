@@ -23,25 +23,51 @@ export default function Contact() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-          className="panel-flush accent-rule mx-auto max-w-4xl px-6 py-14 text-center sm:px-14"
+          className="panel-flush accent-rule hex-bg mx-auto max-w-4xl px-6 py-14 text-center sm:px-14"
           style={{ boxShadow: "var(--glow-3), var(--glow-accent)" }}
         >
-          <span className="eyebrow">
+          {/* Radar sweep behind the copy */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[560px] w-[560px] -translate-x-1/2 -translate-y-1/2 opacity-40 dark:opacity-60"
+          >
+            {[0, 1, 2, 3].map((r) => (
+              <span
+                key={r}
+                className="absolute rounded-full border"
+                style={{
+                  inset: `${r * 70}px`,
+                  borderColor: "color-mix(in srgb, var(--accent) 18%, transparent)",
+                }}
+              />
+            ))}
+            <span
+              className="animate-radar absolute inset-0 rounded-full"
+              style={{
+                background:
+                  "conic-gradient(from 0deg, transparent 0 80%, color-mix(in srgb, var(--accent) 22%, transparent))",
+                maskImage: "radial-gradient(circle, #000 60%, transparent 71%)",
+                WebkitMaskImage: "radial-gradient(circle, #000 60%, transparent 71%)",
+              }}
+            />
+          </div>
+
+          <span className="eyebrow relative">
             <span className="h-px w-6 bg-accent" />
             get started
           </span>
 
-          <h2 className="display mt-5 text-[2rem] text-foreground sm:text-[2.7rem]">
+          <h2 className="display relative mt-5 text-[2rem] text-foreground sm:text-[2.7rem]">
             Ready to secure your{" "}
             <span className="text-gradient">infrastructure?</span>
           </h2>
 
-          <p className="mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-muted-foreground">
+          <p className="relative mx-auto mt-5 max-w-xl text-[16px] leading-relaxed text-muted-foreground">
             Connect an inbox to run all five analysers over real mail, or read the
             benchmark method and the case against over-reading its numbers.
           </p>
 
-          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <div className="relative mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link href="/signup" className="btn-primary px-6 py-3.5 text-sm">
               <Terminal className="h-4 w-4" />
               Create an account
@@ -53,7 +79,7 @@ export default function Contact() {
             </Link>
           </div>
 
-          <div className="mt-12 grid gap-px overflow-hidden rounded-xl border border-border sm:grid-cols-2"
+          <div className="relative mt-12 grid gap-px overflow-hidden rounded-xl border border-border sm:grid-cols-2"
             style={{ background: "var(--border)" }}
           >
             <a

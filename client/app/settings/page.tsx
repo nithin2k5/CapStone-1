@@ -90,7 +90,7 @@ export default function SettingsPage() {
                 className={cn(
                   "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-sm font-medium",
                   activeTab === tab.id
-                    ? "bg-indigo-500/10 text-foreground border border-indigo-500/20 shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                    ? "bg-violet-500/10 text-foreground border border-violet-500/20 shadow-[0_0_15px_rgba(139,92,246,0.1)]"
                     : "text-muted-foreground hover:text-foreground hover:bg-foreground/5"
                 )}
               >
@@ -118,7 +118,7 @@ export default function SettingsPage() {
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 
@@ -130,7 +130,7 @@ export default function SettingsPage() {
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 
@@ -142,14 +142,14 @@ export default function SettingsPage() {
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input type="checkbox" className="sr-only peer" defaultChecked />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 
                   {/* Setting Select Group */}
                   <div className="border-t border-border pt-8">
                     <h4 className="text-sm font-medium text-foreground mb-4">Heuristics Sensitivity</h4>
-                    <select className="w-full md:w-64 h-10 bg-black border border-border rounded-xl px-4 text-sm text-foreground focus:outline-none focus:border-indigo-500/50">
+                    <select className="w-full md:w-64 h-10 bg-black border border-border rounded-xl px-4 text-sm text-foreground focus:outline-none focus:border-violet-500/50">
                       <option value="low">Low (Fewer False Positives)</option>
                       <option value="medium">Medium (Balanced)</option>
                       <option value="high">High (Maximum Security)</option>
@@ -173,8 +173,8 @@ export default function SettingsPage() {
                 
                 <div className="space-y-6">
                   <div className="flex items-center gap-4 border border-border p-4 rounded-xl bg-black/20">
-                    <div className="w-16 h-16 rounded-full bg-indigo-500/20 border border-indigo-500/30 flex items-center justify-center">
-                      <Lock className="w-8 h-8 text-indigo-400" />
+                    <div className="w-16 h-16 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center">
+                      <Lock className="w-8 h-8 text-violet-400" />
                     </div>
                     <div>
                       <h4 className="text-lg font-medium text-foreground">Administrator</h4>
@@ -189,7 +189,7 @@ export default function SettingsPage() {
                         type="text" 
                         value={profileName}
                         onChange={(e) => setNameDraft(e.target.value)}
-                        className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-indigo-500/50"
+                        className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-violet-500/50"
                       />
                     </div>
                     
@@ -198,7 +198,7 @@ export default function SettingsPage() {
                       <input 
                         type="email" 
                         value={session?.email || "admin@company.com"}
-                        className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-indigo-500/50 cursor-not-allowed opacity-70"
+                        className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-violet-500/50 cursor-not-allowed opacity-70"
                         readOnly
                       />
                     </div>
@@ -210,7 +210,7 @@ export default function SettingsPage() {
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         placeholder="Leave blank to keep current password"
-                        className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-indigo-500/50"
+                        className="w-full max-w-md h-12 bg-foreground/5 border border-border rounded-xl px-4 text-foreground focus:outline-none focus:border-violet-500/50"
                       />
                     </div>
                   </div>
@@ -256,7 +256,7 @@ export default function SettingsPage() {
                         checked={userSettings.notif_critical} 
                         onChange={(e) => setUserSettings({...userSettings, notif_critical: e.target.checked})}
                       />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 
@@ -272,7 +272,7 @@ export default function SettingsPage() {
                         checked={userSettings.notif_quarantine} 
                         onChange={(e) => setUserSettings({...userSettings, notif_quarantine: e.target.checked})}
                       />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 
@@ -288,7 +288,7 @@ export default function SettingsPage() {
                         checked={userSettings.notif_daily} 
                         onChange={(e) => setUserSettings({...userSettings, notif_daily: e.target.checked})}
                       />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                         checked={userSettings.notif_weekly} 
                         onChange={(e) => setUserSettings({...userSettings, notif_weekly: e.target.checked})}
                       />
-                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      <div className="w-11 h-6 bg-foreground/10 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-500"></div>
                     </label>
                   </div>
 

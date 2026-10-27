@@ -17,10 +17,10 @@ export function SenderTrustPanel({ findings }: { findings?: ScanFindings | null 
       {trust.supporting_email_ids.length > 0 && <details className="text-sm">
         <summary className="cursor-pointer">Inspect supporting messages</summary>
         <ul className="mt-2 space-y-1 max-h-48 overflow-auto">
-          {trust.supporting_email_ids.map((id) => <li key={id}><Link className="text-cyan-500 underline break-all" href={`/emails/${id}`}>{id}</Link></li>)}
+          {trust.supporting_email_ids.map((id) => <li key={id}><Link className="text-fuchsia-500 underline break-all" href={`/emails/${id}`}>{id}</Link></li>)}
         </ul>
       </details>}
-      {reassessment && <p className="text-sm">Re-evaluated after <Link className="text-cyan-500 underline" href={`/emails/${reassessment.triggering_email_id}`}>supporting evidence was condemned</Link>.
+      {reassessment && <p className="text-sm">Re-evaluated after <Link className="text-fuchsia-500 underline" href={`/emails/${reassessment.triggering_email_id}`}>supporting evidence was condemned</Link>.
         {" "}Score changed from {reassessment.previous_score} to {reassessment.new_score}.
         {" "}Mailbox action {reassessment.enforced ? "confirmed" : "not confirmed"}.
       </p>}

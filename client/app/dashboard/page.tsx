@@ -50,7 +50,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-4">
           <button 
             onClick={() => setIsScanModalOpen(true)}
-            className="px-4 py-2 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-sm font-medium rounded-xl border border-indigo-500/30 transition-colors flex items-center gap-2"
+            className="px-4 py-2 bg-violet-500/20 hover:bg-violet-500/30 text-violet-300 text-sm font-medium rounded-xl border border-violet-500/30 transition-colors flex items-center gap-2"
           >
             <Mail className="w-4 h-4" />
             Scan Inbox Now

@@ -90,9 +90,10 @@ export default function DashboardPreview() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-80px" }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-          className="panel-flush mt-14"
+          className="panel-flush brackets mt-14"
           style={{ boxShadow: "var(--glow-3), var(--glow-accent)" }}
         >
+          <div aria-hidden className="scan-layer" />
           {/* Chrome */}
           <div className="flex items-center justify-between gap-3 border-b border-border bg-secondary px-5 py-3.5">
             <div className="flex items-center gap-2.5">
