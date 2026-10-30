@@ -2,7 +2,7 @@ from collections import Counter
 from datetime import datetime
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_user
@@ -34,11 +34,13 @@ async def get_dashboard(
         )
     ).scalar() or 0
 
+    # Everything with a verdict. A finished scan records the verdict itself as
+    # the status, so counting SCANNED alone read zero once scoring worked.
     scanned = (
         await db.execute(
             select(func.count())
             .select_from(Email)
-            .where(Email.user_id == user_id, Email.status == EmailStatus.SCANNED)
+            .where(Email.user_id == user_id, Email.status != EmailStatus.PENDING)
         )
     ).scalar() or 0
 
@@ -162,10 +164,13 @@ async def get_dashboard(
             )
             .where(Email.user_id == user_id)
             .group_by("time")
-            .order_by("time")
+            # The newest 24 buckets, put back in time order below. Ascending
+            # with a limit kept the oldest 24, so the chart never reached today.
+            .order_by(desc("time"))
             .limit(24)
         )
     ).all()
+    time_rows = list(reversed(time_rows))
 
     monthly_stats: list[MonthlyStat] = []
     for row in time_rows:
