@@ -23,7 +23,7 @@ so "before today" is judged by the same clock: the database's CURRENT_DATE,
 which makes the boundary midnight in the database's time zone.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from sqlalchemy import delete, func, select, update
@@ -40,16 +40,19 @@ BATCH = 500
 
 def fetch_window_start() -> datetime | None:
     """
-    Where a read of the newest messages should start: midnight today.
+    Where a read of the newest messages should start: midnight FETCH_WINDOW_DAYS
+    back, today counting as the first day.
 
-    Mail from earlier days is erased by the retention pass once scanned, so
-    pulling it in on a first sync or a Sync Now would spend model calls on mail
-    nobody keeps. Local time on the gateway, the same clock the database stamps
-    arrival with in a normal install. None when FETCH_TODAY_ONLY is off.
+    This is what a first sign-in scans of the mail already in the inbox, so it
+    bounds the model calls a new mailbox costs alongside SCHEDULER_MAX_RESULTS.
+    Local time on the gateway, the same clock the database stamps arrival with
+    in a normal install. None when the window is 0.
     """
-    if not get_settings().fetch_today_only:
+    days = get_settings().fetch_window_days
+    if days <= 0:
         return None
-    return datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+    midnight = datetime.now().astimezone().replace(hour=0, minute=0, second=0, microsecond=0)
+    return midnight - timedelta(days=days - 1)
 
 
 async def discard_delivered_before(db: AsyncSession, cutoff: Any = None) -> int:

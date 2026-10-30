@@ -1,7 +1,7 @@
 import uuid
 
 import pytest
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from app.database.models import Base, Email, User
@@ -147,3 +147,32 @@ class TestMessageIdsAreScopedToTheUser:
             again, is_new = await repo.create_from_gmail(user_id, message("dup"))
             assert is_new is False
             assert again.id == original.id
+
+
+class TestIngestRowsAreReadyToScan:
+    """
+    The scanner reads `email.scan_result` on the row ingest hands it. Left
+    unloaded, that read is a lazy load, which raises MissingGreenlet under
+    asyncio and failed every Sync Now on the first message it scanned.
+    """
+
+    async def test_a_new_row_has_scan_result_loaded(self, session_factory):
+        user_id = await make_user(session_factory)
+        async with session_factory() as db:
+            email, is_new = await EmailRepository(db).create_from_gmail(user_id, message("new"))
+
+            assert is_new
+            assert "scan_result" not in inspect(email).unloaded
+            assert email.scan_result is None
+
+    async def test_an_existing_row_has_scan_result_loaded(self, session_factory):
+        user_id = await make_user(session_factory)
+        async with session_factory() as db:
+            await EmailRepository(db).create_from_gmail(user_id, message("seen"))
+            await db.commit()
+
+        async with session_factory() as db:
+            email, is_new = await EmailRepository(db).create_from_gmail(user_id, message("seen"))
+
+            assert not is_new
+            assert "scan_result" not in inspect(email).unloaded

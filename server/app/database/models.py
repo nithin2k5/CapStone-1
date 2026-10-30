@@ -175,8 +175,9 @@ class Email(Base):
     remediated_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    # When the daily retention pass erased this delivered message's content.
-    # The row is kept, without body, headers or scan detail, because sender
+    # When this message's content stopped being held: at ingest for mail
+    # fetched now, since body and headers are no longer stored, or by the
+    # daily retention pass for older rows. The row is kept because sender
     # recognition and duplicate detection are built from it.
     discarded_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True

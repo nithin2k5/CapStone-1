@@ -1,3 +1,4 @@
+import asyncio
 import base64
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -30,6 +31,25 @@ class GmailMessage:
     message_id: str
     parsed: ParsedEmail
     mailbox: str = "inbox"
+
+
+@dataclass
+class MailboxEntry:
+    """One message as the mailbox lists it: headers only, no body."""
+
+    message_id: str
+    sender: str
+    recipient: str
+    subject: str
+    received_at: datetime | None
+    mailbox: str
+
+
+@dataclass
+class MailboxPage:
+    entries: list[MailboxEntry]
+    next_page_token: str | None
+    total_estimate: int
 
 
 class GmailScopeMissing(ValueError):
@@ -325,6 +345,130 @@ class GmailService:
                 "Gmail profile read failed: %s - %s", res.status_code, res.text
             )
             return None
+
+    # Everything received, wherever it sits now: quarantine moves mail to SPAM
+    # and a block to TRASH, so an inbox-only listing would hide every verdict
+    # that acted. Sent mail, drafts and chats are not inbound and are left out.
+    RECEIVED_QUERY = "-in:sent -in:drafts -in:chats"
+    # Concurrent metadata reads per page. Each costs 5 quota units against
+    # Gmail's 250 per user per second, so a full page fired at once would be
+    # throttled.
+    LIST_CONCURRENCY = 10
+
+    @staticmethod
+    def _mailbox_of(label_ids: list[str]) -> str:
+        for label, name in (("TRASH", "trash"), ("SPAM", "spam"), ("INBOX", "inbox")):
+            if label in label_ids:
+                return name
+        return "archive"
+
+    async def list_mailbox(
+        self,
+        access_token: str,
+        page_token: str | None = None,
+        max_results: int = 50,
+        query: str = "",
+    ) -> MailboxPage:
+        """
+        One page of received mail, newest first, read live from Gmail.
+
+        Headers only (format=metadata): a listing needs sender, subject and
+        date, and fetching bodies for a whole page would cost a full message
+        download per row. `query` is Gmail search syntax, so search covers the
+        whole mailbox rather than the page already loaded.
+        """
+        headers = {"Authorization": f"Bearer {access_token}"}
+        params: dict[str, Any] = {
+            "maxResults": max_results,
+            "q": f"{self.RECEIVED_QUERY} {query}".strip(),
+            "includeSpamTrash": "true",
+        }
+        if page_token:
+            params["pageToken"] = page_token
+        base = "https://gmail.googleapis.com/gmail/v1/users/me/messages"
+
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.get(base, headers=headers, params=params)
+            if res.status_code == 401:
+                raise AccessTokenRejected()
+            if res.status_code == 403 and "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in res.text:
+                raise GmailScopeMissing()
+            if res.status_code != 200:
+                logger.error("Gmail list failed: %s - %s", res.status_code, res.text)
+                raise ValueError("Gmail did not return the mailbox listing.")
+            data = res.json()
+            ids = [m["id"] for m in data.get("messages", [])]
+
+            gate = asyncio.Semaphore(self.LIST_CONCURRENCY)
+
+            async def metadata(msg_id: str) -> dict[str, Any] | None:
+                async with gate:
+                    r = await client.get(
+                        f"{base}/{msg_id}",
+                        headers=headers,
+                        params={
+                            "format": "metadata",
+                            "metadataHeaders": ["From", "To", "Subject", "Date"],
+                        },
+                    )
+                if r.status_code == 401:
+                    raise AccessTokenRejected()
+                if r.status_code != 200:
+                    logger.warning("Gmail metadata read failed for id=%s: %s", msg_id, r.status_code)
+                    return None
+                return r.json()
+
+            details = await asyncio.gather(*(metadata(i) for i in ids))
+
+        entries = []
+        for msg in details:
+            if not msg:
+                continue
+            # Same parse as a full fetch, so a row lists the sender and date the
+            # scan would record. There is no body to parse at this format.
+            parsed = self._parse_gmail_message_json(msg, "").parsed
+            # Gmail's own arrival time, not the Date header the sender writes;
+            # it is also what the listing is ordered by.
+            internal = msg.get("internalDate")
+            received = (
+                datetime.fromtimestamp(int(internal) / 1000, tz=timezone.utc)
+                if internal
+                else parsed.date
+            )
+            entries.append(
+                MailboxEntry(
+                    message_id=msg["id"],
+                    sender=parsed.sender,
+                    recipient=parsed.recipient,
+                    subject=parsed.subject,
+                    received_at=received,
+                    mailbox=self._mailbox_of(msg.get("labelIds", [])),
+                )
+            )
+        return MailboxPage(
+            entries=entries,
+            next_page_token=data.get("nextPageToken"),
+            total_estimate=int(data.get("resultSizeEstimate") or len(entries)),
+        )
+
+    async def fetch_message(self, access_token: str, message_id: str) -> GmailMessage | None:
+        """
+        One message in full, read live. The gateway does not keep bodies or
+        headers, so this is how a detail view shows them. None when the message
+        is gone from the mailbox.
+        """
+        url = f"https://gmail.googleapis.com/gmail/v1/users/me/messages/{message_id}?format=full"
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            res = await client.get(url, headers={"Authorization": f"Bearer {access_token}"})
+        if res.status_code == 401:
+            raise AccessTokenRejected()
+        if res.status_code == 403 and "ACCESS_TOKEN_SCOPE_INSUFFICIENT" in res.text:
+            raise GmailScopeMissing()
+        if res.status_code != 200:
+            logger.warning("Gmail message read failed for id=%s: %s", message_id, res.status_code)
+            return None
+        data = res.json()
+        return self._parse_gmail_message_json(data, self._mailbox_of(data.get("labelIds", [])))
 
     async def modify_message_labels(
         self,

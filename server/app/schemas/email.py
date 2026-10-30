@@ -49,6 +49,31 @@ class EmailListResponse(BaseModel):
     page_size: int
 
 
+class LiveEmailResponse(BaseModel):
+    """
+    A message as Gmail lists it right now, with the gateway's verdict where it
+    has one. `id` and `status` are None for mail the gateway never scanned.
+    """
+
+    id: UUID | None = None
+    gmail_message_id: str
+    sender: str
+    recipient: str
+    subject: str
+    received_at: datetime | None
+    mailbox: str
+    status: EmailStatusEnum | None = None
+    risk_score: float | None = None
+    enforced: bool = False
+
+
+class LiveEmailListResponse(BaseModel):
+    items: list[LiveEmailResponse]
+    next_page_token: str | None = None
+    # Gmail's estimate, not a count: exact totals are not offered by its API.
+    total_estimate: int
+
+
 class FetchEmailsRequest(BaseModel):
     mailbox: str = Field(default="PendingScan", pattern="^(inbox|spam|trash|unread|recent|PendingScan)$")
     max_results: int = Field(default=20, ge=1, le=100)

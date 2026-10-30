@@ -168,7 +168,7 @@ class TestDailyDiscard:
         assert await discard_delivered_before(db) == 1
         assert (await _reload(db, today)).discarded_at is None
 
-    async def test_erased_mail_leaves_the_list(self, db):
+    async def test_erased_mail_stays_listed_by_its_verdict(self, db):
         owner = await _user(db)
         old = await _email(db, owner, YESTERDAY)
         today = await _email(db, owner, NOW)
@@ -176,9 +176,8 @@ class TestDailyDiscard:
         await discard_delivered_before(db, NOW - timedelta(minutes=1))
 
         emails, total = await EmailRepository(db).list_emails(owner.id)
-        assert [e.id for e in emails] == [today.id]
-        assert total == 1
-        assert old.id not in {e.id for e in emails}
+        assert {e.id for e in emails} == {old.id, today.id}
+        assert total == 2
 
 
 @pytest.mark.asyncio
@@ -218,7 +217,7 @@ class TestErasedMailIsNotRescanned:
 
 @pytest.mark.asyncio
 class TestErasedMailEndpoints:
-    async def test_detail_and_rescan_answer_gone(self, db, monkeypatch):
+    async def test_detail_shows_metadata_and_rescan_answers_gone(self, db, monkeypatch):
         from app.api.deps import get_current_user, get_scan_service
         from app.database.database import get_db
         from app.main import app
@@ -226,6 +225,8 @@ class TestErasedMailEndpoints:
         owner = await _user(db)
         old = await _email(db, owner, YESTERDAY)
         await discard_delivered_before(db, NOW)
+        # The erase is a bulk update; reload the cached row so the endpoint sees it.
+        await db.refresh(old)
 
         async def _db():
             yield db
@@ -240,7 +241,8 @@ class TestErasedMailEndpoints:
         finally:
             app.dependency_overrides.clear()
 
-        assert detail.status_code == 410
+        assert detail.status_code == 200
+        assert detail.json()["body_text"] is None
         assert rescan.status_code == 410
 
 

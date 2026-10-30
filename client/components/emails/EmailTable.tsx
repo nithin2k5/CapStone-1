@@ -5,35 +5,52 @@ import { Badge } from "@/components/ui/Badge";
 import { Search, RefreshCw, ShieldCheck, ShieldAlert, AlertTriangle, ChevronRight, Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getEmailQueue, fetchLiveGmailMessages, EmailItem, EmailListResponse } from "@/lib/api";
+import {
+  getEmailQueue,
+  getLiveEmails,
+  fetchLiveGmailMessages,
+  EmailItem,
+  EmailListResponse,
+  LiveEmailItem,
+  LiveEmailListResponse,
+} from "@/lib/api";
 import { useLiveRefresh } from "@/lib/useLiveRefresh";
 import { cn } from "@/lib/utils";
 
 type EmailRow = {
-  id: string;
+  key: string;
+  // Null for mail the gateway never scanned: there is no verdict to open.
+  id: string | null;
   sender: string;
   address: string;
   subject: string;
   date: string;
   time: string;
-  score: number;
+  score: number | null;
   level: "CRITICAL" | "HIGH" | "SAFE";
   status: string;
 };
 
-function toRow(item: EmailItem): EmailRow {
+function toRow(item: EmailItem | LiveEmailItem): EmailRow {
   const hasAngle = item.sender.includes("<");
-  const received = new Date(item.received_at || item.created_at);
+  const received = new Date(item.received_at || ("created_at" in item ? item.created_at : Date.now()));
+  const score = item.risk_score;
   return {
+    key: item.gmail_message_id || item.id || "",
     id: item.id,
     sender: hasAngle ? item.sender.split("<")[0].trim().replace(/^"|"$/g, "") : item.sender,
     address: hasAngle ? item.sender.split("<")[1].replace(">", "") : item.sender,
     subject: item.subject || "No Subject",
     date: received.toLocaleDateString([], { month: "short", day: "numeric" }),
     time: received.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    score: item.risk_score,
-    level: item.risk_score > 80 ? "CRITICAL" : item.risk_score > 50 ? "HIGH" : "SAFE",
-    status: item.status === "pending" ? "BLOCKED" : item.status.toUpperCase(),
+    score,
+    level: score == null ? "SAFE" : score > 80 ? "CRITICAL" : score > 50 ? "HIGH" : "SAFE",
+    status:
+      item.status == null
+        ? "NOT SCANNED"
+        : item.status === "pending"
+          ? "BLOCKED"
+          : item.status.toUpperCase(),
   };
 }
 
@@ -44,7 +61,8 @@ const filters = [
   { label: "Blocked", value: "blocked" },
 ] as const;
 
-function scoreColor(score: number) {
+function scoreColor(score: number | null) {
+  if (score == null) return "var(--muted-foreground)";
   if (score > 80) return "var(--danger)";
   if (score > 50) return "var(--warning)";
   return "var(--success)";
@@ -58,22 +76,58 @@ export function EmailTable() {
   const [total, setTotal] = useState(0);
   const [status, setStatus] = useState<string | undefined>(undefined);
   const [query, setQuery] = useState("");
+  const [search, setSearch] = useState("");
+  // "All" reads the mailbox live from Gmail, which pages by token rather than
+  // by number: pageTokens[i] opens page i + 1. The verdict filters read the
+  // gateway's rows, which only it has. Without a Gmail mailbox, or when the
+  // live read fails, "All" falls back to those rows too.
+  const [pageTokens, setPageTokens] = useState<(string | undefined)[]>([undefined]);
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [liveFailed, setLiveFailed] = useState(false);
+  const live = !status && !liveFailed;
   const pageSize = 50;
 
   const showPage = useCallback((data: EmailListResponse) => {
     setTotal(data.total || 0);
+    setNextToken(null);
     setEmailsState(data.items.map(toRow));
   }, []);
+
+  const showLivePage = useCallback((data: LiveEmailListResponse) => {
+    setTotal(data.total_estimate || 0);
+    setNextToken(data.next_page_token);
+    setEmailsState(data.items.map(toRow));
+  }, []);
+
+  // Gmail search covers the whole mailbox, so it waits for typing to pause
+  // instead of firing a live read per keystroke.
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setSearch(query.trim());
+      setPage(1);
+      setPageTokens([undefined]);
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const load = useCallback(async () => {
+    if (live) {
+      try {
+        showLivePage(await getLiveEmails(pageTokens[page - 1], pageSize, search));
+        return;
+      } catch (err) {
+        console.error("Live mailbox read failed; showing scanned mail instead", err);
+        setLiveFailed(true);
+      }
+    }
+    showPage(await getEmailQueue(page, pageSize, status));
+  }, [live, page, pageTokens, search, status, showPage, showLivePage]);
 
   useEffect(() => {
     async function loadEmails() {
       setLoading(true);
       try {
-        let data = await getEmailQueue(page, pageSize, status);
-        if (data.items.length === 0 && page === 1 && !status) {
-          data = await fetchLiveGmailMessages("inbox", pageSize);
-        }
-        showPage(data);
+        await load();
       } catch (err) {
         console.error("Failed to fetch emails", err);
         setEmailsState([]); // Fallback to empty on error
@@ -82,25 +136,23 @@ export function EmailTable() {
       }
     }
     loadEmails();
-  }, [page, status, showPage]);
+  }, [load]);
 
-  // Mail the server scanned since the page loaded. Quiet: no spinner, and no
-  // live mailbox fetch — the server already fetches on arrival.
+  // New mail and new verdicts since the page loaded. Quiet: no spinner.
   const refreshQuietly = useCallback(() => {
-    getEmailQueue(page, pageSize, status)
-      .then(showPage)
-      .catch((err) => console.error("Failed to refresh emails", err));
-  }, [page, status, showPage]);
+    load().catch((err) => console.error("Failed to refresh emails", err));
+  }, [load]);
   useLiveRefresh(refreshQuietly);
 
-  // Search narrows the page already loaded; the API has no text search.
+  // Live search already ran in Gmail; the scanned rows have no text search,
+  // so there it narrows the page already loaded.
   const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return emailsState;
+    const q = search.toLowerCase();
+    if (live || !q) return emailsState;
     return emailsState.filter((e) =>
       [e.sender, e.address, e.subject].some((f) => f.toLowerCase().includes(q))
     );
-  }, [emailsState, query]);
+  }, [emailsState, search, live]);
 
   return (
     <GlassCard className="relative z-10 flex w-full flex-col overflow-hidden">
@@ -114,6 +166,7 @@ export function EmailTable() {
               onClick={() => {
                 setStatus(f.value);
                 setPage(1);
+                setPageTokens([undefined]);
               }}
               className={cn(
                 "rounded-lg px-3.5 py-1.5 text-[12.5px] font-medium transition-colors",
@@ -134,7 +187,7 @@ export function EmailTable() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Filter by sender or subject"
+              placeholder={live ? "Search your mailbox" : "Filter by sender or subject"}
               className="h-10 w-full rounded-xl border border-border bg-card pl-9 pr-4 text-[13px] text-foreground placeholder:text-muted-foreground focus:border-accent/60 focus:outline-none focus:ring-2 focus:ring-accent/20 sm:w-72"
             />
           </div>
@@ -144,7 +197,7 @@ export function EmailTable() {
               setLoading(true);
               try {
                 await fetchLiveGmailMessages("inbox", pageSize);
-                showPage(await getEmailQueue(page, pageSize, status));
+                await load();
               } catch (err) {
                 console.error("Failed to sync emails", err);
               } finally {
@@ -186,7 +239,13 @@ export function EmailTable() {
                 <td colSpan={6} className="px-5 py-16 text-center">
                   <Inbox className="mx-auto h-8 w-8 text-accent" />
                   <p className="mt-3 text-muted-foreground">
-                    {query ? "No emails on this page match that filter." : "No emails found in the database."}
+                    {search
+                      ? live
+                        ? "No mail in your mailbox matches that search."
+                        : "No emails on this page match that filter."
+                      : live
+                        ? "Your mailbox has no received mail."
+                        : "No emails found in the database."}
                   </p>
                 </td>
               </tr>
@@ -195,9 +254,13 @@ export function EmailTable() {
               const color = scoreColor(email.score);
               return (
                 <tr
-                  key={email.id}
-                  onClick={() => router.push(`/emails/${email.id}`)}
-                  className="group cursor-pointer transition-colors hover:bg-accent-subtle"
+                  key={email.key}
+                  onClick={email.id ? () => router.push(`/emails/${email.id}`) : undefined}
+                  title={email.id ? undefined : "Not scanned by the gateway yet"}
+                  className={cn(
+                    "group transition-colors",
+                    email.id ? "cursor-pointer hover:bg-accent-subtle" : "opacity-75"
+                  )}
                 >
                   <td className="max-w-[220px] px-5 py-3.5">
                     <div className="flex items-center gap-3">
@@ -219,23 +282,27 @@ export function EmailTable() {
                       <div className="h-1.5 w-16 overflow-hidden rounded-full bg-secondary">
                         <div
                           className="h-full rounded-full"
-                          style={{ width: `${Math.min(100, email.score)}%`, background: color }}
+                          style={{ width: `${Math.min(100, email.score ?? 0)}%`, background: color }}
                         />
                       </div>
                       <span className="w-7 font-mono text-[12px] font-semibold" style={{ color }}>
-                        {Math.round(email.score)}
+                        {email.score == null ? "—" : Math.round(email.score)}
                       </span>
-                      <Badge
-                        variant={email.level === "SAFE" ? "safe" : "blocked"}
-                        className="hidden xl:inline-flex"
-                      >
-                        {email.level}
-                      </Badge>
+                      {email.score != null && (
+                        <Badge
+                          variant={email.level === "SAFE" ? "safe" : "blocked"}
+                          className="hidden xl:inline-flex"
+                        >
+                          {email.level}
+                        </Badge>
+                      )}
                     </div>
                   </td>
                   <td className="px-5 py-3.5">
                     <div className="flex items-center gap-2">
-                      {email.status === "SAFE" ? (
+                      {email.status === "NOT SCANNED" ? (
+                        <Inbox className="h-4 w-4 text-muted-foreground" />
+                      ) : email.status === "SAFE" ? (
                         <ShieldCheck className="h-4 w-4 text-[var(--success)]" />
                       ) : email.status === "QUARANTINED" ? (
                         <AlertTriangle className="h-4 w-4 text-[var(--warning)]" />
@@ -248,7 +315,9 @@ export function EmailTable() {
                     </div>
                   </td>
                   <td className="px-5 py-3.5 text-right">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
+                    {email.id && (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:text-accent" />
+                    )}
                   </td>
                 </tr>
               );
@@ -259,8 +328,9 @@ export function EmailTable() {
 
       <div className="flex flex-col gap-3 border-t border-border px-5 py-4 font-mono text-[11.5px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <div>
-          {emailsState.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of{" "}
-          <span className="text-foreground">{total}</span> emails
+          {emailsState.length === 0 ? 0 : (page - 1) * pageSize + 1}–
+          {live ? (page - 1) * pageSize + emailsState.length : Math.min(page * pageSize, total)} of{" "}
+          <span className="text-foreground">{live && nextToken ? `about ${total}` : total}</span> emails
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -274,8 +344,13 @@ export function EmailTable() {
           <span className="px-2 text-foreground">{page}</span>
           <button
             type="button"
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page * pageSize >= total || loading}
+            onClick={() => {
+              if (live && nextToken) {
+                setPageTokens((tokens) => [...tokens.slice(0, page), nextToken]);
+              }
+              setPage((p) => p + 1);
+            }}
+            disabled={(live ? !nextToken : page * pageSize >= total) || loading}
             className="rounded-lg border border-border px-3 py-1.5 transition-colors hover:border-accent/50 hover:text-accent disabled:opacity-40"
           >
             Next →

@@ -176,6 +176,34 @@ export async function getEmailQueue(page = 1, pageSize = 50, status?: string): P
   return fetchWithAuth(`/emails?page=${page}&page_size=${pageSize}${statusParam}`);
 }
 
+/** A message as Gmail lists it now; `id` and `status` are null when the gateway never scanned it. */
+export interface LiveEmailItem {
+  id: string | null;
+  gmail_message_id: string;
+  sender: string;
+  recipient: string;
+  subject: string;
+  received_at?: string;
+  mailbox: string;
+  status: EmailItem["status"] | null;
+  risk_score: number | null;
+  enforced: boolean;
+}
+
+export interface LiveEmailListResponse {
+  items: LiveEmailItem[];
+  next_page_token: string | null;
+  total_estimate: number;
+}
+
+/** Every received message, read from Gmail on request; `q` is Gmail search syntax. */
+export async function getLiveEmails(pageToken?: string, pageSize = 50, q = ""): Promise<LiveEmailListResponse> {
+  const params = new URLSearchParams({ page_size: String(pageSize) });
+  if (pageToken) params.set("page_token", pageToken);
+  if (q) params.set("q", q);
+  return fetchWithAuth(`/emails/live?${params}`);
+}
+
 export async function fetchLiveGmailMessages(mailbox = "inbox", maxResults = 20): Promise<EmailListResponse> {
   return fetchWithAuth("/emails/fetch", {
     method: "POST",

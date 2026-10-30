@@ -10,8 +10,9 @@ export default function EmailsPage() {
         </span>
         <h2 className="display mt-3 text-[1.7rem] text-foreground">Inbound email</h2>
         <p className="mt-1.5 max-w-2xl text-[14px] text-muted-foreground">
-          Every message the gateway has scanned, with its risk score and what happened to it.
-          Open one to see the evidence behind the verdict.
+          Every message in your mailbox, read live from Gmail, with the gateway&apos;s risk score
+          and verdict where it has scanned one. Open a scanned message to see the evidence behind
+          the verdict.
         </p>
       </div>
       <EmailTable />

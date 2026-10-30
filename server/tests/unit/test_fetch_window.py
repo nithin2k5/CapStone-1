@@ -1,13 +1,12 @@
 """
-Reads of the newest messages start at midnight today.
+Reads of the newest messages start at midnight FETCH_WINDOW_DAYS back.
 
-Mail from earlier days is erased once scanned, so a first sync or a Sync Now
-that took the newest hundred regardless of age spent model calls on mail
-nobody keeps. These tests pin the window on both providers' requests, and on
-every caller that reads the newest messages.
+The window is what a first sign-in scans of the mail already in the inbox, so
+it bounds the model calls a new mailbox costs. These tests pin it on both
+providers' requests, and on every caller that reads the newest messages.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -40,19 +39,23 @@ def _capture(monkeypatch, module, response):
 
 
 class TestWindow:
-    def test_it_starts_at_local_midnight_today(self, monkeypatch):
-        monkeypatch.setattr(retention_service, "get_settings", lambda: Settings(FETCH_TODAY_ONLY=True))
+    def test_it_starts_at_local_midnight_the_given_days_back(self, monkeypatch):
+        monkeypatch.setattr(retention_service, "get_settings", lambda: Settings(FETCH_WINDOW_DAYS=10))
 
         start = fetch_window_start()
         now = datetime.now().astimezone()
 
-        assert start.date() == now.date()
+        assert start.date() == (now - timedelta(days=9)).date()
         assert (start.hour, start.minute, start.second) == (0, 0, 0)
         assert start.tzinfo is not None
         assert start <= now
 
-    def test_it_can_be_switched_off(self, monkeypatch):
-        monkeypatch.setattr(retention_service, "get_settings", lambda: Settings(FETCH_TODAY_ONLY=False))
+    def test_one_day_is_today(self, monkeypatch):
+        monkeypatch.setattr(retention_service, "get_settings", lambda: Settings(FETCH_WINDOW_DAYS=1))
+        assert fetch_window_start().date() == datetime.now().astimezone().date()
+
+    def test_zero_lifts_the_window(self, monkeypatch):
+        monkeypatch.setattr(retention_service, "get_settings", lambda: Settings(FETCH_WINDOW_DAYS=0))
         assert fetch_window_start() is None
 
 

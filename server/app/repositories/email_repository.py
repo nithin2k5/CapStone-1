@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy import func, select
@@ -24,8 +25,12 @@ class EmailRepository:
     async def get_by_gmail_id(
         self, gmail_message_id: str, user_id: UUID
     ) -> Email | None:
+        # scan_result loaded here: the ingest path hands this row straight to
+        # the scanner, which reads it, and a lazy load under asyncio raises.
         result = await self.db.execute(
-            select(Email).where(
+            select(Email)
+            .options(selectinload(Email.scan_result))
+            .where(
                 Email.gmail_message_id == gmail_message_id,
                 Email.user_id == user_id,
             )
@@ -39,8 +44,9 @@ class EmailRepository:
         page_size: int = 20,
         status: EmailStatus | None = None,
     ) -> tuple[list[Email], int]:
-        # Delivered mail whose content has been erased has nothing left to show.
-        visible = (Email.user_id == user_id, Email.discarded_at.is_(None))
+        # Content is never stored, so every row is listed by its metadata and
+        # verdict; the message itself stays in the user's mailbox.
+        visible = (Email.user_id == user_id,)
         query = select(Email).where(*visible)
         count_query = select(func.count()).select_from(Email).where(*visible)
 
@@ -64,6 +70,10 @@ class EmailRepository:
         if existing:
             return existing, False
 
+        # Body and headers are not stored. Every scan on the ingest path is
+        # handed the provider's parse, so the row only needs what dedupe,
+        # sender recognition and the dashboard read. discarded_at is set from
+        # the start so the rescanning passes skip a row with no body to score.
         parsed = gmail_msg.parsed
         email = Email(
             user_id=user_id,
@@ -73,9 +83,7 @@ class EmailRepository:
             subject=parsed.subject,
             received_at=parsed.date,
             status=EmailStatus.PENDING,
-            raw_headers=parsed.raw_headers,
-            body_text=parsed.body_text,
-            body_html=parsed.body_html,
+            discarded_at=datetime.now(timezone.utc),
             mailbox=gmail_msg.mailbox,
         )
         try:
@@ -91,7 +99,10 @@ class EmailRepository:
                 return existing, False
             raise
 
+        # Column refresh only loads columns; scan_result is loaded explicitly
+        # for the same reason as in get_by_gmail_id.
         await self.db.refresh(email)
+        await self.db.refresh(email, attribute_names=["scan_result"])
         return email, True
 
     async def save_scan_result(self, scan_result: ScanResult) -> ScanResult:
@@ -111,6 +122,8 @@ class EmailRepository:
             .where(
                 Email.user_id == user_id,
                 Email.status.in_([EmailStatus.PENDING, EmailStatus.SCANNED]),
+                # Nothing stored to scan; the next sync rescans it from Gmail.
+                Email.discarded_at.is_(None),
             )
             .limit(limit)
         )
